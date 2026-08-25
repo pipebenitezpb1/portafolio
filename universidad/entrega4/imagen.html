@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonificador de Imágenes — Insta3D</title>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+/* ============ SISTEMA DE DISEÑO — retro-industrial / manual técnico (Insta3D) ============ */
+:root{
+  --paper:#e7dfce; --paper-2:#ded4bf; --cream:#f1ebdc;
+  --panel:#16150f; --ink:#1b1a13; --muted:#5b5544; --texto:#3a382c;
+  --accent:#1a7a2e; --accent-2:#15a01e; --alert:#d4500f;
+  --disp:'Barlow Condensed','Arial Narrow','Helvetica Neue Condensed',Impact,sans-serif;
+  --mono:'Space Mono',ui-monospace,Consolas,monospace;
+  --sans:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+/* modo oscuro: invierte papel/tinta manteniendo el verde de marca */
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#161510; --paper-2:#1e1c14; --cream:#211f16;
+    --ink:#e9e2d0; --muted:#a79e86; --texto:#c4bca7;
+    --accent:#23a33d; --accent-2:#2ec24a;
+  }
+  body::after{mix-blend-mode:screen; opacity:.03;}
+  .btn-p, .strip .pla{color:#12110c;}
+}
+
+*{box-sizing:border-box;}
+html,body{overflow-x:hidden; max-width:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.5;
+}
+/* grano de papel */
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; opacity:.05;
+  mix-blend-mode:multiply; z-index:90;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.shell{max-width:1240px; margin:0 auto; padding:14px 14px 40px;}
+a{color:inherit;}
+:focus-visible{outline:3px solid var(--accent-2); outline-offset:2px;}
+
+/* ---------------- NAV / cabecera ---------------- */
+.nav{
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  border:2px solid var(--ink); padding:12px 16px; background:var(--paper-2);
+}
+.brand{display:flex; align-items:center; gap:13px;}
+.brand .blogo{flex:none; display:block;}
+.brand .bdiv{flex:none; width:2px; height:36px; background:var(--ink);}
+.brand .top{font-family:var(--disp); font-weight:700; font-size:27px; line-height:.85; text-transform:uppercase;}
+.brand .top b{color:var(--accent);}
+.brand .sub{font-family:var(--mono); font-size:8.5px; letter-spacing:.18em; color:var(--muted); margin-top:5px;}
+.navmeta{display:flex; gap:16px; font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);}
+.navmeta b{color:var(--accent); font-weight:700;}
+
+/* ---------------- rejilla de módulos ---------------- */
+.app{display:grid; grid-template-columns:1fr 340px; border:2px solid var(--ink); border-top:none;}
+.cell{padding:18px; border-right:2px solid var(--ink); min-width:0;}
+.cell:last-child{border-right:none;}
+.bh{
+  font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); display:flex; justify-content:space-between; gap:10px;
+  align-items:baseline; margin-bottom:14px; border-bottom:1.5px solid var(--ink); padding-bottom:8px;
+}
+.bh b{color:var(--ink); font-weight:700;}
+
+/* ---------------- panel blueprint (la imagen) ---------------- */
+#drop{
+  position:relative; overflow:hidden; cursor:pointer;
+  background:var(--panel); color:#8d9a82;
+  border:2px dashed #46503c; min-height:300px;
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  background-image:
+    linear-gradient(rgba(120,140,110,.07) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(120,140,110,.07) 1px,transparent 1px);
+  background-size:26px 26px;
+}
+#drop.tiene{border-style:solid; border-color:var(--ink);}
+#drop:hover{border-color:var(--accent);}
+#hint{font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; line-height:1.9; z-index:2;}
+#hint u{display:block; text-decoration:none; color:#5e6857; font-size:9.5px; letter-spacing:.16em; margin-top:6px;}
+#lienzo{display:block; max-width:100%; height:auto; position:relative; z-index:2;}
+.vista{position:absolute; top:11px; left:13px; z-index:3;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; color:#7d8a72; text-transform:uppercase;}
+/* marcas de registro */
+.cross{position:absolute; width:14px; height:14px; z-index:3; pointer-events:none;}
+.cross::before,.cross::after{content:""; position:absolute; background:#5a6452;}
+.cross::before{left:50%; top:0; width:1px; height:100%; transform:translateX(-50%);}
+.cross::after{top:50%; left:0; height:1px; width:100%; transform:translateY(-50%);}
+.cross.tl{top:7px; left:7px;} .cross.tr{top:7px; right:7px;}
+.cross.bl{bottom:7px; left:7px;} .cross.br{bottom:7px; right:7px;}
+/* franja técnica bajo la imagen */
+.strip{display:flex; align-items:stretch; flex-wrap:wrap; border:2px solid var(--ink); border-top:none;
+  font-family:var(--mono); font-size:10px; text-transform:uppercase; background:var(--panel); color:#aeb6a3;}
+.strip .pla{background:var(--accent); color:var(--paper);
+  font-family:var(--disp); font-weight:700; font-size:19px; padding:6px 13px; letter-spacing:.02em;}
+.strip span{padding:9px 12px; border-right:1px solid #3a4035; letter-spacing:.08em;}
+.strip span:last-child{border-right:none;}
+.strip b{color:#fff; font-weight:700; font-variant-numeric:tabular-nums;}
+
+/* ---------------- inspector de píxeles ---------------- */
+.inspector{margin-top:18px;}
+#pixeles{display:flex; flex-direction:column; gap:5px;}
+#pixeles .vacio{font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--muted);
+  text-transform:uppercase; border:1.5px dashed var(--ink); padding:14px; text-align:center;}
+.pix{
+  display:grid; grid-template-columns:26px 24px 1fr 68px 64px; gap:10px; align-items:center;
+  border:1.5px solid var(--ink); background:var(--cream); padding:5px 9px;
+}
+.pix.mudo{opacity:.45;}
+.pix .voz{font-family:var(--mono); font-size:9.5px; letter-spacing:.06em; color:var(--muted);}
+.pix .muestra{width:22px; height:22px; border:2px solid var(--ink); display:block;}
+.pix .rgb{font-family:var(--mono); font-size:10.5px; color:var(--muted); white-space:pre;}
+.pix .nota{font-family:var(--disp); font-weight:700; font-size:19px; line-height:1;
+  text-transform:uppercase; font-variant-numeric:tabular-nums;}
+.pix.mudo .nota{font-family:var(--mono); font-size:10px; font-weight:400; letter-spacing:.08em; color:var(--muted);}
+.pix .nivel{height:8px; border:1.5px solid var(--ink); background:var(--paper-2);}
+.pix .nivel i{display:block; height:100%; width:0; background:var(--accent);}
+
+/* ---------------- pistas ---------------- */
+#pistas{display:flex; flex-direction:column; gap:8px; margin-bottom:12px;}
+.pista{border:1.5px solid var(--ink); background:var(--cream); padding:8px 9px; cursor:pointer;}
+.pista.sel{border-width:2px; box-shadow:inset 3px 0 0 var(--accent);}
+.pista.muda{opacity:.5;}
+.pcab{display:flex; align-items:center; gap:7px; margin-bottom:7px;}
+.pcab .chip{width:11px; height:11px; border:1.5px solid var(--ink); flex:none;}
+.pcab b{font-family:var(--mono); font-size:11px; letter-spacing:.06em;}
+.pcab .pinfo{font-family:var(--mono); font-size:8.5px; letter-spacing:.06em; color:var(--muted);
+  margin-left:auto; text-transform:uppercase;}
+.mini{
+  flex:none; width:22px; height:22px; padding:0; border:1.5px solid var(--ink); background:var(--paper-2);
+  color:var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.mini:hover{background:var(--accent); color:var(--paper);}
+.pctl{display:grid; grid-template-columns:1fr; gap:6px;}
+.pctl .dos{display:grid; grid-template-columns:1fr 88px; gap:6px;}
+.pctl label{
+  display:flex; align-items:center; gap:6px; border:2px solid var(--ink); background:var(--paper-2);
+  padding:0 0 0 8px; font-family:var(--mono); font-size:9px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muted);
+}
+.pctl label input{
+  width:100%; min-width:0; border:none; border-left:1.5px solid var(--ink); background:var(--cream);
+  color:var(--ink); font-family:var(--mono); font-size:12px; padding:7px 4px; text-align:center; outline:none;
+}
+.addpista{
+  width:100%; border:2px dashed var(--ink); background:none; color:var(--ink); cursor:pointer;
+  font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  padding:11px; display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.addpista:hover{background:var(--cream); border-style:solid; border-color:var(--accent); color:var(--accent);}
+.addpista:disabled{opacity:.4; cursor:not-allowed;}
+
+/* ---------------- panel de parámetros ---------------- */
+.fila{margin-bottom:13px;}
+.fila label{
+  font-family:var(--mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--muted); display:flex; justify-content:space-between; align-items:baseline;
+  gap:8px; margin-bottom:5px;
+}
+.fila .valor{font-family:var(--mono); font-weight:700; font-size:11px; color:var(--accent);
+  font-variant-numeric:tabular-nums;}
+select{
+  width:100%; padding:9px 10px; border:2px solid var(--ink); background:var(--cream); color:var(--ink);
+  font-family:var(--mono); font-size:12px; border-radius:0; outline:none; cursor:pointer;
+  -webkit-appearance:none; appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+  background-size:5px 5px,5px 5px; background-repeat:no-repeat; padding-right:30px;
+}
+select:focus{border-color:var(--accent);}
+.pctl select{padding:7px 8px; font-size:11px; padding-right:26px;}
+
+input[type=range]{
+  width:100%; margin:0; height:24px; cursor:pointer; background:none;
+  -webkit-appearance:none; appearance:none;
+}
+input[type=range]::-webkit-slider-runnable-track{height:2px; background:var(--ink);}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:16px; height:16px; margin-top:-7px;
+  background:var(--accent); border:2px solid var(--ink); border-radius:0;
+}
+input[type=range]::-moz-range-track{height:2px; background:var(--ink);}
+input[type=range]::-moz-range-thumb{
+  width:14px; height:14px; background:var(--accent); border:2px solid var(--ink); border-radius:0;
+}
+input[type=range]:focus-visible::-webkit-slider-thumb{background:var(--accent-2);}
+
+.check{
+  display:flex; align-items:center; gap:9px; cursor:pointer; min-height:44px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--texto);
+  border-top:1.5px solid var(--ink); margin-top:4px; padding-top:4px;
+}
+.check input{width:18px; height:18px; accent-color:var(--accent); cursor:pointer;}
+
+.btn{
+  width:100%; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.08em;
+  text-transform:uppercase; padding:15px 18px; border:2px solid var(--ink); border-radius:0;
+  cursor:pointer; background:var(--cream); color:var(--ink);
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  transition:background .15s ease-out, color .15s ease-out;
+}
+.btn + .btn{margin-top:8px;}
+.btn-p{background:var(--accent); color:var(--paper);}
+.btn-p:hover{background:var(--accent-2);}
+.btn-p.activo{background:var(--alert); color:var(--paper);}
+.btn-sec:hover{background:var(--paper-2);}
+.btn:disabled{opacity:.55; cursor:progress;}
+.btn svg{flex:none;}
+.sello{
+  margin-top:12px; border:1.5px solid var(--ink); padding:8px 10px;
+  font-family:var(--mono); font-size:8.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); display:flex; justify-content:space-between; gap:8px;
+}
+
+/* ---------------- pie ---------------- */
+.fbar{
+  background:var(--panel); color:#cfc9b8; border:2px solid var(--ink); border-top:none;
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  padding:14px 18px; font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+}
+.fbar p{margin:0; max-width:660px; line-height:1.8;}
+.fbar b{color:#fff;}
+.fbar .verde{color:var(--accent-2);}
+.barcode{flex:none; width:104px; height:30px;
+  background:repeating-linear-gradient(90deg,#cfc9b8 0 2px,transparent 2px 4px,#cfc9b8 4px 5px,transparent 5px 9px);}
+
+/* ---------------- responsive ---------------- */
+@media (max-width:900px){
+  .app{grid-template-columns:1fr;}
+  .cell{border-right:none; border-bottom:2px solid var(--ink);}
+  .cell:last-child{border-bottom:none;}
+}
+@media (max-width:640px){
+  .shell{padding:10px 10px 30px;}
+  .nav{padding:10px 12px;}
+  .brand .top{font-size:22px;}
+  .navmeta{width:100%; justify-content:space-between;}
+  .pix{grid-template-columns:24px 22px 1fr 60px; gap:8px;}
+  .pix .nivel{display:none;}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important; transition:none !important;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="nav">
+    <div class="brand">
+      <svg class="blogo" width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+        <rect x="1" y="1" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2"/>
+        <rect x="8"  y="24" width="4" height="10" fill="currentColor"/>
+        <rect x="15" y="16" width="4" height="18" fill="#1a7a2e"/>
+        <rect x="22" y="9"  width="4" height="25" fill="currentColor"/>
+        <rect x="29" y="19" width="4" height="15" fill="#1a7a2e"/>
+      </svg>
+      <div class="bdiv"></div>
+      <div>
+        <div class="top">SONI<b>FICADOR</b></div>
+        <div class="sub">IMAGEN → SONIDO · MANUAL DE OPERACIÓN</div>
+      </div>
+    </div>
+    <div class="navmeta">
+      <span>FIG. <b>SON-01</b></span>
+      <span>REV. <b>03</b></span>
+      <span>HECHO EN CHILE</span>
+    </div>
+  </header>
+
+  <div class="app">
+
+    <!-- ============ I. MUESTRA ============ -->
+    <section class="cell">
+      <div class="bh"><span>I · Muestra — lectura óptica</span><span id="metaImg">SIN ARCHIVO</span></div>
+
+      <div id="drop">
+        <span class="vista">FIG. SON-01 — BARRIDO MULTIPISTA</span>
+        <span class="cross tl"></span><span class="cross tr"></span>
+        <span class="cross bl"></span><span class="cross br"></span>
+        <span id="hint">Arrastra una imagen aquí<u>o haz clic para seleccionar archivo</u></span>
+        <canvas id="lienzo" style="display:none"></canvas>
+      </div>
+      <div class="strip">
+        <span class="pla">SON</span>
+        <span>PISTAS · <b id="nPistas">1</b></span>
+        <span>PASOS · <b id="nPasos">48</b></span>
+        <span>VOCES · <b id="nVoces">4</b></span>
+        <span>CICLO · <b id="durTxt">—</b></span>
+      </div>
+      <input type="file" id="file" accept="image/*" style="display:none">
+
+      <div class="inspector">
+        <div class="bh">
+          <span>II · Píxeles en lectura · <b id="pistaTxt">P01</b></span>
+          <span>PASO <b id="colTxt">—</b> · BANDA <b id="pasTxt">—</b></span>
+        </div>
+        <div id="pixeles"><span class="vacio">Carga una imagen para leer los píxeles</span></div>
+      </div>
+    </section>
+
+    <!-- ============ III. PISTAS + PARÁMETROS ============ -->
+    <aside class="cell">
+      <div class="bh"><span>III · Pistas</span><span>SIMULTÁNEAS</span></div>
+      <div id="pistas"></div>
+      <button id="addPista" class="addpista" type="button">
+        <svg width="11" height="11" viewBox="0 0 11 11" aria-hidden="true">
+          <path d="M5.5 0v11M0 5.5h11" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Agregar pista
+      </button>
+
+      <div class="bh" style="margin-top:22px"><span>IV · Parámetros</span><span>SPEC</span></div>
+
+      <div class="fila">
+        <label for="fuente">Parámetro que define la nota</label>
+        <select id="fuente">
+          <option value="lum">Luminancia (brillo)</option>
+          <option value="hue">Matiz (Hue)</option>
+          <option value="r">Canal Rojo</option>
+          <option value="g">Canal Verde</option>
+          <option value="b">Canal Azul</option>
+        </select>
+      </div>
+
+      <div class="fila">
+        <label for="escala">Escala</label>
+        <select id="escala">
+          <option value="mayor">Mayor</option>
+          <option value="menor">Menor natural</option>
+          <option value="pentaMayor" selected>Pentatónica mayor</option>
+          <option value="pentaMenor">Pentatónica menor</option>
+          <option value="blues">Blues</option>
+          <option value="dorico">Dórico</option>
+          <option value="tonos">Tonos enteros</option>
+          <option value="cromatica">Cromática</option>
+        </select>
+      </div>
+
+      <div class="fila">
+        <label for="raiz">Nota raíz</label>
+        <select id="raiz">
+          <option>Do</option><option>Do#</option><option>Re</option><option>Re#</option>
+          <option>Mi</option><option>Fa</option><option>Fa#</option><option>Sol</option>
+          <option>Sol#</option><option>La</option><option>La#</option><option>Si</option>
+        </select>
+      </div>
+
+      <div class="fila">
+        <label for="octBase">Octava base <span class="valor" id="vOct">3</span></label>
+        <input type="range" id="octBase" min="1" max="6" value="3">
+      </div>
+      <div class="fila">
+        <label for="rango">Rango de octavas <span class="valor" id="vRango">3</span></label>
+        <input type="range" id="rango" min="1" max="6" value="3">
+      </div>
+      <div class="fila">
+        <label for="voces">Voces por pista <span class="valor" id="vVoces">4</span></label>
+        <input type="range" id="voces" min="1" max="8" value="4">
+      </div>
+      <div class="fila">
+        <label for="cols">Resolución · pasos <span class="valor" id="vCols">48</span></label>
+        <input type="range" id="cols" min="8" max="160" value="48">
+      </div>
+      <div class="fila">
+        <label for="vel">Velocidad · pasos/seg <span class="valor" id="vVel">7</span></label>
+        <input type="range" id="vel" min="2" max="24" value="7">
+      </div>
+      <div class="fila">
+        <label for="umbral">Umbral de silencio <span class="valor" id="vUmbral">0.12</span></label>
+        <input type="range" id="umbral" min="0" max="0.6" step="0.02" value="0.12">
+      </div>
+      <div class="fila">
+        <label for="volumen">Volumen maestro <span class="valor" id="vVolumen">2.2</span></label>
+        <input type="range" id="volumen" min="0" max="5" step="0.1" value="2.2">
+      </div>
+
+      <label class="check" for="loop"><input type="checkbox" id="loop" checked> Repetir en bucle</label>
+
+      <button id="btnPlay" class="btn btn-p" type="button">
+        <svg id="icoPlay" width="13" height="14" viewBox="0 0 13 14" aria-hidden="true"><path d="M1 1l11 6-11 6z" fill="currentColor"/></svg>
+        <span id="txtPlay">Reproducir</span>
+      </button>
+
+      <button id="btnExport" class="btn btn-sec" type="button">
+        <svg width="13" height="14" viewBox="0 0 13 14" aria-hidden="true">
+          <path d="M6.5 0.5v8M3 5.5l3.5 3.5L10 5.5" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M1 11.5v1.5h11v-1.5" fill="none" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span id="txtExport">Exportar MP3</span>
+      </button>
+
+      <div class="sello">
+        <span>MP3 192 kbps · mono</span><span>1 ciclo completo</span>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="fbar">
+    <p>
+      Cada <b>pista</b> recorre la imagen en su propia dirección y suena junto a las demás.
+      Las <b>bandas</b> parten la imagen en franjas que se leen una tras otra.
+      Los píxeles bajo el <b>umbral</b> quedan en silencio: ahí nace el ritmo.
+      Con la reproducción detenida, <span class="verde">pasa el cursor sobre la imagen</span>
+      para inspeccionar la pista seleccionada.
+    </p>
+    <div class="barcode" aria-hidden="true"></div>
+  </footer>
+</div>
+
+<script>
+// ---------------- Escalas (semitonos desde la raíz) ----------------
+const ESCALAS = {
+  mayor:      [0,2,4,5,7,9,11],
+  menor:      [0,2,3,5,7,8,10],
+  pentaMayor: [0,2,4,7,9],
+  pentaMenor: [0,3,5,7,10],
+  blues:      [0,3,5,6,7,10],
+  dorico:     [0,2,3,5,7,9,10],
+  tonos:      [0,2,4,6,8,10],
+  cromatica:  [0,1,2,3,4,5,6,7,8,9,10,11],
+};
+
+// Direcciones de barrido disponibles por pista
+const DIRS = {
+  h:  "Horizontal  →",
+  hr: "Horizontal  ←",
+  v:  "Vertical  ↓",
+  vr: "Vertical  ↑",
+};
+// Instrumentos: cada uno es una receta para un pequeno sintetizador.
+//   partials  parciales que suenan a la vez (ratio sobre la fundamental, ganancia, onda, detune)
+//   a d s     envolvente: ataque y caida como fraccion de la duracion, y nivel de sustain (0-1)
+//   fm        modulacion de frecuencia: ratio del modulador e indice, con su propia caida
+//   filtro    paso bajo con envolvente propia (pico y base como multiplos de la nota)
+//   vibrato   LFO sobre la afinacion, en cents
+//   nivel     ajuste de volumen para emparejarlos al oido
+const INSTRUMENTOS = {
+  // --- osciladores crudos (el sonido original de la app) ---
+  triangle: { n:"Triangular", g:"B\u00e1sicos", nivel:1,
+              partials:[{ratio:1, gain:1, tipo:"triangle"}], a:.01, d:.3, s:0 },
+  sine:     { n:"Senoidal", g:"B\u00e1sicos", nivel:1.1,
+              partials:[{ratio:1, gain:1, tipo:"sine"}], a:.01, d:.3, s:0 },
+  square:   { n:"Cuadrada", g:"B\u00e1sicos", nivel:.75,
+              partials:[{ratio:1, gain:1, tipo:"square"}], a:.01, d:.3, s:0 },
+  sawtooth: { n:"Sierra", g:"B\u00e1sicos", nivel:.8,
+              partials:[{ratio:1, gain:1, tipo:"sawtooth"}], a:.01, d:.3, s:0 },
+
+  // --- instrumentos ---
+  arpa:    { n:"Arpa", g:"Instrumentos", nivel:1,
+             partials:[{ratio:1, gain:1, tipo:"sawtooth"}], a:.004, d:.5, s:0,
+             filtro:{ q:1, pico:9, base:1.6, caida:.5 } },
+  epiano:  { n:"P. el\u00e9ctrico", g:"Instrumentos", nivel:1,
+             partials:[{ratio:1, gain:1, tipo:"sine"}], a:.005, d:.45, s:.12,
+             fm:{ ratio:2, indice:2.4, caida:.28 } },
+  campana: { n:"Campana", g:"Instrumentos", nivel:.9,
+             partials:[{ratio:1, gain:1, tipo:"sine"}], a:.004, d:.7, s:0,
+             fm:{ ratio:3.5, indice:3.2, caida:.5 } },
+  marimba: { n:"Marimba", g:"Instrumentos", nivel:1.05,
+             partials:[{ratio:1, gain:1, tipo:"sine"}, {ratio:4, gain:.18, tipo:"sine"}],
+             a:.003, d:.22, s:0 },
+  organo:  { n:"\u00d3rgano", g:"Instrumentos", nivel:.6,
+             partials:[{ratio:1, gain:.7}, {ratio:2, gain:.45}, {ratio:3, gain:.25}, {ratio:4, gain:.15}],
+             a:.02, d:.1, s:.85 },
+  cuerdas: { n:"Cuerdas", g:"Instrumentos", nivel:.62,
+             partials:[{ratio:1, gain:.5, tipo:"sawtooth", detune:-7},
+                       {ratio:1, gain:.5, tipo:"sawtooth", detune:7},
+                       {ratio:2, gain:.15, tipo:"sawtooth"}],
+             a:.35, d:.2, s:.7, filtro:{ q:.7, pico:6, base:3, caida:.6 } },
+  flauta:  { n:"Flauta", g:"Instrumentos", nivel:.85,
+             partials:[{ratio:1, gain:1, tipo:"sine"}, {ratio:2, gain:.08, tipo:"sine"}],
+             a:.18, d:.15, s:.8, vibrato:{ hz:5.2, cents:9 } },
+  bajo:    { n:"Bajo", g:"Instrumentos", nivel:.9,
+             partials:[{ratio:.5, gain:.55, tipo:"sine"}, {ratio:1, gain:.45, tipo:"square"}],
+             a:.006, d:.35, s:.25, filtro:{ q:3, pico:5, base:1.2, caida:.35 } },
+};
+// orden de instrumentos para las pistas nuevas, para que no suenen todas igual
+const ROTACION = ["triangle","arpa","epiano","marimba","organo","bajo"];
+// paleta funcional para identificar cada pista sobre el plano oscuro
+const COLORES = ["#2ec24a","#d4500f","#e7dfce","#4fc3d9","#e0b83a","#c95fb5"];
+const MAX_PISTAS = COLORES.length;
+
+// ---------------- Estado / DOM ----------------
+const $ = id => document.getElementById(id);
+const lienzo = $("lienzo"), lctx = lienzo.getContext("2d");
+let imagen = null;                 // Image cargada
+let ctx;                           // AudioContext
+let reproduciendo = false;
+let pasoGlobal = 0, tiempoSig = 0, tiempoInicio = 0, schedTimer = null, rafId = 0;
+
+// pistas: cada una con su dirección, bandas y timbre; todas suenan a la vez
+let pistas = [], numPista = 0, pistaSel = null;
+
+const esHorizontal = p => p.dir === "h"  || p.dir === "hr";
+const esReversa    = p => p.dir === "hr" || p.dir === "vr";
+const activas      = () => pistas.filter(p => p.activa && p.px);
+const pistaActual  = () => pistas.find(p => p.id === pistaSel) || null;
+// pasos del ciclo completo = el de la pista más larga
+const cicloPasos = () => activas().reduce((m, p) => Math.max(m, p.total), 0);
+
+// vincular sliders a su etiqueta
+const liga = (id, out) => { const e=$(id), o=$(out); const f=()=>o.textContent=e.value; e.addEventListener("input",f); f(); };
+liga("octBase","vOct"); liga("rango","vRango"); liga("voces","vVoces");
+liga("cols","vCols"); liga("vel","vVel"); liga("umbral","vUmbral"); liga("volumen","vVolumen");
+
+// volumen maestro en vivo
+$("volumen").addEventListener("input", () => { if (masterGain) masterGain.gain.value = +$("volumen").value; });
+
+// re-muestrear todas las pistas si cambia la resolución o las voces
+["cols","voces"].forEach(id => $(id).addEventListener("change", () => { if (imagen) muestrearTodo(); }));
+
+// duración de un ciclo completo
+function actualizarMeta() {
+  const pasos = cicloPasos();
+  const seg = pasos / (+$("vel").value);
+  const m = Math.floor(seg / 60), sg = Math.round(seg % 60);
+  $("durTxt").textContent = pasos ? (m ? m + "m " + String(sg).padStart(2,"0") + "s" : sg + "s") : "—";
+  $("nPistas").textContent = activas().length;
+  $("nPasos").textContent = $("cols").value;
+  $("nVoces").textContent = $("voces").value;
+}
+["cols","vel","voces"].forEach(id => $(id).addEventListener("input", actualizarMeta));
+
+// ---------------- Carga de imagen ----------------
+const drop = $("drop"), file = $("file");
+drop.addEventListener("click", () => file.click());
+file.addEventListener("change", e => { if (e.target.files[0]) cargar(e.target.files[0]); });
+drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("tiene"); });
+drop.addEventListener("dragleave", () => { if (!imagen) drop.classList.remove("tiene"); });
+drop.addEventListener("drop", e => {
+  e.preventDefault();
+  if (e.dataTransfer.files[0]) cargar(e.dataTransfer.files[0]);
+});
+
+function cargar(archivo) {
+  const url = URL.createObjectURL(archivo);
+  const img = new Image();
+  img.onload = () => {
+    imagen = img;
+    $("hint").style.display = "none";
+    lienzo.style.display = "block";
+    drop.classList.add("tiene");
+    $("metaImg").textContent = img.width + " × " + img.height + " PX";
+    // dibujar a tamaño de muestra visible (máx 560 de ancho)
+    const escala = Math.min(1, 560 / img.width);
+    lienzo.width = Math.round(img.width * escala);
+    lienzo.height = Math.round(img.height * escala);
+    lctx.drawImage(img, 0, 0, lienzo.width, lienzo.height);
+    muestrearTodo();
+  };
+  img.src = url;
+}
+
+// ---------------- Muestreo por pista ----------------
+// Cada pista reduce la imagen a su propia rejilla según hacia dónde barre:
+//   horizontal → ancho = pasos, alto = voces*bandas   (barre columnas)
+//   vertical   → ancho = voces*bandas, alto = pasos   (barre filas)
+function muestrearPista(p) {
+  if (!imagen) return;
+  const pasos = +$("cols").value;
+  const voces = +$("voces").value;
+  const carriles = voces * p.pasadas;
+  const horiz = esHorizontal(p);
+  const w = horiz ? pasos : carriles;
+  const h = horiz ? carriles : pasos;
+  const off = document.createElement("canvas");
+  off.width = w; off.height = h;
+  const octx = off.getContext("2d");
+  octx.drawImage(imagen, 0, 0, w, h);
+  p.px = octx.getImageData(0, 0, w, h).data;
+  p.w = w; p.pasos = pasos; p.voces = voces; p.carriles = carriles;
+  p.total = pasos * p.pasadas;      // pasos de un ciclo de esta pista
+}
+
+function muestrearTodo() {
+  pistas.forEach(muestrearPista);
+  construirInspector();
+  renderPistas();
+  actualizarMeta();
+}
+
+// índice del píxel dentro de la pista: paso del barrido, voz y banda
+function indicePx(p, paso, y, banda) {
+  const carril = banda * p.voces + y;
+  const s = esReversa(p) ? p.pasos - 1 - paso : paso;
+  return esHorizontal(p) ? (carril * p.w + s) * 4 : (s * p.w + carril) * 4;
+}
+
+// ---------------- Gestión de pistas ----------------
+function crearPista(dir) {
+  if (pistas.length >= MAX_PISTAS) return;
+  const p = {
+    id: ++numPista,
+    dir: dir || "h",
+    pasadas: 1,
+    instr: ROTACION[pistas.length % ROTACION.length],
+    activa: true,
+    color: COLORES[pistas.length % COLORES.length],
+    px: null, total: 0,
+  };
+  pistas.push(p);
+  if (pistaSel === null) pistaSel = p.id;
+  muestrearPista(p);
+  renderPistas();
+  actualizarMeta();
+}
+
+function borrarPista(id) {
+  pistas = pistas.filter(p => p.id !== id);
+  pistas.forEach((p, i) => p.color = COLORES[i % COLORES.length]);
+  if (pistaSel === id) pistaSel = pistas.length ? pistas[0].id : null;
+  ultimaClave = "";
+  renderPistas();
+  actualizarMeta();
+}
+
+const opciones = (mapa, sel) => Object.entries(mapa)
+  .map(([v, t]) => `<option value="${v}"${v === sel ? " selected" : ""}>${t}</option>`).join("");
+
+// instrumentos agrupados por familia
+function opcionesInstr(sel) {
+  const grupos = {};
+  for (const [k, v] of Object.entries(INSTRUMENTOS)) (grupos[v.g] = grupos[v.g] || []).push([k, v]);
+  return Object.entries(grupos).map(([g, items]) =>
+    `<optgroup label="${g}">` + items.map(([k, v]) =>
+      `<option value="${k}"${k === sel ? " selected" : ""}>${v.n}</option>`).join("") + "</optgroup>"
+  ).join("");
+}
+
+function renderPistas() {
+  const cont = $("pistas");
+  cont.innerHTML = "";
+  pistas.forEach((p, i) => {
+    const el = document.createElement("div");
+    el.className = "pista" + (p.id === pistaSel ? " sel" : "") + (p.activa ? "" : " muda");
+    el.innerHTML = `
+      <div class="pcab">
+        <span class="chip" style="background:${p.color}"></span>
+        <b>P${String(i + 1).padStart(2, "0")}</b>
+        <span class="pinfo">${DIRS[p.dir].replace(/\s+/g, " ")} · ${p.pasadas} banda${p.pasadas > 1 ? "s" : ""}</span>
+        <button class="mini" data-a="mute" type="button" aria-label="${p.activa ? "Silenciar" : "Activar"} pista">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+            <rect x="1" y="1" width="8" height="8" fill="${p.activa ? "currentColor" : "none"}"
+                  stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </button>
+        <button class="mini" data-a="del" type="button" aria-label="Eliminar pista">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </button>
+      </div>
+      <div class="pctl">
+        <select data-a="dir" aria-label="Dirección del barrido">${opciones(DIRS, p.dir)}</select>
+        <div class="dos">
+          <select data-a="instr" aria-label="Instrumento">${opcionesInstr(p.instr)}</select>
+          <label>Bandas<input type="number" data-a="pasadas" min="1" max="8" value="${p.pasadas}"></label>
+        </div>
+      </div>`;
+
+    el.addEventListener("click", e => {
+      if (e.target.closest("button, select, input, label")) return;
+      pistaSel = p.id; ultimaClave = ""; renderPistas();
+    });
+    el.querySelector('[data-a="mute"]').addEventListener("click", () => {
+      p.activa = !p.activa; renderPistas(); actualizarMeta();
+    });
+    el.querySelector('[data-a="del"]').addEventListener("click", () => borrarPista(p.id));
+    el.querySelector('[data-a="dir"]').addEventListener("change", e => {
+      p.dir = e.target.value; muestrearPista(p); ultimaClave = ""; renderPistas();
+    });
+    el.querySelector('[data-a="instr"]').addEventListener("change", e => {
+      p.instr = e.target.value;
+      if (!reproduciendo) probarInstrumento(p);      // audicion corta al elegirlo
+    });
+    el.querySelector('[data-a="pasadas"]').addEventListener("change", e => {
+      p.pasadas = Math.max(1, Math.min(8, +e.target.value || 1));
+      muestrearPista(p); ultimaClave = ""; renderPistas(); actualizarMeta();
+    });
+    cont.appendChild(el);
+  });
+  $("addPista").disabled = pistas.length >= MAX_PISTAS;
+  $("pistaTxt").textContent = pistaSel
+    ? "P" + String(pistas.findIndex(p => p.id === pistaSel) + 1).padStart(2, "0") : "—";
+}
+
+$("addPista").addEventListener("click", () => {
+  // sugiere una dirección distinta a la última para que la pista nueva aporte algo
+  const usadas = pistas.map(p => p.dir);
+  const libre = Object.keys(DIRS).find(d => !usadas.includes(d));
+  crearPista(libre || "h");
+});
+
+// ---------------- Inspector de píxeles ----------------
+const NOMBRES = ["Do","Do#","Re","Re#","Mi","Fa","Fa#","Sol","Sol#","La","La#","Si"];
+const nombreNota = midi => NOMBRES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
+
+let filasIns = [];       // referencias al DOM de cada voz
+let ultimaClave = "";    // "pista|paso|banda": evita repintar en cada frame
+let hoverPaso = null;    // paso bajo el cursor cuando está detenido
+
+// una fila por voz; se reconstruyen sólo si cambia la cantidad de voces
+function construirInspector() {
+  if (!imagen) return;                 // sin imagen se mantiene el mensaje de "carga una imagen"
+  const voces = +$("voces").value;
+  const cont = $("pixeles");
+  if (filasIns.length === voces) { ultimaClave = ""; return; }
+  cont.innerHTML = "";
+  filasIns = [];
+  for (let y = 0; y < voces; y++) {
+    const f = document.createElement("div");
+    f.className = "pix";
+    f.innerHTML = '<span class="voz"></span><span class="muestra"></span><span class="rgb"></span>' +
+                  '<span class="nota"></span><span class="nivel"><i></i></span>';
+    f.querySelector(".voz").textContent = "V" + String(y + 1).padStart(2, "0");
+    cont.appendChild(f);
+    filasIns.push({
+      raiz: f,
+      muestra: f.querySelector(".muestra"),
+      rgb: f.querySelector(".rgb"),
+      nota: f.querySelector(".nota"),
+      nivel: f.querySelector(".nivel i"),
+    });
+  }
+  ultimaClave = "";
+}
+
+// vuelca un paso de la pista en el inspector, con el mismo criterio que tocarPaso
+function actualizarInspector(p, s) {
+  if (!p || !p.px || !filasIns.length) return;
+  const banda = Math.floor(s / p.pasos), paso = s % p.pasos;
+  const clave = p.id + "|" + paso + "|" + banda;
+  if (clave === ultimaClave) return;
+  ultimaClave = clave;
+  const fuente = $("fuente").value, umbral = +$("umbral").value;
+  $("colTxt").textContent = (paso + 1) + " / " + p.pasos;
+  $("pasTxt").textContent = (banda + 1) + " / " + p.pasadas;
+
+  for (let y = 0; y < filasIns.length; y++) {
+    const f = filasIns[y];
+    const idx = indicePx(p, paso, y, banda);
+    const r = p.px[idx], g = p.px[idx+1], b = p.px[idx+2];
+    const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+    const mudo = lum < umbral;
+
+    f.raiz.classList.toggle("mudo", mudo);
+    f.muestra.style.background = `rgb(${r},${g},${b})`;
+    f.rgb.textContent = `R${String(r).padStart(3)} G${String(g).padStart(3)} B${String(b).padStart(3)}`;
+
+    if (mudo) {
+      f.raiz.title = `Luminancia ${lum.toFixed(2)} < umbral ${umbral}`;
+      f.nota.textContent = "silencio";
+      f.nivel.style.width = "0%";
+    } else {
+      const midi = valorAMidi(valorDe(r, g, b, fuente));
+      f.raiz.title = `${freqDeMidi(midi).toFixed(1)} Hz · MIDI ${midi} · luminancia ${lum.toFixed(2)}`;
+      f.nota.textContent = nombreNota(midi);
+      f.nivel.style.width = Math.round((0.25 + 0.55 * lum) / 0.8 * 100) + "%";
+    }
+  }
+}
+
+// refrescar la lectura cuando cambia un parámetro que la afecta
+["fuente","escala","raiz","octBase","rango","umbral"].forEach(id =>
+  $(id).addEventListener("input", () => { ultimaClave = ""; }));
+
+// con la reproducción detenida, el cursor recorre la pista seleccionada
+lienzo.addEventListener("mousemove", e => {
+  const p = pistaActual();
+  if (!p || !p.px) return;
+  const caja = lienzo.getBoundingClientRect();
+  const u = (e.clientX - caja.left) / caja.width;
+  const v = (e.clientY - caja.top) / caja.height;
+  const eje = esHorizontal(p) ? u : v;                 // avance del barrido
+  const cruz = esHorizontal(p) ? v : u;                // banda
+  const banda = Math.max(0, Math.min(p.pasadas - 1, Math.floor(cruz * p.pasadas)));
+  const frac = esReversa(p) ? 1 - eje : eje;
+  const paso = Math.max(0, Math.min(p.pasos - 1, Math.floor(frac * p.pasos)));
+  hoverPaso = banda * p.pasos + paso;
+});
+lienzo.addEventListener("mouseleave", () => { hoverPaso = null; });
+
+// ---------------- Utilidades de color / notas ----------------
+function rgb2hue(r, g, b) {
+  r/=255; g/=255; b/=255;
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx-mn;
+  if (d === 0) return 0;
+  let h;
+  if (mx === r) h = ((g-b)/d) % 6;
+  else if (mx === g) h = (b-r)/d + 2;
+  else h = (r-g)/d + 4;
+  h *= 60; if (h < 0) h += 360;
+  return h / 360;
+}
+
+function valorDe(r, g, b, fuente) {
+  switch (fuente) {
+    case "hue": return rgb2hue(r,g,b);
+    case "r": return r/255;
+    case "g": return g/255;
+    case "b": return b/255;
+    default:  return (0.299*r + 0.587*g + 0.114*b) / 255; // luminancia
+  }
+}
+
+function valorAMidi(v) {
+  const escala = ESCALAS[$("escala").value];
+  const raiz = $("raiz").selectedIndex;          // 0..11
+  const octBase = +$("octBase").value;
+  const rango = +$("rango").value;
+  const total = escala.length * rango;
+  let i = Math.floor(v * total);
+  if (i >= total) i = total - 1;
+  if (i < 0) i = 0;
+  const paso = escala[i % escala.length];
+  const octShift = Math.floor(i / escala.length);
+  return 12 * (octBase + 1) + raiz + paso + 12 * octShift;
+}
+
+const freqDeMidi = midi => 440 * Math.pow(2, (midi - 69) / 12);
+const valorANota = v => freqDeMidi(valorAMidi(v));
+
+// ---------------- Audio ----------------
+let masterGain;
+
+// cadena maestra: notas -> ganancia -> limitador -> salida.
+// La usan la reproducción en vivo y el render offline de la exportación,
+// para que el archivo suene exactamente igual que la escucha.
+function cadenaMaestra(c) {
+  const g = c.createGain();
+  g.gain.value = +$("volumen").value;
+  const lim = c.createDynamicsCompressor();   // actúa como limitador (normaliza picos)
+  lim.threshold.value = -3;   // dB donde empieza a limitar
+  lim.knee.value = 0;
+  lim.ratio.value = 20;       // ratio alto = limitador duro
+  lim.attack.value = 0.003;
+  lim.release.value = 0.25;
+  g.connect(lim).connect(c.destination);
+  return g;
+}
+
+function audio() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = cadenaMaestra(ctx);
+  }
+  if (ctx.state === "suspended") ctx.resume();
+  return ctx;
+}
+
+// Construye y agenda UNA nota del instrumento indicado.
+// Todo se crea por nota y se destruye solo: los nodos de Web Audio son desechables.
+function dispararVoz(c, destino, ins, freq, vol, cuando, dur) {
+  const fin = cuando + dur;
+
+  // --- envolvente de amplitud (ADSR simplificado, en fracciones de la duracion) ---
+  const env = c.createGain();
+  let ataque = Math.max(0.004, (ins.a || .01) * dur);
+  if (ataque > dur * 0.6) ataque = dur * 0.6;
+  const tA = cuando + ataque;
+  let tD = tA + Math.max(0.01, (ins.d || .3) * dur);
+  if (tD > fin - 0.005) tD = fin - 0.005;
+  if (tD < tA) tD = tA;
+  const sus = Math.max(0, Math.min(1, ins.s || 0));
+
+  env.gain.setValueAtTime(0, cuando);
+  env.gain.linearRampToValueAtTime(vol, tA);
+  if (sus > 0.005) {                                  // instrumento sostenido
+    const nivelSus = Math.max(0.0001, vol * sus);
+    env.gain.exponentialRampToValueAtTime(nivelSus, tD);
+    env.gain.setValueAtTime(nivelSus, Math.max(tD, fin - 0.06));
+    env.gain.exponentialRampToValueAtTime(0.0001, fin);
+  } else {                                            // instrumento percusivo
+    env.gain.exponentialRampToValueAtTime(0.0001, fin);
+  }
+
+  // --- filtro paso bajo con envolvente propia ---
+  if (ins.filtro) {
+    const f = c.createBiquadFilter();
+    f.type = "lowpass";
+    f.Q.value = ins.filtro.q;
+    const base = Math.max(60, Math.min(16000, freq * ins.filtro.base));
+    const pico = Math.max(base, Math.min(16000, freq * ins.filtro.pico));
+    f.frequency.setValueAtTime(pico, cuando);
+    f.frequency.exponentialRampToValueAtTime(base, cuando + Math.max(0.02, (ins.filtro.caida || .4) * dur));
+    env.connect(f).connect(destino);
+  } else {
+    env.connect(destino);
+  }
+
+  // --- parciales (se normalizan para que todos los instrumentos peguen parejo) ---
+  const suma = ins.partials.reduce((t, par) => t + par.gain, 0) || 1;
+  const nodos = [];
+  for (const par of ins.partials) {
+    const o = c.createOscillator();
+    o.type = par.tipo || "sine";
+    o.frequency.value = freq * par.ratio;
+    if (par.detune) o.detune.value = par.detune;
+    const g = c.createGain();
+    g.gain.value = par.gain / suma;
+    o.connect(g).connect(env);
+    nodos.push(o);
+
+    if (ins.fm) {                                     // modulador de frecuencia sobre este parcial
+      const m = c.createOscillator();
+      m.type = "sine";
+      m.frequency.value = freq * par.ratio * ins.fm.ratio;
+      const mg = c.createGain();
+      mg.gain.setValueAtTime(freq * par.ratio * ins.fm.indice, cuando);
+      mg.gain.exponentialRampToValueAtTime(1, cuando + Math.max(0.02, (ins.fm.caida || .3) * dur));
+      m.connect(mg).connect(o.frequency);
+      nodos.push(m);
+    }
+  }
+
+  // --- vibrato opcional sobre la afinacion ---
+  if (ins.vibrato) {
+    const lfo = c.createOscillator();
+    lfo.frequency.value = ins.vibrato.hz;
+    const lg = c.createGain();
+    lg.gain.value = ins.vibrato.cents;
+    lfo.connect(lg);
+    nodos.forEach(o => lg.connect(o.detune));
+    nodos.push(lfo);
+  }
+
+  nodos.forEach(o => { o.start(cuando); o.stop(fin + 0.03); });
+}
+
+// audicion corta al cambiar de instrumento (La central)
+function probarInstrumento(p) {
+  const c = audio();
+  const ins = INSTRUMENTOS[p.instr] || INSTRUMENTOS.triangle;
+  dispararVoz(c, masterGain, ins, 440, 0.28 * (ins.nivel || 1), c.currentTime + 0.02, 0.55);
+}
+
+// dispara las voces de UN paso de UNA pista
+function tocarPaso(p, s, cuando, c, destino, nPistas) {
+  const banda = Math.floor(s / p.pasos), paso = s % p.pasos;
+  const fuente = $("fuente").value;
+  const umbral = +$("umbral").value;
+  const dur = (1 / +$("vel").value) * 1.6;   // notas un poco solapadas
+  const ins = INSTRUMENTOS[p.instr] || INSTRUMENTOS.triangle;
+
+  for (let y = 0; y < p.voces; y++) {
+    const idx = indicePx(p, paso, y, banda);
+    const r = p.px[idx], g = p.px[idx+1], b = p.px[idx+2];
+    const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+    if (lum < umbral) continue;                // píxel oscuro = silencio
+
+    const freq = valorANota(valorDe(r, g, b, fuente));
+    // brillo → volumen; se reparte por raíz(voces × pistas) para sumar sin saturar
+    const vol = (0.25 + 0.55 * lum) * (ins.nivel || 1) / Math.sqrt(p.voces * nPistas);
+    dispararVoz(c, destino, ins, freq, vol, cuando, dur);
+  }
+}
+
+// planificador con lookahead: cada pista da la vuelta en su propio ciclo
+function planificar() {
+  const c = audio();
+  const secPorPaso = 1 / +$("vel").value;
+  const lista = activas();
+  if (!lista.length) { detener(); return; }
+  const ciclo = cicloPasos();
+
+  while (tiempoSig < c.currentTime + 0.12) {
+    for (const p of lista) tocarPaso(p, pasoGlobal % p.total, tiempoSig, c, masterGain, lista.length);
+    pasoGlobal++;
+    tiempoSig += secPorPaso;
+    if (!$("loop").checked && pasoGlobal >= ciclo) { detenerAlFinal(tiempoSig); return; }
+  }
+}
+
+// ---------------- Exportar audio ----------------
+const SR_EXPORT = 44100;          // MP3 trabaja cómodo a 44.1 kHz
+const KBPS_EXPORT = 192;
+
+// Renderiza un ciclo completo (todas las pistas) más rápido que en tiempo real
+function renderizarOffline() {
+  const secPorPaso = 1 / +$("vel").value;
+  const lista = activas();
+  const pasos = cicloPasos();
+  const cola = secPorPaso * 1.6 + 0.05;                 // deja sonar la última nota
+  const muestras = Math.ceil(SR_EXPORT * (pasos * secPorPaso + cola));
+  const off = new OfflineAudioContext(1, muestras, SR_EXPORT);
+  const destino = cadenaMaestra(off);
+  for (let i = 0; i < pasos; i++) {
+    for (const p of lista) tocarPaso(p, i % p.total, i * secPorPaso, off, destino, lista.length);
+  }
+  return off.startRendering();
+}
+
+// El navegador no codifica MP3 por sí solo: se carga lamejs bajo demanda
+let lamePromesa = null;
+function cargarLame() {
+  if (window.lamejs) return Promise.resolve(window.lamejs);
+  if (lamePromesa) return lamePromesa;
+  const FUENTES = [
+    "https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js",
+    "https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js",
+  ];
+  lamePromesa = FUENTES.reduce((cadena, url) => cadena.catch(() => new Promise((ok, falla) => {
+    const et = document.createElement("script");
+    et.src = url;
+    et.onload = () => window.lamejs ? ok(window.lamejs) : falla(new Error("lamejs no quedó disponible"));
+    et.onerror = () => falla(new Error("no se pudo cargar " + url));
+    document.head.appendChild(et);
+  })), Promise.reject(new Error("inicio")));
+  lamePromesa.catch(() => { lamePromesa = null; });      // permite reintentar
+  return lamePromesa;
+}
+
+const aInt16 = f32 => {
+  const i16 = new Int16Array(f32.length);
+  for (let i = 0; i < f32.length; i++) {
+    const v = Math.max(-1, Math.min(1, f32[i]));
+    i16[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
+  }
+  return i16;
+};
+
+async function codificarMp3(buffer, avisa) {
+  const lame = await cargarLame();
+  const enc = new lame.Mp3Encoder(1, buffer.sampleRate, KBPS_EXPORT);
+  const i16 = aInt16(buffer.getChannelData(0));
+  const BLOQUE = 1152 * 50;                              // múltiplo del frame MP3
+  const partes = [];
+  for (let i = 0; i < i16.length; i += BLOQUE) {
+    const trozo = enc.encodeBuffer(i16.subarray(i, Math.min(i + BLOQUE, i16.length)));
+    if (trozo.length) partes.push(trozo);
+    avisa(i / i16.length);
+    await new Promise(r => setTimeout(r));               // cede el hilo: la página no se congela
+  }
+  const fin = enc.flush();
+  if (fin.length) partes.push(fin);
+  return new Blob(partes, { type: "audio/mpeg" });
+}
+
+// Respaldo sin dependencias por si el codificador MP3 no carga (p. ej. sin internet)
+function comoWav(buffer) {
+  const f32 = buffer.getChannelData(0), n = f32.length;
+  const datos = new ArrayBuffer(44 + n * 2), v = new DataView(datos);
+  const txt = (off, str) => { for (let i = 0; i < str.length; i++) v.setUint8(off + i, str.charCodeAt(i)); };
+  txt(0, "RIFF");  v.setUint32(4, 36 + n * 2, true);  txt(8, "WAVEfmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, buffer.sampleRate, true); v.setUint32(28, buffer.sampleRate * 2, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  txt(36, "data"); v.setUint32(40, n * 2, true);
+  const i16 = aInt16(f32);
+  for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, i16[i], true);
+  return new Blob([datos], { type: "audio/wav" });
+}
+
+function descargar(blob, nombre) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+let exportando = false;
+async function exportar() {
+  if (!activas().length) { alert("Carga una imagen y deja al menos una pista activa."); return; }
+  if (exportando) return;
+  exportando = true;
+  const btn = $("btnExport"), estado = m => { $("txtExport").textContent = m; };
+  btn.disabled = true;
+  try {
+    estado("Renderizando…");
+    const buffer = await renderizarOffline();
+    let blob, ext = "mp3";
+    try {
+      estado("Codificando 0%");
+      blob = await codificarMp3(buffer, x => estado("Codificando " + Math.round(x * 100) + "%"));
+    } catch (err) {
+      console.warn("Sin codificador MP3, se exporta WAV:", err);
+      estado("Sin MP3 — exportando WAV");
+      blob = comoWav(buffer); ext = "wav";
+    }
+    descargar(blob, `sonificado-${$("escala").value}-${activas().length}p.${ext}`);
+    estado(ext === "mp3" ? "Listo · MP3 descargado" : "Listo · WAV descargado");
+  } catch (err) {
+    console.error(err);
+    estado("Error al exportar");
+  } finally {
+    btn.disabled = false;
+    exportando = false;
+    setTimeout(() => $("txtExport").textContent = "Exportar MP3", 4000);
+  }
+}
+
+$("btnExport").addEventListener("click", exportar);
+
+// ---------------- Playhead ----------------
+// dibuja el barrido de una pista: límites de su banda + la línea que avanza
+function marcador(p, sFrac, opaco) {
+  const banda = Math.floor(sFrac / p.pasos);
+  const dentro = sFrac - banda * p.pasos;                // paso (con fracción) dentro de la banda
+  const u = esReversa(p) ? 1 - dentro / p.pasos : dentro / p.pasos;
+  const W = lienzo.width, H = lienzo.height;
+  lctx.fillStyle = p.color;
+
+  if (esHorizontal(p)) {
+    const alto = H / p.pasadas, y0 = banda * alto, x = u * W;
+    if (p.pasadas > 1) {
+      lctx.globalAlpha = .5;
+      lctx.fillRect(0, y0, W, 1); lctx.fillRect(0, y0 + alto - 1, W, 1);
+    }
+    lctx.globalAlpha = .2;  lctx.fillRect(x - 5, y0, 10, alto);
+    lctx.globalAlpha = opaco ? .95 : .5; lctx.fillRect(x - 1, y0, 2, alto);
+  } else {
+    const ancho = W / p.pasadas, x0 = banda * ancho, y = u * H;
+    if (p.pasadas > 1) {
+      lctx.globalAlpha = .5;
+      lctx.fillRect(x0, 0, 1, H); lctx.fillRect(x0 + ancho - 1, 0, 1, H);
+    }
+    lctx.globalAlpha = .2;  lctx.fillRect(x0, y - 5, ancho, 10);
+    lctx.globalAlpha = opaco ? .95 : .5; lctx.fillRect(x0, y - 1, ancho, 2);
+  }
+  lctx.globalAlpha = 1;
+}
+
+function dibujarPlayhead() {
+  rafId = requestAnimationFrame(dibujarPlayhead);   // re-armar siempre, aun sin imagen
+  if (!imagen) return;
+  lctx.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+
+  const sel = pistaActual();
+  if (reproduciendo) {
+    const secPorPaso = 1 / +$("vel").value;
+    const t = Math.max(0, (audio().currentTime - tiempoInicio) / secPorPaso);
+    for (const p of activas()) marcador(p, t % p.total, true);
+    if (sel && sel.px) actualizarInspector(sel, Math.floor(t) % sel.total);
+  } else if (hoverPaso !== null && sel && sel.px) {
+    const s = Math.min(hoverPaso, sel.total - 1);
+    marcador(sel, s, false);
+    actualizarInspector(sel, s);
+  }
+}
+
+// ---------------- Transporte ----------------
+function reproducir() {
+  if (!activas().length) { alert("Carga una imagen y deja al menos una pista activa."); return; }
+  const c = audio();
+  reproduciendo = true;
+  pasoGlobal = 0;
+  tiempoInicio = c.currentTime + 0.1;
+  tiempoSig = tiempoInicio;
+  schedTimer = setInterval(planificar, 25);
+  $("txtPlay").textContent = "Detener";
+  $("icoPlay").innerHTML = '<rect x="1" y="1" width="11" height="12" fill="currentColor"/>';
+  $("btnPlay").classList.add("activo");
+}
+
+function detener() {
+  reproduciendo = false;
+  clearInterval(schedTimer);
+  $("txtPlay").textContent = "Reproducir";
+  $("icoPlay").innerHTML = '<path d="M1 1l11 6-11 6z" fill="currentColor"/>';
+  $("btnPlay").classList.remove("activo");
+}
+function detenerAlFinal(t) {
+  clearInterval(schedTimer);
+  const espera = Math.max(0, (t - audio().currentTime) * 1000 + 200);
+  setTimeout(detener, espera);
+}
+
+$("btnPlay").addEventListener("click", () => reproduciendo ? detener() : reproducir());
+
+// ---------------- Arranque ----------------
+crearPista("h");          // una pista horizontal por defecto
+actualizarMeta();
+requestAnimationFrame(dibujarPlayhead);
+</script>
+</body>
+</html>

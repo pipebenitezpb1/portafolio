@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrega 1 · Lámina Interactiva de Interfaces — Luis Felipe Benítez</title>
+<meta name="description" content="Taller de Interfaces UAI 2026 — Lámina interactiva: interfaces de un horno de microondas.">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+:root{
+  --paper:#e7dfce;--paper-2:#ded4bf;--cream:#f1ebdc;--ink:#1b1a13;--muted:#6b6450;
+  --accent:#1a7a2e;--alert:#d4500f;
+  --fisica:#1f6b3a;--visual:#b5651d;--acustica:#6d2f7a;
+  --disp:'Barlow Condensed','Arial Narrow',Impact,sans-serif;
+  --mono:'Space Mono',ui-monospace,monospace;
+  --sans:'Barlow',system-ui,sans-serif;
+}
+/* tema claro fijo (coherente con el index del portafolio) */
+*{box-sizing:border-box;}
+html,body{overflow-x:hidden;max-width:100%;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;mix-blend-mode:multiply;z-index:90;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.wrap{max-width:1000px;margin:0 auto;padding:18px 18px 70px;}
+a{color:inherit;}
+
+.nav{display:flex;align-items:center;justify-content:space-between;border:2px solid var(--ink);background:var(--paper-2);padding:12px 16px;box-shadow:5px 5px 0 var(--ink);margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.nav .name{font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;}
+.nav .back{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;}
+.nav .back:hover{color:var(--accent);}
+
+.head{border:2px solid var(--ink);background:var(--cream);padding:28px 26px;box-shadow:6px 6px 0 var(--ink);margin-bottom:18px;}
+.eye{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;margin-bottom:10px;}
+.head h1{font-family:var(--disp);font-weight:700;font-size:clamp(28px,6vw,50px);text-transform:uppercase;line-height:1;margin:0 0 8px;}
+.head .meta{font-family:var(--mono);font-size:12px;color:var(--muted);}
+
+/* toolbar filtros */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;}
+.toolbar .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-right:4px;}
+.chip{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.04em;border:2px solid var(--ink);background:var(--cream);padding:6px 12px;box-shadow:3px 3px 0 var(--ink);cursor:pointer;transition:transform .1s,box-shadow .1s;}
+.chip:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink);}
+.chip.on{background:var(--ink);color:var(--paper);}
+.chip .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+.dot.f{background:var(--fisica);} .dot.v{background:var(--visual);} .dot.a{background:var(--acustica);}
+
+/* layout lámina */
+.lam{display:grid;grid-template-columns:1.25fr .95fr;gap:16px;align-items:start;}
+@media(max-width:780px){.lam{grid-template-columns:1fr;}}
+.diagram{border:2px solid var(--ink);background:var(--cream);box-shadow:6px 6px 0 var(--ink);padding:10px;}
+.diagram svg{display:block;width:100%;height:auto;}
+
+.side{display:flex;flex-direction:column;gap:14px;}
+.info{border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:18px 18px 20px;box-shadow:5px 5px 0 var(--accent);min-height:150px;}
+.info .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:#cfc6b0;text-transform:uppercase;}
+.info h3{font-family:var(--disp);font-weight:700;font-size:26px;text-transform:uppercase;margin:6px 0 8px;color:var(--paper);line-height:1;}
+.info .tags{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.info .pill{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:#fff;}
+.pill.f{background:var(--fisica);} .pill.v{background:var(--visual);} .pill.a{background:var(--acustica);}
+.pill.io{background:transparent;border:1px solid #cfc6b0;color:#cfc6b0;font-weight:400;}
+.info p{margin:0;font-size:14.5px;color:#e9e2d0;}
+.info .hint{color:#b7ae97;font-style:italic;}
+
+.lists h4{font-family:var(--disp);text-transform:uppercase;font-size:16px;letter-spacing:.02em;margin:6px 0 6px;color:var(--muted);}
+.ent{display:flex;flex-direction:column;gap:6px;}
+.ent button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--ink);background:var(--cream);padding:8px 10px;cursor:pointer;font-family:var(--sans);font-size:14px;color:var(--ink);transition:transform .1s,box-shadow .1s;box-shadow:2px 2px 0 var(--ink);}
+.ent button:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink);}
+.ent button .n{font-family:var(--mono);font-weight:700;font-size:12px;width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.ent button.f .n{border-color:var(--fisica);color:var(--fisica);}
+.ent button.v .n{border-color:var(--visual);color:var(--visual);}
+.ent button.a .n{border-color:var(--acustica);color:var(--acustica);}
+.ent button.active{background:var(--ink);color:var(--paper);}
+.ent button.active .n{border-color:var(--paper);color:var(--paper);}
+.ent button.dim{opacity:.3;}
+
+/* SVG interactivo */
+.hotspot{fill:transparent;stroke:transparent;stroke-width:4;transition:.15s;pointer-events:none;}
+.hotspot.f{stroke:var(--fisica);} .hotspot.v{stroke:var(--visual);} .hotspot.a{stroke:var(--acustica);}
+.hotspot.strong{stroke-width:6;}
+.mk{cursor:pointer;}
+.mk circle{fill:var(--cream);stroke:var(--ink);stroke-width:2;transition:.15s;}
+.mk.f circle{stroke:var(--fisica);} .mk.v circle{stroke:var(--visual);} .mk.a circle{stroke:var(--acustica);}
+.mk text{font-family:var(--mono);font-size:14px;font-weight:700;fill:var(--ink);}
+.mk:hover circle{stroke-width:3.5;}
+.mk.dim{opacity:.2;}
+.mk.active circle{fill:var(--ink);}
+.mk.active text{fill:var(--paper);}
+.mk.active circle{animation:pulse 1.1s ease-in-out infinite;}
+@keyframes pulse{0%,100%{stroke-width:2.5;}50%{stroke-width:5;}}
+
+.band{margin:30px 0 12px;display:flex;align-items:center;gap:12px;}
+.band h2{font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;margin:0;white-space:nowrap;}
+.band .ln{flex:1;height:2px;background:var(--ink);opacity:.25;}
+.box{border:2px solid var(--ink);background:var(--cream);padding:20px 22px;box-shadow:4px 4px 0 var(--ink);font-size:15px;}
+.box p{margin:0 0 10px;} .box p:last-child{margin:0;}
+.cta{display:inline-block;margin-top:6px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent);}
+.foot{margin-top:38px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.06em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="nav">
+    <div class="name">LF<span style="color:var(--accent)">·</span>Benítez</div>
+    <a class="back" href="/#universidad">← Volver al portafolio</a>
+  </div>
+
+  <div class="head">
+    <div class="eye">// TALLER DE INTERFACES · ENTREGA N°1 · LÁMINA INTERACTIVA</div>
+    <h1>Interfaces de un Microondas</h1>
+    <div class="meta">Universidad Adolfo Ibáñez · Prof. Jorge Forero · 2026 · Luis Felipe Benítez</div>
+  </div>
+
+  <div class="toolbar">
+    <span class="lbl">Filtrar tipología:</span>
+    <button class="chip on" data-f="todas">Todas</button>
+    <button class="chip" data-f="f"><span class="dot f"></span>Física</button>
+    <button class="chip" data-f="v"><span class="dot v"></span>Visual</button>
+    <button class="chip" data-f="a"><span class="dot a"></span>Acústica</button>
+  </div>
+
+  <div class="lam">
+    <!-- DIAGRAMA INTERACTIVO -->
+    <div class="diagram">
+      <svg viewBox="0 0 660 480" xmlns="http://www.w3.org/2000/svg" aria-label="Diagrama interactivo del microondas">
+        <!-- cuerpo -->
+        <rect x="30" y="40" width="600" height="400" rx="10" fill="var(--cream)" stroke="var(--ink)" stroke-width="3"/>
+        <!-- puerta -->
+        <rect x="55" y="70" width="350" height="340" rx="6" fill="var(--paper-2)" stroke="var(--ink)" stroke-width="2"/>
+        <!-- cavidad / ventana -->
+        <rect x="80" y="95" width="300" height="290" rx="4" fill="#201e17" stroke="var(--ink)" stroke-width="2"/>
+        <g stroke="#5a5443" stroke-width="1" opacity="0.55">
+          <line x1="120" y1="95" x2="120" y2="385"/><line x1="160" y1="95" x2="160" y2="385"/>
+          <line x1="200" y1="95" x2="200" y2="385"/><line x1="240" y1="95" x2="240" y2="385"/>
+          <line x1="280" y1="95" x2="280" y2="385"/><line x1="320" y1="95" x2="320" y2="385"/>
+        </g>
+        <!-- luz interior -->
+        <ellipse cx="230" cy="150" rx="110" ry="60" fill="#f2c14e" opacity="0.28"/>
+        <!-- ondas de calor -->
+        <g stroke="#d4500f" stroke-width="3" fill="none" opacity="0.75" stroke-linecap="round">
+          <path d="M185 250 q12 -14 24 0 q12 14 24 0 q12 -14 24 0"/>
+          <path d="M185 272 q12 -14 24 0 q12 14 24 0 q12 -14 24 0" opacity="0.6"/>
+        </g>
+        <!-- plato giratorio -->
+        <ellipse cx="230" cy="345" rx="100" ry="24" fill="#3a3527"/>
+        <ellipse cx="230" cy="340" rx="72" ry="16" fill="#4a4433"/>
+        <circle cx="230" cy="332" r="26" fill="#8a8266"/>
+        <!-- manija -->
+        <rect x="408" y="95" width="16" height="290" rx="8" fill="#8a8266" stroke="var(--ink)" stroke-width="2"/>
+        <!-- panel -->
+        <rect x="440" y="70" width="165" height="340" rx="6" fill="#201e17" stroke="var(--ink)" stroke-width="2"/>
+        <!-- display -->
+        <rect x="458" y="88" width="130" height="46" rx="4" fill="#08281c"/>
+        <text x="578" y="120" fill="#34d399" font-family="var(--mono)" font-size="26" font-weight="700" text-anchor="end" letter-spacing="2">12:00</text>
+        <!-- botonera -->
+        <g fill="#2c2a20" stroke="#403c30" stroke-width="1">
+          <rect x="458" y="150" width="38" height="30" rx="4"/><rect x="503" y="150" width="38" height="30" rx="4"/><rect x="548" y="150" width="40" height="30" rx="4"/>
+          <rect x="458" y="188" width="38" height="30" rx="4"/><rect x="503" y="188" width="38" height="30" rx="4"/><rect x="548" y="188" width="40" height="30" rx="4"/>
+          <rect x="458" y="226" width="38" height="30" rx="4"/><rect x="503" y="226" width="38" height="30" rx="4"/><rect x="548" y="226" width="40" height="30" rx="4"/>
+        </g>
+        <rect x="458" y="266" width="60" height="32" rx="4" fill="#1a7a2e"/>
+        <text x="488" y="287" fill="#fff" font-family="var(--mono)" font-size="11" font-weight="700" text-anchor="middle">INICIO</text>
+        <rect x="528" y="266" width="60" height="32" rx="4" fill="#d4500f"/>
+        <text x="558" y="287" fill="#fff" font-family="var(--mono)" font-size="11" font-weight="700" text-anchor="middle">STOP</text>
+        <!-- altavoz -->
+        <g fill="#5a5443">
+          <circle cx="552" cy="360" r="2.5"/><circle cx="562" cy="360" r="2.5"/><circle cx="572" cy="360" r="2.5"/>
+          <circle cx="552" cy="370" r="2.5"/><circle cx="562" cy="370" r="2.5"/><circle cx="572" cy="370" r="2.5"/>
+        </g>
+        <g stroke="#6d2f7a" stroke-width="2.5" fill="none" opacity="0.85" stroke-linecap="round">
+          <path d="M584 352 q10 12 0 26"/>
+        </g>
+        <!-- cable / enchufe -->
+        <path d="M75 440 L75 452 Q75 460 67 460 L48 460" stroke="#6b6450" stroke-width="4" fill="none"/>
+        <rect x="22" y="450" width="26" height="20" rx="3" fill="#3a3527"/>
+
+        <!-- ===== HOTSPOTS (resaltado) ===== -->
+        <rect id="h1" class="hotspot" x="452" y="146" width="142" height="156" rx="6"/>
+        <rect id="h2" class="hotspot" x="404" y="92" width="24" height="296" rx="12"/>
+        <rect id="h3" class="hotspot" x="53" y="68" width="354" height="344" rx="8"/>
+        <rect id="h4" class="hotspot" x="18" y="446" width="42" height="30" rx="4"/>
+        <rect id="h5" class="hotspot" x="454" y="84" width="138" height="54" rx="5"/>
+        <ellipse id="h6" class="hotspot" cx="230" cy="150" rx="112" ry="62"/>
+        <ellipse id="h7" class="hotspot" cx="230" cy="342" rx="104" ry="28"/>
+        <rect id="h8" class="hotspot" x="78" y="93" width="304" height="294" rx="5"/>
+        <rect id="h9" class="hotspot" x="540" y="350" width="52" height="40" rx="5"/>
+
+        <!-- ===== MARCADORES (click) ===== -->
+        <g class="mk f" data-i="0"><circle cx="523" cy="210" r="15"/><text x="523" y="215" text-anchor="middle">1</text></g>
+        <g class="mk f" data-i="1"><circle cx="416" cy="112" r="15"/><text x="416" y="117" text-anchor="middle">2</text></g>
+        <g class="mk f" data-i="2"><circle cx="78" cy="90" r="15"/><text x="78" y="95" text-anchor="middle">3</text></g>
+        <g class="mk f" data-i="3"><circle cx="40" cy="430" r="15"/><text x="40" y="435" text-anchor="middle">4</text></g>
+        <g class="mk v" data-i="4"><circle cx="523" cy="111" r="15"/><text x="523" y="116" text-anchor="middle">5</text></g>
+        <g class="mk v" data-i="5"><circle cx="150" cy="130" r="15"/><text x="150" y="135" text-anchor="middle">6</text></g>
+        <g class="mk f" data-i="6"><circle cx="230" cy="348" r="15"/><text x="230" y="353" text-anchor="middle">7</text></g>
+        <g class="mk f" data-i="7"><circle cx="305" cy="235" r="15"/><text x="305" y="240" text-anchor="middle">8</text></g>
+        <g class="mk a" data-i="8"><circle cx="566" cy="350" r="15"/><text x="566" y="355" text-anchor="middle">9</text></g>
+      </svg>
+    </div>
+
+    <!-- PANEL LATERAL -->
+    <div class="side">
+      <div class="info" id="info">
+        <div class="k">Interfaz seleccionada</div>
+        <h3 id="iTit">Explora la lámina</h3>
+        <div class="tags" id="iTags"></div>
+        <p class="hint" id="iDesc">Toca un número sobre el microondas —o un elemento de la lista— para ver qué tipo de interfaz es y cómo funciona. Usa los filtros de arriba para aislar por tipología.</p>
+      </div>
+
+      <div class="lists">
+        <h4>Entradas (inputs)</h4>
+        <div class="ent" id="listaEnt"></div>
+        <h4 style="margin-top:12px;">Salidas (outputs)</h4>
+        <div class="ent" id="listaSal"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band"><h2>Objetivo</h2><div class="ln"></div></div>
+  <div class="box">
+    <p>Identificar, clasificar y explicar las <b>interfaces de entrada y salida</b> de un horno de microondas, según su tipología: <b>física</b> (mecánica/táctil), <b>visual</b> (luz/pantalla) y <b>acústica</b> (sonido).</p>
+    <p>Esta lámina es interactiva: cada interfaz se resalta sobre el diagrama al seleccionarla.
+      <a class="cta" href="lamina-microondas.svg" target="_blank">Ver versión imagen (SVG) →</a></p>
+  </div>
+
+  <div class="foot">© 2026 · Luis Felipe Benítez · Taller de Interfaces UAI · portafolio.insta3d.cl</div>
+
+</div>
+
+<script>
+const D = [
+  {n:1,nombre:'Teclado / Botones',tipo:'f',io:'Entrada',hot:'h1',desc:'Pulsación mecánica de teclas para fijar tiempo, potencia y funciones.'},
+  {n:2,nombre:'Manija / Puerta',tipo:'f',io:'Entrada',hot:'h2',desc:'Acción física para abrir la puerta y acceder a la cavidad.'},
+  {n:3,nombre:'Sensor de puerta',tipo:'f',io:'Entrada',hot:'h3',desc:'Interruptor de seguridad que detecta si la puerta está cerrada antes de operar.'},
+  {n:4,nombre:'Enchufe / Alimentación',tipo:'f',io:'Entrada',hot:'h4',desc:'Conexión eléctrica que entrega la energía al equipo.'},
+  {n:5,nombre:'Pantalla / Display',tipo:'v',io:'Salida',hot:'h5',desc:'Muestra el reloj, el tiempo restante y el modo seleccionado.'},
+  {n:6,nombre:'Luz interior',tipo:'v',io:'Salida',hot:'h6',desc:'Ilumina la cavidad para observar los alimentos durante el ciclo.'},
+  {n:7,nombre:'Plato giratorio',tipo:'f',io:'Salida',hot:'h7',desc:'Movimiento rotatorio que distribuye el calor de forma uniforme.'},
+  {n:8,nombre:'Calor (microondas)',tipo:'f',io:'Salida',hot:'h8',desc:'Radiación que calienta el alimento: es la salida térmica principal.'},
+  {n:9,nombre:'Señal sonora (beep)',tipo:'a',io:'Salida',hot:'h9',desc:'Pitido al terminar el ciclo o al confirmar la pulsación de una tecla.'},
+];
+const TIPO = {f:'Física', v:'Visual', a:'Acústica'};
+let seleccion = null, filtro = 'todas';
+
+const $ = s => document.querySelector(s);
+const marcadores = [...document.querySelectorAll('.mk')];
+const hotspots = D.map(d => document.getElementById(d.hot));
+
+// construir listas
+function itemBtn(d, i){
+  const b = document.createElement('button');
+  b.className = 'ent-item ' + d.tipo;
+  b.dataset.i = i;
+  b.innerHTML = `<span class="n">${d.n}</span><span>${d.nombre}</span>`;
+  b.addEventListener('click', () => seleccionar(i));
+  return b;
+}
+D.forEach((d,i) => {
+  (d.io === 'Entrada' ? $('#listaEnt') : $('#listaSal')).appendChild(itemBtn(d,i));
+});
+const items = [...document.querySelectorAll('.ent button')];
+
+// eventos marcadores
+marcadores.forEach(mk => {
+  mk.addEventListener('click', () => {
+    const i = +mk.dataset.i;
+    seleccionar(seleccion === i ? null : i);
+  });
+});
+
+// filtros
+document.querySelectorAll('.chip').forEach(ch => {
+  ch.addEventListener('click', () => {
+    filtro = ch.dataset.f;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === ch));
+    render();
+  });
+});
+
+function seleccionar(i){ seleccion = i; render(); }
+
+function render(){
+  // marcadores
+  marcadores.forEach(mk => {
+    const i = +mk.dataset.i, d = D[i];
+    const match = filtro === 'todas' || d.tipo === filtro;
+    mk.classList.toggle('dim', !match);
+    mk.classList.toggle('active', seleccion === i);
+  });
+  // items lista
+  items.forEach(b => {
+    const i = +b.dataset.i, d = D[i];
+    const match = filtro === 'todas' || d.tipo === filtro;
+    b.classList.toggle('dim', !match);
+    b.classList.toggle('active', seleccion === i);
+  });
+  // hotspots: reset
+  hotspots.forEach(h => h.classList.remove('f','v','a','strong'));
+  // resaltar por filtro (suave)
+  if (filtro !== 'todas'){
+    D.forEach((d,i) => { if (d.tipo === filtro) hotspots[i].classList.add(d.tipo); });
+  }
+  // resaltar selección (fuerte)
+  if (seleccion !== null){
+    const d = D[seleccion];
+    hotspots[seleccion].classList.add(d.tipo, 'strong');
+    $('#iTit').textContent = d.nombre;
+    $('#iDesc').classList.remove('hint');
+    $('#iDesc').textContent = d.desc;
+    $('#iTags').innerHTML =
+      `<span class="pill ${d.tipo}">${TIPO[d.tipo]}</span>` +
+      `<span class="pill io">${d.io}</span>`;
+  } else {
+    $('#iTit').textContent = 'Explora la lámina';
+    $('#iTags').innerHTML = '';
+    const p = $('#iDesc'); p.classList.add('hint');
+    p.textContent = 'Toca un número sobre el microondas —o un elemento de la lista— para ver qué tipo de interfaz es y cómo funciona. Usa los filtros de arriba para aislar por tipología.';
+  }
+}
+render();
+</script>
+</body>
+</html>
