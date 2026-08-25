@@ -5,3 +5,6 @@ Thumbs.db
 
 # Instructivo con secretos de infraestructura (NO publicar)
 HANDOFF.md
+
+# Script de despliegue (tiene IP interna del NUC)
+deploy.sh
