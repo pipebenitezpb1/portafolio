@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PULSAR — Controlador físico CTRL-04L</title>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+:root{
+  --paper:#e7dfce;--paper-2:#ded4bf;--cream:#f1ebdc;--ink:#1b1a13;--muted:#6b6450;
+  --accent:#1a7a2e;--alert:#d4500f;--lima:#8fbf1f;--indigo:#3d2c8d;
+  --disp:'Barlow Condensed','Arial Narrow',Impact,sans-serif;
+  --mono:'Space Mono',ui-monospace,monospace;
+  --sans:'Barlow',system-ui,sans-serif;
+}
+/* tema claro fijo */
+*{box-sizing:border-box;}
+html,body{overflow-x:hidden;max-width:100%;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;mix-blend-mode:multiply;z-index:90;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.wrap{max-width:900px;margin:0 auto;padding:18px 18px 70px;}
+a{color:inherit;}
+
+.nav{display:flex;align-items:center;justify-content:space-between;border:2px solid var(--ink);background:var(--paper-2);padding:12px 16px;box-shadow:5px 5px 0 var(--ink);margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.nav .name{font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;}
+.nav .back{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;}
+.nav .back:hover{color:var(--accent);}
+
+.head{border:2px solid var(--ink);background:var(--ink);color:var(--cream);padding:28px 26px;box-shadow:6px 6px 0 var(--accent);margin-bottom:18px;}
+.head img{display:block;width:min(100%,420px);margin:6px 0 14px;}
+.eye{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--lima);text-transform:uppercase;margin-bottom:10px;}
+.head .meta{font-family:var(--mono);font-size:12px;color:#b9b19a;}
+
+.band{margin:28px 0 12px;display:flex;align-items:center;gap:12px;}
+.band h2{font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;margin:0;white-space:nowrap;}
+.band .ln{flex:1;height:2px;background:var(--ink);opacity:.25;}
+.box{border:2px solid var(--ink);background:var(--cream);padding:20px 22px;box-shadow:4px 4px 0 var(--ink);font-size:15px;}
+.box p{margin:0 0 12px;} .box p:last-child{margin:0;}
+.box h3{font-family:var(--disp);text-transform:uppercase;font-size:17px;margin:14px 0 6px;} .box h3:first-child{margin-top:0;}
+.box ul{margin:0 0 6px;padding-left:20px;}
+.cta{display:inline-block;margin:4px 8px 4px 0;font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:var(--accent);text-decoration:none;padding:10px 16px;border:2px solid var(--accent);box-shadow:3px 3px 0 var(--ink);}
+.cta:hover{transform:translate(-1px,-1px);}
+.cta.alt{background:var(--cream);color:var(--ink);border-color:var(--ink);}
+.nota{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:10px;}
+
+.video{border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);background:#000;}
+.video video{display:block;width:100%;height:auto;}
+.pdf{width:100%;height:520px;border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);background:var(--cream);}
+
+.dos{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+.tabla{width:100%;border-collapse:collapse;font-size:14px;}
+.tabla td,.tabla th{border-bottom:1px solid rgba(27,26,19,.2);padding:6px 4px;text-align:left;vertical-align:top;}
+.tabla th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;border:1px solid var(--ink);vertical-align:-1px;margin-right:2px;}
+
+.proceso{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.proceso figure{margin:0;border:2px solid var(--ink);background:var(--cream);box-shadow:4px 4px 0 var(--ink);overflow:hidden;}
+.proceso img{display:block;width:100%;height:170px;object-fit:cover;}
+.proceso figcaption{font-family:var(--mono);font-size:11px;padding:6px 8px;color:var(--muted);}
+.render{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+.render img{display:block;width:100%;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);}
+
+.foot{margin-top:38px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);}
+@media (max-width:520px){.pdf{height:380px;}.head{padding:22px 18px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="nav">
+    <div class="name">LF<span style="color:var(--accent)">·</span>Benítez</div>
+    <a class="back" href="/#universidad">← Volver al portafolio</a>
+  </div>
+
+  <div class="head">
+    <div class="eye">// TALLER DE INTERFACES · UNIDAD 2 · ENTREGA 1 · CONTROLADOR FÍSICO</div>
+    <img src="/universidad/pulsar/logo_pulsar.png" alt="PULSAR">
+    <div class="meta">Modelo CTRL-04L · Luis-Felipe Benítez · UAI · 2026</div>
+  </div>
+
+  <div class="box">
+    <h3>Concepto</h3>
+    <p>Un instrumento que también es un <b>juguete</b>. PULSAR <b>suena</b> (controla música, efectos y un sampler en la web, y funciona como controlador MIDI), <b>se ilumina</b> (8 LED laterales que siguen a los faders y laten con la música) y <b>juega</b> (15 animaciones espaciales y 3 juegos de arcade con récords guardados en memoria).</p>
+    <h3>Inspiración</h3>
+    <p><b>Buzz Lightyear:</b> al imprimir las primeras piezas en verde limón junto a perillas morado índigo, la combinación quedó idéntica al traje de Buzz, y la adopté como dirección de diseño: perillas “ALA”, un galón de rango espacial en la tapa y animaciones de cohetes, hiperespacio, planetas y “¡al infinito y más allá!”.</p>
+    <p><b>Arcade clásico:</b> los dos faders, uno a cada lado, eran exactamente las dos paletas de un <b>Pong</b>. De ahí salieron también <b>Simón dice</b> con los 4 botones de colores y <b>Alunizaje</b>, inspirado en Lunar Lander (1979).</p>
+    <h3>Nombre</h3>
+    <p>Un púlsar es una estrella de neutrones que emite pulsos regulares, como un faro cósmico: une el <b>espacio</b> y la <b>señal</b> (luz, sonido, ritmo). La línea bajo el logo es ese pulso.</p>
+  </div>
+
+  <div class="band"><h2>Video</h2><div class="ln"></div></div>
+  <div class="video">
+    <video controls preload="metadata" playsinline poster="/universidad/pulsar/r_explotada.jpg" src="/universidad/pulsar/pulsar_render.mp4"></video>
+  </div>
+  <p class="nota">Render animado del modelo 3D: vista explotada con sus tornillos, armado, faders, botones, pantalla y tapa. Música y efectos sintetizados para el video.</p>
+
+  <div class="band"><h2>Pruébalo</h2><div class="ln"></div></div>
+  <div class="box">
+    <p>El dashboard del controlador está en línea: muestra faders, botones y luces en tiempo real, transforma una canción con filtros, eco y sampler, envía MIDI y refleja la pantalla de la caja. Sin la caja conectada, usa el <b>Modo demo</b>.</p>
+    <a class="cta" href="https://sintetizador.insta3d.cl" target="_blank" rel="noopener">▶ Abrir sintetizador web →</a>
+    <p class="nota">Para conectar la caja por USB se necesita Chrome o Edge en computador (Web Serial). Safari y los navegadores de iPhone no lo permiten. La música la cargas tú con “Cargar MP3”.</p>
+  </div>
+
+  <div class="band"><h2>Cómo funciona</h2><div class="ln"></div></div>
+  <div class="dos">
+    <div class="box">
+      <h3>El color cambia la función</h3>
+      <p>El botón blanco cambia el color de las luces; cada color es un banco de funciones para los otros tres botones.</p>
+      <table class="tabla">
+        <tr><th>Banco</th><th>Rojo</th><th>Azul</th><th>Amarillo</th></tr>
+        <tr><td><span class="dot" style="background:#3ec95a"></span> Reproductor</td><td>sample</td><td>eco</td><td>play/pausa</td></tr>
+        <tr><td><span class="dot" style="background:#e33"></span> DJ</td><td>al inicio</td><td>loop</td><td>freno</td></tr>
+        <tr><td><span class="dot" style="background:#2f7de1"></span> Filtros</td><td>paso bajo</td><td>paso alto</td><td>banda</td></tr>
+        <tr><td><span class="dot" style="background:#2cd4d9"></span> Espacio</td><td>eco</td><td>reverb</td><td>silencio</td></tr>
+        <tr><td><span class="dot" style="background:#8a5cf0"></span> Sampler</td><td>pad 1</td><td>pad 2</td><td>pad 3</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <h3>Combinaciones</h3>
+      <ul>
+        <li>Rojo + azul: siguiente animación</li>
+        <li>Rojo + amarillo: menú de juegos</li>
+        <li>Azul + amarillo: modo exhibición</li>
+        <li>Azul + blanco: brillo</li>
+        <li>Rojo + blanco: pulso a golpes (BPM)</li>
+        <li>Amarillo + blanco: pantalla de prueba</li>
+        <li>Los 4: reinicio · 3 s borra récords</li>
+        <li>Blanco 5 s: apagar</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="band"><h2>Electrónica y fabricación</h2><div class="ln"></div></div>
+  <div class="box">
+    <p><b>XIAO ESP32-C3</b> · 2 faders B10K de 60 mm · 4 pulsadores 12×12 · OLED 0,96″ bicolor I2C · tira WS2812B de 8 LED (4 por lado) · shield en placa perforada 7×9 cm · USB-C para energía y datos.</p>
+    <p>Siete capas: base impresa en PLA, shield fijado con 4 tornillos M3×8, láminas difusoras que entran desde arriba, cubierta de acrílico negro de 3 mm cortada a láser, marco con visor de la OLED inclinado 15°, perillas ALA a presión y cierre con 4 tornillos M3×12. Patas de TPU y tapa protectora. CAD paramétrico en Python (build123d).</p>
+  </div>
+  <div class="render" style="margin-top:14px;">
+    <img src="/universidad/pulsar/r_explotada.jpg" alt="Vista explotada" loading="lazy">
+    <img src="/universidad/pulsar/r_oled.jpg" alt="Pantalla OLED" loading="lazy">
+    <img src="/universidad/pulsar/r_botones.jpg" alt="Botones" loading="lazy">
+    <img src="/universidad/pulsar/r_tapa.jpg" alt="Tapa protectora" loading="lazy">
+  </div>
+
+  <div class="band"><h2>Proceso</h2><div class="ln"></div></div>
+  <div class="proceso">
+    <figure><img src="/universidad/pulsar/07_primer_prototipo.jpg" alt="" loading="lazy"><figcaption>1 · Primer prototipo</figcaption></figure>
+    <figure><img src="/universidad/pulsar/09_maqueta_mdf.jpg" alt="" loading="lazy"><figcaption>2 · Maqueta en MDF</figcaption></figure>
+    <figure><img src="/universidad/pulsar/12_layout_final_marcos_sliders.jpg" alt="" loading="lazy"><figcaption>3 · Distribución final</figcaption></figure>
+    <figure><img src="/universidad/pulsar/14_corte_laser_acrilico.jpg" alt="" loading="lazy"><figcaption>4 · Corte láser del acrílico</figcaption></figure>
+    <figure><img src="/universidad/pulsar/13_impresion_base.jpg" alt="" loading="lazy"><figcaption>5 · Impresión de la base</figcaption></figure>
+    <figure><img src="/universidad/pulsar/18_soldaduras_reverso.jpg" alt="" loading="lazy"><figcaption>6 · Soldadura del shield</figcaption></figure>
+    <figure><img src="/universidad/pulsar/15_cableado_y_alargador.jpg" alt="" loading="lazy"><figcaption>7 · Cableado</figcaption></figure>
+    <figure><img src="/universidad/pulsar/19_visor_oled_pantalla_prueba.jpg" alt="" loading="lazy"><figcaption>8 · Visor y OLED</figcaption></figure>
+  </div>
+
+  <div class="band"><h2>Presentación</h2><div class="ln"></div></div>
+  <iframe class="pdf" src="/universidad/pulsar/pulsar_presentacion.pdf" title="Presentación PULSAR"></iframe>
+  <p style="margin-top:8px;"><a class="cta alt" href="/universidad/pulsar/pulsar_presentacion.pdf" target="_blank" rel="noopener">Abrir presentación (PDF) →</a></p>
+
+  <div class="band"><h2>Archivos y código</h2><div class="ln"></div></div>
+  <div class="box">
+    <p>Firmware, dashboard, CAD (STEP/STL y archivos de corte láser), esquemático, manual y fotos de proceso en el repositorio:</p>
+    <a class="cta alt" href="https://github.com/pipebenitezpb1/PULSAR" target="_blank" rel="noopener">Ver repositorio en GitHub →</a>
+    <a class="cta alt" href="https://github.com/pipebenitezpb1/PULSAR/blob/main/docs/manual_PULSAR.pdf" target="_blank" rel="noopener">Manual (PDF) →</a>
+  </div>
+
+  <div class="foot">© 2026 · Luis-Felipe Benítez · Taller de Interfaces UAI · Unidad 2, Entrega 1</div>
+</div>
+</body>
+</html>
