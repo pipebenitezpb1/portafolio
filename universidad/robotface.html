@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RobotFace — Claude físico y expresivo</title>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+:root{
+  --paper:#e7dfce;--paper-2:#ded4bf;--cream:#f1ebdc;--ink:#1b1a13;--muted:#6b6450;
+  --accent:#1a7a2e;--alert:#d4500f;--lima:#8fbf1f;--indigo:#3d2c8d;
+  --disp:'Barlow Condensed','Arial Narrow',Impact,sans-serif;
+  --mono:'Space Mono',ui-monospace,monospace;
+  --sans:'Barlow',system-ui,sans-serif;
+}
+/* tema claro fijo */
+*{box-sizing:border-box;}
+html,body{overflow-x:hidden;max-width:100%;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;mix-blend-mode:multiply;z-index:90;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.wrap{max-width:900px;margin:0 auto;padding:18px 18px 70px;}
+a{color:inherit;}
+
+.nav{display:flex;align-items:center;justify-content:space-between;border:2px solid var(--ink);background:var(--paper-2);padding:12px 16px;box-shadow:5px 5px 0 var(--ink);margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.nav .name{font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;}
+.nav .back{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;}
+.nav .back:hover{color:var(--accent);}
+
+.head{border:2px solid var(--ink);background:var(--ink);color:var(--cream);padding:28px 26px;box-shadow:6px 6px 0 var(--accent);margin-bottom:18px;}
+.head img{display:block;width:min(100%,420px);margin:6px 0 14px;}
+.eye{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--lima);text-transform:uppercase;margin-bottom:10px;}
+.head .meta{font-family:var(--mono);font-size:12px;color:#b9b19a;}
+
+.band{margin:28px 0 12px;display:flex;align-items:center;gap:12px;}
+.band h2{font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;margin:0;white-space:nowrap;}
+.band .ln{flex:1;height:2px;background:var(--ink);opacity:.25;}
+.box{border:2px solid var(--ink);background:var(--cream);padding:20px 22px;box-shadow:4px 4px 0 var(--ink);font-size:15px;}
+.box p{margin:0 0 12px;} .box p:last-child{margin:0;}
+.box h3{font-family:var(--disp);text-transform:uppercase;font-size:17px;margin:14px 0 6px;} .box h3:first-child{margin-top:0;}
+.box ul{margin:0 0 6px;padding-left:20px;}
+.cta{display:inline-block;margin:4px 8px 4px 0;font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:var(--accent);text-decoration:none;padding:10px 16px;border:2px solid var(--accent);box-shadow:3px 3px 0 var(--ink);}
+.cta:hover{transform:translate(-1px,-1px);}
+.cta.alt{background:var(--cream);color:var(--ink);border-color:var(--ink);}
+.nota{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:10px;}
+
+.video{border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);background:#000;}
+.video video{display:block;width:100%;height:auto;}
+.pdf{width:100%;height:520px;border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);background:var(--cream);}
+
+.dos{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+.tabla{width:100%;border-collapse:collapse;font-size:14px;}
+.tabla td,.tabla th{border-bottom:1px solid rgba(27,26,19,.2);padding:6px 4px;text-align:left;vertical-align:top;}
+.tabla th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;border:1px solid var(--ink);vertical-align:-1px;margin-right:2px;}
+
+.proceso{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.proceso figure{margin:0;border:2px solid var(--ink);background:var(--cream);box-shadow:4px 4px 0 var(--ink);overflow:hidden;}
+.proceso img{display:block;width:100%;height:170px;object-fit:cover;}
+.proceso figcaption{font-family:var(--mono);font-size:11px;padding:6px 8px;color:var(--muted);}
+.render{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+.render img{display:block;width:100%;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);}
+
+.foot{margin-top:38px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);}
+@media (max-width:520px){.pdf{height:380px;}.head{padding:22px 18px;}}
+.head h1{font-family:var(--disp);font-weight:700;font-size:clamp(34px,8vw,58px);text-transform:uppercase;line-height:.95;margin:4px 0 10px;}
+.head .baj{font-size:16px;color:#d8d0bb;margin:0 0 12px;max-width:620px;}
+.portada{border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);}
+.portada img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;object-position:50% 60%;background:#fff;}
+.render.una{grid-template-columns:1fr;} .render.una img{max-width:520px;margin:0 auto;}
+.flujo{font-family:var(--mono);font-size:11.5px;line-height:1.7;background:var(--ink);color:var(--cream);padding:16px 18px;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accent);overflow-x:auto;white-space:pre;margin:0;}
+.iter{counter-reset:it;list-style:none;padding:0;margin:0 0 12px;}
+.iter li{counter-increment:it;position:relative;padding:0 0 12px 38px;}
+.iter li::before{content:counter(it);position:absolute;left:0;top:0;width:26px;height:26px;border:2px solid var(--ink);font-family:var(--disp);font-weight:700;display:flex;align-items:center;justify-content:center;background:var(--paper-2);}
+.iter li.ok::before{background:var(--accent);color:#fff;border-color:var(--accent);}
+.iter b.no{color:var(--alert);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="nav">
+    <div class="name">LF<span style="color:var(--accent)">·</span>Benítez</div>
+    <a class="back" href="/#universidad">← Volver al portafolio</a>
+  </div>
+
+  <div class="head">
+    <div class="eye">// TALLER DE INTERFACES · DESIGNLAB UAI · INTERFAZ FÍSICA CON IA</div>
+    <h1>RobotFace</h1>
+    <p class="baj">Claude físico y expresivo. Una interfaz sin pantalla de botones: mirada, gesto y voz para conversar con una IA.</p>
+    <div class="meta">Luis-Felipe Benítez · UAI · 2026</div>
+  </div>
+
+  <figure class="portada foto" style="margin:0 0 18px;"><img src="/universidad/robotface/estudio_tres_cuartos.jpg" alt="RobotFace montado sobre la pantalla de un notebook"></figure>
+
+  <div class="box">
+    <h3>Concepto</h3>
+    <p>Unos ojos animatrónicos montados sobre la pantalla de un notebook que te <b>miran</b>, <b>conversan</b> contigo por voz con Claude y <b>expresan emociones</b> con los párpados. Diseñé la interacción completa: un ciclo de vida (duerme si no hay nadie, despierta al verte y te saluda), 16 expresiones sincronizadas con lo que dice, reconocimiento facial con consentimiento y la montura física en acrílico, MDF e impresión 3D, toda paramétrica.</p>
+    <h3>Problema</h3>
+    <p>Conversar con una IA es mirar una pantalla. ¿Qué pasa si la IA te mira de vuelta?</p>
+  </div>
+
+  <div class="band"><h2>Interacción</h2><div class="ln"></div></div>
+  <div class="dos">
+    <div class="box">
+      <h3>Estados en vez de menús</h3>
+      <p>Duerme, despierta, saluda, escucha, piensa y responde.</p>
+      <ul>
+        <li><b>Duerme</b> a los 10 s sin ver a nadie: cierra los ojos y ronca en pantalla. El ruido no lo despierta, a propósito, para que no reaccione a cualquier sonido de la sala.</li>
+        <li><b>Despierta</b> solo al ver una cara: entreabre los ojos, parpadea, mira a la persona y la saluda, por su nombre si la reconoce.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Conversación natural</h3>
+      <ul>
+        <li>Mira a quien habla: detecta caras y quién mueve la boca.</li>
+        <li>Se calla si lo interrumpes (distingue tu voz del eco de la suya).</li>
+        <li>Ignora voces del fondo si nadie frente a la cámara habla.</li>
+        <li>Solo “piensa en voz alta” (“mmm, a ver…”) cuando le haces una pregunta.</li>
+        <li>Personalidad: amigo chileno, sarcasmo cariñoso, respuestas cortas, honesto sobre ser una IA.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="band"><h2>Expresión</h2><div class="ln"></div></div>
+  <div class="box">
+    <p>Claude elige una emoción por frase ([feliz], [sarcastico]…). Los ojos la actúan justo al decirla y la boca de caricatura en pantalla cambia de forma y se mueve con el audio.</p>
+    <p><b>16 expresiones:</b> sorpresa, sueño, enojo, sospecha, guiño, curioso, feliz, rodar los ojos, mirar alrededor, pensar, triste, parpadeo, confundido, nervioso, dormido y despertar.</p>
+    <p><b>Regla de diseño:</b> los dos ojos parpadean siempre juntos. La asimetría queda solo para el guiño y los gestos que la necesitan; los parpadeos descoordinados se veían como una falla.</p>
+  </div>
+  <div class="render una foto" style="margin-top:14px;">
+    <img src="/universidad/robotface/bocas_emociones.png" alt="Bocas según la emoción" loading="lazy">
+  </div>
+
+  <div class="band"><h2>Ética</h2><div class="ln"></div></div>
+  <div class="box">
+    <p>La cara es un <b>dato biométrico</b>. El robot pregunta por voz antes de recordarte, guarda la huella (128 números) solo en el computador y te olvida si le dices “olvídame”.</p>
+    <p>El escaneo guiado te pide 6 ángulos (frente, izquierda, derecha, barbilla arriba y abajo, frente) con un marco que barre la cara. Para reconocerte combina cara (70 %) y ropa (30 %): la ropa ayuda cuando la cara se ve de lado o lejos, pero una cara claramente distinta siempre gana.</p>
+  </div>
+
+  <div class="band"><h2>Cómo funciona</h2><div class="ln"></div></div>
+<pre class="flujo">Cámara ─► seguir.py (YuNet · MediaPipe · SFace) ─► USB serie ─► Arduino UNO ─► I2C ─► PCA9685 ─► 6 × SG90
+              ▲ │  UDP (expresiones, quién habla, caras)
+              │ ▼
+Micrófono ─► hablar.py (Whisper MLX · Claude · voz · boca) ◄──► API de Claude
+                    │ UDP (forma de la boca)
+                    ▼
+            servidor.py ◄── página web + panel en vivo</pre>
+  <div class="dos" style="margin-top:14px;">
+    <div class="box">
+      <h3>Mecanismo</h3>
+      <p>EyeMech ε3.2 de Will Cogley: 6 servos SG90 (4 para los párpados, 2 para la mirada X/Y) controlados por un Arduino UNO y una PCA9685. Calibrado servo por servo con fotos.</p>
+      <p>La mirada apunta a los <b>ojos</b> de la persona, no al centro de la cara: al principio miraba muy arriba.</p>
+    </div>
+    <div class="box">
+      <h3>Voz</h3>
+      <p>Whisper en la GPU del Mac (MLX) → Claude Haiku (por velocidad y costo, con caché de prompt) → voz Paulina de macOS → boca animada que sigue el audio.</p>
+    </div>
+  </div>
+
+  <div class="band"><h2>El objeto</h2><div class="ln"></div></div>
+  <div class="box">
+    <h3>Cuatro iteraciones de montura</h3>
+    <ol class="iter">
+      <li><b>Cabeza completa tipo personaje.</b> <b class="no">Descartada:</b> tapaba demasiado y copiaba un personaje existente.</li>
+      <li><b>Montura tipo cámara web</b> con pinza articulada y carcasa. <b class="no">Descartada:</b> la articulación no aguantaba el peso.</li>
+      <li><b>Frente de MDF</b> que tapaba el mecanismo. Cortado y probado, pero chocaba con los párpados al cerrar y con la pieza superior al mirar abajo.</li>
+      <li class="ok"><b>Mecanismo a la vista</b> sobre una base de acrílico negro de 5 mm cortada a láser, con ganchos fijos a 15° en el borde de la pantalla, pata trasera siempre perpendicular a la pantalla y pata hasta la mesa con varilla M8, porque el peso le ganaba a la bisagra. La electrónica va en una caja de MDF de 3 mm con uniones dentadas y grabado de cerebro en todas las caras.</li>
+    </ol>
+    <p>Todo es <b>paramétrico en código</b> (CadQuery): las piezas salen de scripts en Python a partir de medidas reales, que revisan choques contra la pantalla y entre piezas, y que se puedan imprimir sin soportes.</p>
+  </div>
+  <div class="proceso foto" style="margin-top:14px;">
+    <figure><img src="/universidad/robotface/estudio_lado.jpg" alt="" loading="lazy"><figcaption>Perfil: ganchos y pata</figcaption></figure>
+    <figure><img src="/universidad/robotface/estudio_arriba_arduino.jpg" alt="" loading="lazy"><figcaption>Mecanismo y electrónica</figcaption></figure>
+    <figure><img src="/universidad/robotface/estudio_mecanismo.jpg" alt="" loading="lazy"><figcaption>EyeMech y párpado</figcaption></figure>
+    <figure><img src="/universidad/robotface/estudio_arriba.jpg" alt="" loading="lazy"><figcaption>Base de acrílico</figcaption></figure>
+    <figure><img src="/universidad/robotface/estudio_frente_mdf.jpg" alt="" loading="lazy"><figcaption>Iteración 3: frente de MDF</figcaption></figure>
+    <figure><img src="/universidad/robotface/proceso_caja_cerebro.jpg" alt="" loading="lazy"><figcaption>Caja con grabado de cerebro</figcaption></figure>
+    <figure><img src="/universidad/robotface/proceso_caja_abierta.jpg" alt="" loading="lazy"><figcaption>Electrónica en la caja</figcaption></figure>
+    <figure><img src="/universidad/robotface/proceso_prueba_notebook.jpg" alt="" loading="lazy"><figcaption>Prueba de altura</figcaption></figure>
+    <figure><img src="/universidad/robotface/boceto.jpg" alt="" loading="lazy"><figcaption>Boceto de la montura</figcaption></figure>
+  </div>
+  <div class="render foto" style="margin-top:14px;">
+    <img src="/universidad/robotface/vista.png" alt="Render CAD del conjunto" loading="lazy">
+    <img src="/universidad/robotface/pata_mesa.png" alt="Pata a la mesa" loading="lazy">
+    <img src="/universidad/robotface/capsula_usbc.png" alt="Cápsula USB-C" loading="lazy">
+  </div>
+
+  <div class="band"><h2>Herramientas</h2><div class="ln"></div></div>
+  <div class="box">
+    <p><b>Hardware:</b> Arduino UNO, PCA9685, servos SG90. <b>Software:</b> Python, OpenCV, MediaPipe, Whisper (MLX), API de Claude, pygame, HTML/CSS/JS. <b>Fabricación:</b> CadQuery, corte láser, impresión 3D (Bambu).</p>
+  </div>
+
+  <div class="band"><h2>Archivos y código</h2><div class="ln"></div></div>
+  <div class="box">
+    <p>Programas, sketches del Arduino, CAD paramétrico, STL, cortes láser y la página de entrega con ojos interactivos:</p>
+    <a class="cta alt" href="https://github.com/pipebenitezpb1/RobotFace" target="_blank" rel="noopener">Ver repositorio en GitHub →</a>
+    <p class="nota">Mecanismo EyeMech ε3.2 por Will Cogley. Las piezas de montura y la caja son diseño propio.</p>
+  </div>
+
+  <div class="foot">© 2026 · Luis-Felipe Benítez · Taller de Interfaces UAI · DesignLab</div>
+</div>
+<script>
+// oculta las fotos que aún no están subidas
+document.querySelectorAll('.foto img').forEach(function(i){
+  function q(){var f=i.closest('figure')||i; f.remove();}
+  if(i.complete&&i.naturalWidth===0) q(); else i.addEventListener('error',q);
+});
+</script>
+</body>
+</html>
