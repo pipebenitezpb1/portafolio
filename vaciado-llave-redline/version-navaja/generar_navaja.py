@@ -325,3 +325,12 @@ for m in ms7:
     m.apply_translation([x, y, 0]); x += ex[0] + 6; fila = max(fila, ex[1])
 placa7 = trimesh.util.concatenate(ms7); placa7.export(os.path.join(pr, "7_pasadores_y_broches.stl"))
 print(f"placa de pasadores y broches: {' x '.join(f'{v:.1f}' for v in placa7.extents)} mm, {len(placa7.split())} piezas, {sum(m.volume for m in ms7) / 1000:.0f} cm3")
+
+# 8) bandeja (vaciado de la llave) + bisagra completa en una sola placa: todas las piezas impresas definitivas
+x = y = fila = 0.0; ms8 = []
+for f in ["bandeja_navaja.stl", "bisagra_fija.stl", "remache_x2.stl", "remache_x2.stl", "seguro_x2.stl", "seguro_x2.stl"]:
+    m = trimesh.load(os.path.join(aqui, f)); m.apply_translation(-m.bounds[0]); ex = m.extents
+    if x > 0 and x + ex[0] > 224.5: x, y, fila = 0.0, y + fila + 6, 0.0
+    m.apply_translation([x, y, 0]); ms8.append(m); x += ex[0] + 6; fila = max(fila, ex[1])
+placa8 = trimesh.util.concatenate(ms8); placa8.export(os.path.join(aqui, "bandeja_con_bisagra.stl"))
+print(f"bandeja con bisagra: {' x '.join(f'{v:.1f}' for v in placa8.extents)} mm, {len(placa8.split())} piezas")
