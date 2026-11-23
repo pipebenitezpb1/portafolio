@@ -108,7 +108,7 @@ def cil(x, y, r_, za, zb):
     m = trimesh.creation.cylinder(radius=r_, height=zb - za, sections=48); m.apply_translation([x, y, (za + zb) / 2]); return m
 
 resalte = cil(ur, v_res, FIADOR_SALIENTE, 0, 16)
-bandeja = U(D(extruir(bandeja2d, 0, alto), extruir(corte, BASE, alto + 1)), D(resalte, B(ur - 5, ur - 0.5, v_res - 3, v_res + 3, -1, 17)))
+bandeja = D(extruir(bandeja2d, 0, alto), extruir(corte, BASE, alto + 1))
 
 # ---------------- MDF: caras, lomo y extremo ----------------
 zi0, zi1 = -JUEGO_Z, alto + JUEGO_Z               # caras interiores de las dos tapas
@@ -143,6 +143,8 @@ ang_max = next(a for a in np.arange(150, 360, 0.5) if choca(u_lomo, a))
 zc0, zc1 = NUDILLO_Z
 bandeja = D(bandeja, D(extruir(silueta.buffer(1), -1, alto + 1), U(extruir(b_centro, zc0 + 0.15, zc1 - 0.15),
             extruir(b_extremos, -2, zc0 + 0.15), extruir(b_extremos, zc1 - 0.15, alto + 2))))
+bandeja = U(bandeja, D(resalte, B(ur - 5, ur - 0.5, v_res - 3, v_res + 3, -1, 17)))   # resalte del fiador
+assert len(bandeja.split()) == 1
 agujero = cil(P[0], P[1], EJE_D / 2 + 0.15, zi0 - 1, zi1 + 1)
 tab_h = (u_lomo + 3, u_lomo + 13)                  # pestanas de la hoja hacia las caras
 bisagra = D(U(extruir(hoja2d, zi0, zi1), extruir(ref2d, zi0, zc0 - 0.15), extruir(ref2d, zc1 + 0.15, zi1),
@@ -286,3 +288,14 @@ open(os.path.join(pr, "4_pruebas_mdf.svg"), "w").write(
     f'<svg xmlns="http://www.w3.org/2000/svg" width="170mm" height="{yy:.2f}mm" viewBox="0 0 170 {yy:.2f}" '
     f'fill="none" stroke-width="0.2" font-family="sans-serif">' + "".join(el) + "</svg>")
 print("piezas de prueba en pruebas/")
+
+# 6) todas las pruebas impresas en una sola placa
+fs = ["pruebas/1_calce_llave.stl", "pruebas/5_calibre_remache_impreso.stl", "pruebas/2_bisagra_trozo_bandeja.stl",
+      "pruebas/3_fiador_punta_bandeja.stl", "bisagra_fija.stl", "remache_x2.stl", "seguro_x2.stl"]
+x = y = fila = 0.0; ms = []
+for f in fs:
+    m = trimesh.load(os.path.join(aqui, f)); m.apply_translation(-m.bounds[0]); ex = m.extents
+    if x > 0 and x + ex[0] > 206.5: x, y, fila = 0.0, y + fila + 6, 0.0
+    m.apply_translation([x, y, 0]); ms.append(m); x += ex[0] + 6; fila = max(fila, ex[1])
+placa = trimesh.util.concatenate(ms); placa.export(os.path.join(pr, "todas_las_pruebas.stl"))
+print(f"placa de pruebas: {' x '.join(f'{v:.1f}' for v in placa.extents)} mm, {len(placa.split())} piezas")
