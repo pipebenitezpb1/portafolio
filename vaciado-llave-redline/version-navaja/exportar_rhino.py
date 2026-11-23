@@ -51,6 +51,13 @@ for nombre, color, piezas in [("Armado - MDF", MDF, [("Cara inferior", g.m_caras
     for n, m in piezas: malla(m, idx, n)
 rotulo("MODELO ARMADO", 100, 75, c_txt)
 
+# ---- calcado de la foto: contorno de la llave y vaciado, en su posicion dentro de la bandeja ----
+idx = capa("Calcado de la llave (de la foto)", (0, 0, 230))
+for n, p in [("Contorno de la llave (calcado)", g.herr), ("Vaciado (calcado + holgura)", g.vaciado)]:
+    pl = r3.Polyline(0)
+    for x_, y_ in p.exterior.coords: pl.Add(float(x_), float(y_), float(g.BASE))
+    modelo.Objects.AddPolyline(pl, atr(idx, n))
+
 # ---- 2. piezas definitivas, orientadas para imprimir ----
 idx = capa("Imprimir - piezas definitivas", ROJO); x, y0 = 0.0, -150.0
 for n, f, cant in [("Bandeja", "bandeja_navaja.stl", 1), ("Bisagra fija", "bisagra_fija.stl", 1),
