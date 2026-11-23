@@ -8,6 +8,7 @@ perfil (rectas, arcos y curvas suaves) -> extrusion -> cilindros y cajas que se
 suman o se restan.  Salidas:
     estuche_navaja.step   estuche armado: solo cuerpos (sin componentes), en el orden que imprime este script
     pruebas_navaja.step   piezas de prueba para imprimir, acostadas sobre el plano XY
+    todo_navaja.step      todo junto: armado, pruebas impresas y piezas de MDF planas (definitivas y de prueba)
 En Fusion: Archivo > Abrir > (desde mi equipo) y elegir el .step.
 """
 import os
@@ -172,5 +173,40 @@ for k, (n, s) in enumerate(pr):
     print(f"Cuerpo {k + 1}: {n:38s} valido={s.isValid()} solidos={len(s.Solids())} {bb.xlen:.1f} x {bb.ylen:.1f} x {bb.zlen:.1f}")
     x += bb.xlen + 6; fila = max(fila, bb.ylen)
 guardar(sueltos, "pruebas_navaja.step")
+# ---------- todo en un solo archivo: armado + pruebas impresas + MDF plano (definitivo y de prueba) ----------
+def plano(poly, x_, y_):
+    k = ext(poly, 0, t); bb = k.BoundingBox(); return k.translate(Vector(x_ - bb.xmin, y_ - bb.ymin, 0)), bb.xlen, bb.ylen
+todo = [(n, s_) for n, s_, col in piezas]
+todo += [("PRUEBA impresa: " + n, s_.translate(Vector(0, -230, 0))) for (n, _), s_ in zip(pr, sueltos)]
+y = 110.0
+for n, p in [("MDF plano: cara", g.cara), ("MDF plano: cara", g.cara), ("MDF plano: lomo", g.p_lomo), ("MDF plano: extremo", g.p_ext)]:
+    k, w_, h_ = plano(p, 0, y); todo.append((n, k)); y += h_ + 8
+y = 110.0
+for n, p in [("PRUEBA MDF: esquina de la bisagra", g.mini), ("PRUEBA MDF: esquina de la bisagra", g.mini), ("PRUEBA MDF: lomo corto", g.mini_lomo),
+             ("PRUEBA MDF: calibre de holguras", g.cal), ("PRUEBA MDF: extremo", g.p_ext)]:
+    k, w_, h_ = plano(p, 290, y); todo.append((n, k)); y += h_ + 8
+guardar([s_ for n, s_ in todo], "todo_navaja.step")
+print("--- todo_navaja.step ---")
+for k, (n, s_) in enumerate(todo):
+    bb = s_.BoundingBox(); print(f"Cuerpo {k + 1}: {n} | valido={s_.isValid()} | en x {bb.xmin:.0f}..{bb.xmax:.0f}, y {bb.ymin:.0f}..{bb.ymax:.0f}")
+# ---------- carpeta del script de Fusion: STEP + foto + calcado + nombres de los cuerpos ----------
+import json, shutil
+fz = os.path.join(g.aqui, "fusion", "EstucheNavaja")
+def tramos(poly):                                  # el calcado partido en las esquinas, con un punto cada ~2 mm
+    p = np.array(poly.exterior.coords)[:-1]; n = len(p)
+    a_, b_ = p - np.roll(p, 1, 0), np.roll(p, -1, 0) - p
+    giro = np.abs(np.degrees(np.arctan2(a_[:, 0] * b_[:, 1] - a_[:, 1] * b_[:, 0], (a_ * b_).sum(1))))
+    esq = [i for i in range(n) if giro[i] > 12] or [0]
+    out = []
+    for i, j in zip(esq, esq[1:] + [esq[0] + n]):
+        seg = p[np.arange(i, j + 1) % n]; d = np.r_[0, np.cumsum(np.hypot(*(seg[1:] - seg[:-1]).T))]
+        k = max(1, int(d[-1] / 2.0)); ids = sorted(set(np.searchsorted(d, np.linspace(0, d[-1], k + 1)).clip(0, len(seg) - 1)))
+        out.append([[round(float(x_), 3), round(float(y_), 3)] for x_, y_ in seg[ids]])
+    return out
+json.dump({"nombres": [n for n, s_ in todo], "llave": tramos(g.herr), "vaciado": tramos(g.vaciado),
+           "lienzo_mm": {"x0": -20, "y0": -25, "ancho": 240, "alto": 100}}, open(os.path.join(fz, "datos.json"), "w"))
+shutil.copy(os.path.join(g.aqui, "todo_navaja.step"), fz)
+shutil.copy(os.path.join(g.aqui, "..", "calcado", "foto_para_lienzo.png"), fz)
+shutil.make_archive(os.path.join(g.aqui, "fusion", "EstucheNavaja"), "zip", os.path.join(g.aqui, "fusion"), "EstucheNavaja")
 print("comparacion con las mallas: bandeja", round(g.bandeja.volume / 1000, 2), "bisagra", round(g.bisagra.volume / 1000, 2),
       "remache", round(g.rem[0].volume / 1000, 2), "seguro", round(g.seg[0].volume / 1000, 2), "cara", round(g.m_caras[0].volume / 1000, 2))

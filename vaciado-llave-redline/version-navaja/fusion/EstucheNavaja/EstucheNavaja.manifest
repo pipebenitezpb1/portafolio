@@ -1,0 +1,8 @@
+{
+	"autodeskProduct": "Fusion360",
+	"type": "script",
+	"author": "",
+	"description": {"": "Estuche tipo navaja: importa los cuerpos, pone la foto como lienzo y dibuja el calcado"},
+	"supportedOS": "windows|mac",
+	"editEnabled": true
+}
