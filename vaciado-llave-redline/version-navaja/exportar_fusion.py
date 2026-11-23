@@ -185,6 +185,14 @@ y = 110.0
 for n, p in [("PRUEBA MDF: esquina de la bisagra", g.mini), ("PRUEBA MDF: esquina de la bisagra", g.mini), ("PRUEBA MDF: lomo corto", g.mini_lomo),
              ("PRUEBA MDF: calibre de holguras", g.cal), ("PRUEBA MDF: extremo", g.p_ext)]:
     k, w_, h_ = plano(p, 290, y); todo.append((n, k)); y += h_ + 8
+# lamina de calco bajo el estuche: el rectangulo que ocupa la foto (240 x 100 mm), la linea trazada y el vaciado
+# como cordones en relieve, y dos marcas en (0,0) y (200,0).  La foto misma no puede ir dentro de un STEP.
+zl = zi0 - t - 5
+linea = lambda p, w_: p.buffer(w_ / 2).difference(p.buffer(-w_ / 2))
+todo += [("CALCO: lamina del lienzo 240 x 100 mm", caja(-20, 220, -25, 75, zl - 0.4, zl)),
+         ("CALCO: linea trazada de la llave", ext(linea(g.herr, 0.6), zl, zl + 0.4)),
+         ("CALCO: linea del vaciado", ext(linea(g.vaciado, 0.4), zl, zl + 0.4)),
+         ("CALCO: marca (0,0)", cil(0, 0, 1.0, zl, zl + 0.8)), ("CALCO: marca (200,0)", cil(200, 0, 1.0, zl, zl + 0.8))]
 guardar([s_ for n, s_ in todo], "todo_navaja.step")
 print("--- todo_navaja.step ---")
 for k, (n, s_) in enumerate(todo):
