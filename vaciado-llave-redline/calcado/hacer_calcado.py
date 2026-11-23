@@ -58,3 +58,14 @@ open(os.path.join(aqui, "contorno_llave.svg"), "w").write(
     f'<svg xmlns="http://www.w3.org/2000/svg" width="{bx[2] + 10:.2f}mm" height="{bx[3] + 10:.2f}mm" viewBox="-5 -5 {bx[2] + 10:.2f} {bx[3] + 10:.2f}">'
     f'<path fill="none" stroke="red" stroke-width="0.2" d="M' + " L".join(f"{x:.2f},{bx[3] - y:.2f}" for x, y in co) + ' Z"/></svg>')
 print("origen del modelo (0,0) en el pixel", px([[0, 0]])[0], "de foto_alineada.png;", f"{ANCHO:g} x {ALTO:g} mm a {K} px/mm")
+
+# foto para usar como lienzo (canvas) en Fusion: dos cruces a 200 mm exactos para calibrarla,
+# en los puntos (0, 0) y (200, 0) del modelo
+lz = alineada.copy()
+for u, txt in [(0, "(0,0)"), (200, "(200,0)")]:
+    cx_, cy_ = px([[u, 0]])[0]
+    cv2.line(lz, (cx_ - 40, cy_), (cx_ + 40, cy_), (0, 0, 255), 2, cv2.LINE_AA); cv2.line(lz, (cx_, cy_ - 40), (cx_, cy_ + 40), (0, 0, 255), 2, cv2.LINE_AA)
+    cv2.circle(lz, (cx_, cy_), 12, (0, 0, 255), 2, cv2.LINE_AA)
+    cv2.putText(lz, txt, (cx_ - 60, cy_ + 80), f, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
+cv2.putText(lz, "Calibrar: 200 mm entre las dos cruces", (px([[55, 0]])[0][0], px([[0, -14]])[0][1]), f, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
+cv2.imwrite(os.path.join(aqui, "foto_para_lienzo.png"), lz)
