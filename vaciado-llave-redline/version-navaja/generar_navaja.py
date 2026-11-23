@@ -184,21 +184,27 @@ m_ext = a3d(p_ext, [[0, 0, 1, x_ext], [1, 0, 0, y_lomo], [0, 1, 0, 0], [0, 0, 0,
 m_caras = [extruir(cara, zi0 - t, zi0), extruir(cara, zi1, zi1 + t)]
 
 # ---------------- remache de 1/4 de vuelta y seguro ----------------
-def remache(c, alas_en_u):
-    ln = t + 0.2
+def remache(c, alas_en_u, extra=0.2, marcas=0):   # extra = holgura del cuello sobre el espesor del MDF
+    ln = t + extra
     partes = [cil(0, 0, EJE_D / 2, zi0, zi1), cil(0, 0, CUELLO_D / 2, zi0 - ln - ALA[2], zi1 + ln + ALA[2])]
     for za in (zi0 - ln - ALA[2], zi1 + ln):
         partes.append(B(-ALA[0] / 2, ALA[0] / 2, -ALA[1] / 2, ALA[1] / 2, za, za + ALA[2]))
-    m = D(U(*partes), B(-20, 20, -20, -ALA[1] / 2, zi0 - 20, zi1 + 20))   # cara plana para imprimir acostado
+    cortes = [B(-20, 20, -20, -ALA[1] / 2, zi0 - 20, zi1 + 20)]              # cara plana para imprimir acostado
+    for i in range(marcas):                                                  # anillos que identifican la variante
+        z = alto / 2 - 3 + 2.4 * i
+        cortes.append(D(cil(0, 0, EJE_D / 2 + 1, z, z + 0.8), cil(0, 0, EJE_D / 2 - 0.5, z - 1, z + 2)))
+    m = D(U(*partes), *cortes)
     if not alas_en_u: m.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [0, 0, 1]))
     m.apply_translation([c[0], c[1], 0]); return m
-def seguro(c, alas_en_u):                          # tapa con patas: entra en las orejas y bloquea el giro
+def seguro(c, alas_en_u, pata=4.4, marcas=0):                          # tapa con patas: entra en las orejas y bloquea el giro
     z0 = zi1 + t
     disco = D(cil(0, 0, 7.5, z0 + 0.2, z0 + 0.2 + ALA[2]),
               B(-ALA[0] / 2 - 0.2, ALA[0] / 2 + 0.2, -ALA[1] / 2 - 0.2, ALA[1] / 2 + 0.2, z0, z0 + 5), cil(0, 0, CUELLO_D / 2 + 0.2, z0, z0 + 5))
     patas = [B(-2.2, 2.2, sg * (CUELLO_D / 2 + 0.25), sg * (ALA[0] / 2 + 0.2), z0 - t, z0 + 0.3) for sg in (1, -1)]
-    patas = [B(-2.2, 2.2, *sorted([sg * (CUELLO_D / 2 + 0.25), sg * (ALA[0] / 2 + 0.2)]), z0 - t, z0 + 0.3) for sg in (1, -1)]
+    patas = [B(-pata / 2, pata / 2, *sorted([sg * (CUELLO_D / 2 + 0.25), sg * (ALA[0] / 2 + 0.2)]), z0 - t, z0 + 0.3) for sg in (1, -1)]
     m = U(disco, *patas)
+    if marcas:                                                               # muescas en el borde que identifican la variante
+        m = D(m, *[cil(7.5 * np.cos(a_), 7.5 * np.sin(a_), 0.9, z0, z0 + 6) for a_ in np.radians(25 + 22 * np.arange(marcas))])
     if not alas_en_u: m.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [0, 0, 1]))
     m.apply_translation([c[0], c[1], 0]); return m
 # orejas del MDF a lo largo de u en el eje y de v en la esquina; las alas quedan cruzadas (trabadas)
@@ -299,3 +305,23 @@ for f in fs:
     m.apply_translation([x, y, 0]); ms.append(m); x += ex[0] + 6; fila = max(fila, ex[1])
 placa = trimesh.util.concatenate(ms); placa.export(os.path.join(pr, "todas_las_pruebas.stl"))
 print(f"placa de pruebas: {' x '.join(f'{v:.1f}' for v in placa.extents)} mm, {len(placa.split())} piezas")
+
+# 7) pasadores (remaches) y broches (seguros y fiador) con varias holguras, en una placa.
+#    El numero de marcas identifica cada variante; las marcadas con * son las del diseno actual.
+VAR_REMACHE = (0.0, 0.2, 0.4)        # holgura del cuello sobre los 3 mm del MDF  -> 1, 2*, 3 anillos
+VAR_SEGURO = (4.2, 4.4, 4.6, 4.8)    # ancho de las patas del seguro              -> 1, 2*, 3, 4 muescas
+VAR_FIADOR = (1.0, 1.3, 1.6)         # saliente del resalte del clic              -> 1, 2*, 3 muescas
+ms7 = [girar(remache((0, 0), True, e_, i + 1), 90, [1, 0, 0]) for i, e_ in enumerate(VAR_REMACHE)]
+ms7 += [girar(seguro((0, 0), True, p_, i + 1), 180, [1, 0, 0]) for i, p_ in enumerate(VAR_SEGURO)]
+sin_resalte = D(bandeja, B(ur + 0.001, ur + 4, v_res - 4, v_res + 4, -1, 18))
+for i, sal in enumerate(VAR_FIADOR):
+    b_ = U(sin_resalte, D(cil(ur, v_res, sal, 0, 16), B(ur - 5, ur - 0.5, v_res - 4, v_res + 4, -1, 17)))
+    b_ = D(b_, *[B(ur - 27 + 3 * k, ur - 25.8 + 3 * k, yb - 1, yb + 3, alto - 1, alto + 1) for k in range(i + 1)])
+    ms7.append(recorte(b_, box(ur - 30, yb - 1, ur + 3, vs1 + 7)))
+x = y = fila = 0.0
+for m in ms7:
+    ex = m.extents
+    if x > 0 and x + ex[0] > 120: x, y, fila = 0.0, y + fila + 6, 0.0
+    m.apply_translation([x, y, 0]); x += ex[0] + 6; fila = max(fila, ex[1])
+placa7 = trimesh.util.concatenate(ms7); placa7.export(os.path.join(pr, "7_pasadores_y_broches.stl"))
+print(f"placa de pasadores y broches: {' x '.join(f'{v:.1f}' for v in placa7.extents)} mm, {len(placa7.split())} piezas, {sum(m.volume for m in ms7) / 1000:.0f} cm3")
