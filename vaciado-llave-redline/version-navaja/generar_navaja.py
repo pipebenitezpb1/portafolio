@@ -25,7 +25,7 @@ from shapely.ops import unary_union
 from shapely import affinity
 
 # ---- llave / vaciado ----
-HOLGURA = 0.7              # mm de juego alrededor de la llave
+HOLGURA = 1.0              # mm de juego alrededor de la llave
 ALTURA_HERRAMIENTA = 20.0  # mm, grosor maximo de la llave (mango). MEDIR Y AJUSTAR
 BASE = 2.0                 # mm de piso bajo la llave
 PARED = 4.0                # mm de pared alrededor del vaciado

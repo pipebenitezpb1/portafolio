@@ -34,10 +34,10 @@ cv2.imwrite(os.path.join(aqui, "foto_alineada.png"), alineada)
 
 def px(poly): return np.round(np.array(poly) @ S.T + s0).astype(np.int32)
 suave = Polygon(json.load(open(os.path.join(aqui, "..", "version-navaja", "contorno_mm.json"))))
-vaciado = suave.buffer(0.7)
+vaciado = suave.buffer(1.0)
 img = cv2.addWeighted(alineada, 0.75, np.full_like(alineada, 255), 0.25, 0)
 cv2.polylines(img, [px(q)], True, (0, 200, 255), 2, cv2.LINE_AA)                      # contorno detectado en la foto
-cv2.polylines(img, [px(vaciado.exterior.coords)], True, (255, 120, 0), 3, cv2.LINE_AA) # vaciado (+0,7 mm)
+cv2.polylines(img, [px(vaciado.exterior.coords)], True, (255, 120, 0), 3, cv2.LINE_AA) # vaciado (+1,0 mm)
 cv2.polylines(img, [px(suave.exterior.coords)], True, (0, 0, 230), 4, cv2.LINE_AA)     # calcado suavizado
 # regla usada para la escala: 20 marcas de 1 mm sobre la mordaza
 r0 = A @ np.array([1850 + 600 / 4, 560 + 290 / 4]) + b
@@ -46,7 +46,7 @@ for i in range(21):
     a_ = r0 + dr * i + nrm * 1.0; b_ = a_ + nrm * (3.0 if i % 10 == 0 else 1.6)
     cv2.line(img, tuple(px([a_])[0]), tuple(px([b_])[0]), (0, 160, 0), 3, cv2.LINE_AA)
 f = cv2.FONT_HERSHEY_SIMPLEX
-for txt, col, yy in [("Calcado suavizado (contorno de la llave)", (0, 0, 230), 40), ("Vaciado = calcado + 0,7 mm de holgura", (255, 120, 0), 80),
+for txt, col, yy in [("Calcado suavizado (contorno de la llave)", (0, 0, 230), 40), ("Vaciado = calcado + 1,0 mm de holgura", (255, 120, 0), 80),
                      ("Contorno detectado en la foto", (0, 160, 220), 120), ("Regla de la mordaza: 20 mm = 228 px  ->  11,4 px/mm", (0, 160, 0), 160)]:
     cv2.putText(img, txt, (30, yy), f, 1.0, col, 2, cv2.LINE_AA)
 x0, x1 = px([[0, -12]])[0], px([[200, -12]])[0]

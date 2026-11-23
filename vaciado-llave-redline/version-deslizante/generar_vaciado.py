@@ -19,7 +19,7 @@ import trimesh
 from shapely.geometry import Polygon, Point, box
 
 # ---- herramienta / vaciado ----
-HOLGURA = 0.7              # mm de juego alrededor de la llave
+HOLGURA = 1.0              # mm de juego alrededor de la llave
 ALTURA_HERRAMIENTA = 20.0  # mm, grosor maximo de la llave (mango). MEDIR Y AJUSTAR
 PROFUNDIDAD = ALTURA_HERRAMIENTA  # mm de profundidad del vaciado
 BASE = 2.0                 # mm de piso bajo la llave
