@@ -6,7 +6,7 @@
 Cada pieza se construye como lo haria una persona, con operaciones simples:
 perfil (rectas, arcos y curvas suaves) -> extrusion -> cilindros y cajas que se
 suman o se restan.  Salidas:
-    estuche_navaja.step   estuche armado, un cuerpo con nombre por pieza
+    estuche_navaja.step   estuche armado: solo cuerpos (sin componentes), en el orden que imprime este script
     pruebas_navaja.step   piezas de prueba para imprimir, acostadas sobre el plano XY
 En Fusion: Archivo > Abrir > (desde mi equipo) y elegir el .step.
 """
@@ -138,11 +138,12 @@ piezas = [("MDF_cara_inferior", ext(g.cara, zi0 - t, zi0), MDF), ("MDF_cara_supe
           ("pasador_eje", remache(P, False), NEGRO), ("pasador_esquina", remache(C2, True), NEGRO),
           ("broche_seguro_eje", seguro(P, False), AMAR), ("broche_seguro_esquina", seguro(C2, True), AMAR)]
 piezas.append(("llave_referencia_calcado", ext(g.herr, g.BASE, g.BASE + 13), cq.Color(0.75, 0.77, 0.8)))   # el calcado de la foto, como solido
-ens = cq.Assembly(name="estuche_navaja")
-for n, s, col in piezas:
-    ens.add(s, name=n, color=col)
+def guardar(solidos, archivo):                     # un solo conjunto de cuerpos, sin componentes ni ensamblaje
+    cq.exporters.export(cq.Compound.makeCompound(solidos), os.path.join(g.aqui, archivo))
+for k, (n, s, col) in enumerate(piezas):
+    print(f"Cuerpo {k + 1}:", end=" ")
     print(f"{n:24s} valido={s.isValid()} solidos={len(s.Solids())} caras={len(s.Faces())} volumen={s.Volume() / 1000:.2f} cm3")
-ens.save(os.path.join(g.aqui, "estuche_navaja.step"))
+guardar([s for n, s, col in piezas], "estuche_navaja.step")
 
 # ---------- piezas de prueba, acostadas para imprimir ----------
 def acostar(s, eje=None, ang=0):
@@ -158,13 +159,13 @@ zona = caja(ur - 30, ur + 3, yb - 1, g.vs1 + 7, -1, alto + 1)
 for i, sal in enumerate(g.VAR_FIADOR):
     b_ = resta(bandeja(sal).intersect(zona), *[caja(ur - 27 + 3 * k, ur - 25.8 + 3 * k, yb - 1, yb + 3, alto - 1, alto + 1) for k in range(i + 1)])
     pr.append((f"broche_fiador_{i + 1}_marcas_saliente_{sal:.1f}", acostar(b_)))
-ens2 = cq.Assembly(name="pruebas_navaja"); x = y = fila = 0.0
-for n, s in pr:
+x = y = fila = 0.0; sueltos = []
+for k, (n, s) in enumerate(pr):
     bb = s.BoundingBox()
     if x > 0 and x + bb.xlen > 207: x, y, fila = 0.0, y + fila + 6, 0.0
-    ens2.add(s, name=n, loc=cq.Location(Vector(x, y, 0)), color=ROJO if "bandeja" in n or "fiador" in n else AZUL)
-    print(f"{n:38s} valido={s.isValid()} solidos={len(s.Solids())} {bb.xlen:.1f} x {bb.ylen:.1f} x {bb.zlen:.1f}")
+    sueltos.append(s.translate(Vector(x, y, 0)))
+    print(f"Cuerpo {k + 1}: {n:38s} valido={s.isValid()} solidos={len(s.Solids())} {bb.xlen:.1f} x {bb.ylen:.1f} x {bb.zlen:.1f}")
     x += bb.xlen + 6; fila = max(fila, bb.ylen)
-ens2.save(os.path.join(g.aqui, "pruebas_navaja.step"))
+guardar(sueltos, "pruebas_navaja.step")
 print("comparacion con las mallas: bandeja", round(g.bandeja.volume / 1000, 2), "bisagra", round(g.bisagra.volume / 1000, 2),
       "remache", round(g.rem[0].volume / 1000, 2), "seguro", round(g.seg[0].volume / 1000, 2), "cara", round(g.m_caras[0].volume / 1000, 2))
