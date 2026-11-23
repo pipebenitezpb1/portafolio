@@ -234,3 +234,47 @@ print(f"estuche cerrado: {cb[2] - cb[0]:.1f} x {cb[3] - cb[1]:.1f} x {alto + 2 *
 print(f"bandeja: {' x '.join(f'{v:.1f}' for v in bandeja.extents)} mm | estanca: {bandeja.is_watertight} | {bandeja.volume / 1000:.0f} cm3")
 print(f"bisagra fija: {' x '.join(f'{v:.1f}' for v in bisagra.extents)} mm | estanca: {bisagra.is_watertight}")
 print(f"remache estanco: {rem[0].is_watertight} | seguro estanco: {seg[0].is_watertight} | apertura maxima: {ang_max:.0f} grados")
+
+# =====================================================================
+#  PIEZAS DE PRUEBA (carpeta pruebas/): rapidas de imprimir y cortar,
+#  para ajustar holguras antes de fabricar el estuche completo
+# =====================================================================
+pr = os.path.join(aqui, "pruebas"); os.makedirs(pr, exist_ok=True)
+def recorte(m, poly, z0=-5, z1=alto + 5):
+    r_ = trimesh.boolean.intersection([m, extruir(poly, z0, z1)], engine="manifold"); r_.apply_translation(-r_.bounds[0]); return r_
+# 1) calce de la llave: solo el contorno del vaciado, 3 mm de alto
+p1 = D(extruir(vaciado.buffer(2.5), 0, 3.0), extruir(vaciado, 0.6, 4.0)); p1.apply_translation(-p1.bounds[0])
+p1.export(os.path.join(pr, "1_calce_llave.stl"))
+# 2) bisagra: trozo de la bandeja alrededor del eje (se prueba con bisagra_fija + remache)
+recorte(bandeja, Point(P).buffer(26, resolution=32)).export(os.path.join(pr, "2_bisagra_trozo_bandeja.stl"))
+# 3) fiador: punta de la bandeja con la lamina flexible (se prueba contra el Extremo de MDF)
+recorte(bandeja, box(ur - 30, yb - 1, ur + 3, vs1 + 7)).export(os.path.join(pr, "3_fiador_punta_bandeja.stl"))
+
+# 4) MDF: mini estuche (2 caras + lomo corto) para probar remache, seguro, pestanas y hoja de bisagra,
+#    recortado de la esquina real de la bisagra, y un calibre con tres holguras de cada encaje
+def cerr(dx, c): return affinity.translate(cerradura((0, 0), True).buffer(dx, join_style=2), *c)
+u_fin = max(tabs_l[0][1] + 6, P[0] + 34)             # esquina real de la bisagra, recortada
+mini = cara.intersection(box(P[0] - 20, y_lomo - t - MARGEN - 5, u_fin, P[1] + 24))
+mini_lomo = tira(u_fin - u_lomo, [tabs_l[0]], u_lomo)
+dxs = (-0.1, 0.0, 0.1)
+cal = box(0, 0, 100, 40)
+for i, dx in enumerate(dxs):
+    cal = cal.difference(cerr(dx, (17 + 33 * i, 27)))
+    cal = cal.difference(box(8.5 + 33 * i - dx, 6 - dx, 8.5 + 33 * i + PESTANA + dx, 6 + t + dx))
+el, yy = [], 5.0
+def pon(poly, etiqueta, marcas=()):
+    global yy
+    bx0, by0, bx1, by1 = poly.bounds
+    el.append(f'<path d="{ruta(poly, 5 - bx0, yy + by1, -1)}" stroke="red"/>')
+    el.append(f'<text x="{bx1 - bx0 + 9:.1f}" y="{yy + 6:.1f}" font-size="3.5" fill="blue" stroke="none">{etiqueta}</text>')
+    for mx, my, txt in marcas:
+        el.append(f'<text x="{5 + mx:.1f}" y="{yy + by1 - my:.1f}" font-size="3" fill="blue" stroke="none" text-anchor="middle">{txt}</text>')
+    yy += by1 - by0 + 5
+pon(mini, "esquina de la bisagra (x2)"); pon(mini, "")
+pon(mini_lomo, "lomo corto")
+pon(cal, "calibre de holguras (mm por lado)", [(17 + 33 * i, 16, f"{dx:+.1f}") for i, dx in enumerate(dxs)])
+pon(p_ext, "extremo real (prueba del fiador)")
+open(os.path.join(pr, "4_pruebas_mdf.svg"), "w").write(
+    f'<svg xmlns="http://www.w3.org/2000/svg" width="170mm" height="{yy:.2f}mm" viewBox="0 0 170 {yy:.2f}" '
+    f'fill="none" stroke-width="0.2" font-family="sans-serif">' + "".join(el) + "</svg>")
+print("piezas de prueba en pruebas/")
