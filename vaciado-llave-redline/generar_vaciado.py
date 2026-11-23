@@ -1,16 +1,17 @@
-"""Estuche tipo caja de fosforos para la llave ajustable REDLINE de 8".
+"""Estuche para la llave ajustable REDLINE de 8", sin pegamento ni tornillos.
 
-Bandeja impresa en 3D (con el vaciado de la llave) que desliza dentro de una
-funda de MDF abierta por un extremo; la tapa de MDF va pegada al frente de la
-bandeja. Dos topes de MDF, encolados en ranuras de los laterales, corren por
-un canal a cada lado de la bandeja e impiden que salga por completo.
+Solo piezas impresas en 3D y MDF cortado:
+  - bandeja impresa con el vaciado de la llave, que desliza hacia afuera;
+  - tubo de 4 paneles de MDF unidos por pestanas y ranuras;
+  - tapa trasera y marco frontal impresos, que abrazan el tubo y traban con
+    dientes flexibles en agujeros del MDF;
+  - topes laterales integrados al marco frontal (corren por los canales de la bandeja);
+  - tapa frontal con bisagra (pasador impreso) y cierre a presion.
 
 El contorno (contorno_mm.json) se obtuvo de una foto, escalada con la regla
 grabada en la mordaza (11,4 px/mm). Ajusta los parametros y vuelve a ejecutar:
-    pip install numpy shapely trimesh mapbox-earcut manifold3d matplotlib
+    pip install numpy shapely trimesh mapbox-earcut manifold3d
     python3 generar_vaciado.py
-Salidas: bandeja_llave_redline.stl, prueba_ajuste.stl, bandeja_llave_redline.svg,
-caja_mdf.svg (plano de corte 1:1) y vista_previa.png.
 """
 import json, os
 import numpy as np
@@ -27,17 +28,26 @@ PARED_EXTREMO = 4.0        # mm de pared minima en los extremos
 RADIO_ESQUINA = 2.0        # mm, esquinas exteriores de la bandeja
 DEDO_ANCHO = 24.0          # mm, ancho de la ranura para sacar la llave (0 = sin ranura)
 DEDO_POS = 0.60            # posicion de la ranura a lo largo (0 = corona, 1 = mordaza)
-# ---- funda de MDF ----
+# ---- funda de MDF (sin pegamento: encajes y trabas) ----
 ESPESOR_MDF = 3.0          # mm
 JUEGO_CAJA = 0.25          # mm de juego entre bandeja y funda (por lado)
-RADIO_MUESCA = 10.0        # mm, muescas de la funda para tomar la bandeja
-# ---- topes laterales ----
-TOPE_LARGO = 8.0           # mm, largo del tope (a lo largo de la caja)
+MARGEN_RANURA = 3.0        # mm de MDF que queda por fuera de las ranuras de las pestanas
+PESTANA = 20.0             # mm, largo de cada pestana de los laterales
+# ---- piezas impresas de los extremos ----
+PARED_IMP = 2.0            # mm, pared de los marcos impresos
+JUEGO_MDF = 0.15           # mm de juego entre MDF y marcos impresos
+FALDA = 26.0               # mm que cada marco abraza al tubo de MDF
+TRABA_ALTO = 1.0           # mm, altura del diente que traba en el MDF
+VENTANA = (24.0, 14.0)     # mm, ventana para empujar la bandeja con los dedos
+# ---- topes laterales (integrados al marco frontal) ----
+TOPE_LARGO = 10.0          # mm
 TOPE_SALIENTE = 2.0        # mm que el tope entra en el canal de la bandeja
-TOPE_A_BOCA = 4.0          # mm entre el tope y la boca de la funda
 CANAL_PROF = 2.5           # mm de profundidad del canal en la bandeja
 CANAL_INICIO = 8.0         # mm de pared que queda al fondo del canal (hace de tope)
 CANAL_JUEGO = 0.5          # mm de juego vertical del tope en el canal
+# ---- bisagra ----
+BISAGRA_R = 3.5            # mm, radio exterior de los nudillos
+PASADOR_D = 3.0            # mm, diametro del pasador impreso
 
 aqui = os.path.dirname(os.path.abspath(__file__))
 pts = np.array(json.load(open(os.path.join(aqui, "contorno_mm.json"))))
@@ -70,8 +80,8 @@ def extruir(poly, z0, z1):
     return m
 
 # canal lateral: abierto hacia el frente, cerrado al fondo, techo a 45 grados para imprimir sin soportes
-cz0 = alto / 2 - (ESPESOR_MDF + CANAL_JUEGO) / 2
-cz1 = cz0 + ESPESOR_MDF + CANAL_JUEGO
+cz0 = alto / 2 - (3.0 + CANAL_JUEGO) / 2
+cz1 = cz0 + 3.0 + CANAL_JUEGO
 def canal(y_cara, sentido):
     v = []
     for x in (ex0 + CANAL_INICIO, ex1 + 1):
@@ -104,96 +114,145 @@ hx0, hy0, hx1, hy1 = herramienta.bounds
 print(f"llave: {hx1 - hx0:.1f} x {hy1 - hy0:.1f} mm")
 print(f"bandeja: {w:.1f} x {h:.1f} x {alto:.1f} mm | estanca: {pieza.is_watertight} | volumen: {pieza.volume / 1000:.1f} cm3")
 
-# ---------- funda de MDF (uniones a tope, encoladas) ----------
-t, j = ESPESOR_MDF, JUEGO_CAJA
-Li, Wi, Hi = w + j, h + 2 * j, alto + j          # interior de la funda
-La = Li + t                                      # largo de los paneles
-tope_x = La - TOPE_A_BOCA - TOPE_LARGO           # inicio del tope, medido desde el extremo cerrado
-tope_z = (cz0 + cz1) / 2 - t / 2                 # altura del tope sobre el piso interior
-recorrido = (tope_x - t) - CANAL_INICIO          # cuanto sale la bandeja
-piezas = [  # nombre, largo, ancho, cantidad, tipo
-    ("Tapa superior / base", La, Wi + 2 * t, 2, "muesca"),
-    ("Lateral", La, Hi, 2, "ranura"),
-    ("Fondo (extremo cerrado)", Wi, Hi, 1, ""),
-    ("Tapa frontal (pegar a la bandeja)", Wi + 2 * t, Hi + 2 * t, 1, ""),
-    ("Tope", TOPE_LARGO, t + TOPE_SALIENTE, 2, ""),
-]
-el, y, ancho_hoja = [], 5.0, 0.0
-for nombre, a, b, n, tipo in piezas:
+
+# =====================================================================
+#  FUNDA: tubo de MDF + extremos impresos.  Ejes: x = largo (0 = fondo),
+#  y = ancho (bandeja de 0 a h), z = alto (bandeja de 0 a alto)
+# =====================================================================
+t, j, e, S, c = ESPESOR_MDF, JUEGO_CAJA, MARGEN_RANURA, PARED_IMP, JUEGO_MDF
+Wi, Hi = h + 2 * j, alto + j
+L = w - S + 0.3                       # largo de los paneles de MDF
+xf = L + S                            # cara frontal del marco
+ys0, ys1 = -j - t, h + j + t          # caras exteriores de los laterales
+Y0, Y1, Z0, Z1 = ys0 - e, ys1 + e, -t, Hi + t     # exterior del tubo
+Yo0, Yo1, Zb, Zt = Y0 - c - S, Y1 + c + S, Z0 - c - S, Z1 + c + S  # exterior de los marcos
+yc, zm = h / 2, alto / 2
+
+def B(xa, xb, ya, yb, za, zb):
+    m = trimesh.creation.box([xb - xa, yb - ya, zb - za])
+    m.apply_translation([(xa + xb) / 2, (ya + yb) / 2, (za + zb) / 2]); return m
+def U(*ms): return trimesh.boolean.union(list(ms), engine="manifold")
+def D(a_, *ms): return trimesh.boolean.difference([a_, U(*ms) if len(ms) > 1 else ms[0]], engine="manifold")
+def casco(*ms): return trimesh.Trimesh(vertices=np.vstack([m.vertices for m in ms])).convex_hull
+def cil(eje, p, r, a_, b_):
+    m = trimesh.creation.cylinder(radius=r, height=b_ - a_, sections=48)
+    if eje == "y":
+        m.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))
+        m.apply_translation([p[0], (a_ + b_) / 2, p[1]])
+    else:
+        m.apply_translation([p[0], p[1], (a_ + b_) / 2])
+    return m
+
+def cavidad(xa, xb):   # hueco en "I" que recibe los cuatro paneles
+    return U(B(xa, xb, Y0 - c, Y1 + c, Hi - c, Z1 + c), B(xa, xb, Y0 - c, Y1 + c, Z0 - c, c),
+             B(xa, xb, ys0 - c, ys1 + c, 0, Hi))
+
+TR_Y = [yc - 22, yc + 22]             # centros de las trabas (arriba y abajo)
+def trabas(raiz, libre, cara, d):     # d = +1 la lengueta apunta a +x, -1 a -x
+    cortes, dientes = [], []
+    xa, xb = sorted([raiz, libre + d * 0.8])
+    for yt in TR_Y:
+        for zi, sg, za, zb in [(Z1 + c, -1, Z1 + c - 0.1, Zt + 1), (Z0 - c, 1, Zb - 1, Z0 - c + 0.1)]:
+            cortes += [B(xa, xb, yt - 4.8, yt - 4, za, zb), B(xa, xb, yt + 4, yt + 4.8, za, zb),
+                       B(*sorted([libre, libre + d * 0.8]), yt - 4.8, yt + 4.8, za, zb)]
+            perfil = [(cara, zi - sg * 0.3), (cara, zi + sg * TRABA_ALTO), (cara + d * 0.8, zi + sg * TRABA_ALTO),
+                      (cara + d * 3.5, zi), (cara + d * 3.5, zi - sg * 0.3)]
+            dientes.append(trimesh.Trimesh(vertices=[[x, y, z] for x, z in perfil for y in (yt - 4, yt + 4)]).convex_hull)
+    return cortes, dientes
+
+# ---- tapa trasera ----
+cortes, dientes = trabas(6, 23, 18, +1)
+trasera = U(D(B(-2.5, FALDA, Yo0, Yo1, Zb, Zt), cavidad(0, FALDA + 1), *cortes), *dientes)
+
+# ---- marco frontal con topes y nudillos de bisagra ----
+xa_, za_ = xf - BISAGRA_R, Zt + 0.3 + BISAGRA_R       # eje de la bisagra
+R = BISAGRA_R
+ancho = Yo1 - Yo0
+nf = 11.0                                              # nudillos del marco (3)
+nl = (ancho - 3 * nf - 4 * 0.3) / 2                    # nudillos de la tapa (2)
+ny = [Yo0, Yo0 + nf, Yo0 + nf + 0.3, Yo0 + nf + 0.3 + nl, Yo0 + nf + 0.6 + nl, Yo0 + 2 * nf + 0.6 + nl,
+      Yo0 + 2 * nf + 0.9 + nl, Yo0 + 2 * nf + 0.9 + 2 * nl, Yo0 + 2 * nf + 1.2 + 2 * nl, Yo1]
+n_marco, n_tapa = [(ny[0], ny[1]), (ny[4], ny[5]), (ny[8], ny[9])], [(ny[2], ny[3]), (ny[6], ny[7])]
+cortes, dientes = trabas(L - 6, L - 23, L - 18, -1)
+vx0, vx1 = L - 9 - VENTANA[1], L - 9
+ventanas = B(vx0, vx1, yc - VENTANA[0] / 2, yc + VENTANA[0] / 2, Zb - 1, Zt + 1)
+zl0, zl1 = Zb + 4, Zb + 14                             # altura de las pestanas de cierre
+cierre_x = xf - 13
+ranuras_cierre = [cil("z", (cierre_x, yy), 0.8, zl0 - 2, zl1 + 2) for yy in (Yo0 - 0.1, Yo1 + 0.1)]
+una = B(xf - 5, xf + 1, yc - 9, yc + 9, Zb - 1, Z0 - c)   # muesca para abrir la tapa con la una
+marco = D(B(L - FALDA, xf, Yo0, Yo1, Zb, Zt), cavidad(L - FALDA - 1, L), B(L - 1, xf + 1, -j, h + j, 0, Hi),
+          ventanas, una, *cortes, *ranuras_cierre)
+topes = [B(L - TOPE_LARGO, L + 0.1, ys0 - c - 0.1, -j + TOPE_SALIENTE, zm - 1.5, zm + 1.5),
+         B(L - TOPE_LARGO, L + 0.1, h + j - TOPE_SALIENTE, ys1 + c + 0.1, zm - 1.5, zm + 1.5)]
+nud = [U(casco(cil("y", (xa_, za_), R, a_, b_), B(xf - 2 * R, xf, a_, b_, Zt - 0.5, Zt + 0.5)),
+         B(xa_, xf, a_, b_, Zt, za_ + R)) for a_, b_ in n_marco]
+marco = D(U(marco, *topes, *dientes, *nud), cil("y", (xa_, za_), PASADOR_D / 2 + 0.2, Yo0 - 1, Yo1 + 1))
+
+# ---- tapa frontal con bisagra y cierre a presion ----
+g, tl = 0.2, 3.0
+tapa = B(xf + g, xf + g + tl, Yo0 - 1.8, Yo1 + 1.8, Zb, Zt)
+brazos = [U(cil("y", (xa_, za_), R, a_, b_), B(xa_, xf + g + tl, a_, b_, za_ - R, za_ + R),
+            B(xf + g, xf + g + tl, a_, b_, Zt - 1, za_ + R)) for a_, b_ in n_tapa]
+pest = []
+for yi, sg in [(Yo0 - g, -1), (Yo1 + g, 1)]:
+    pest += [B(xf - 16, xf + g + 0.1, *sorted([yi, yi + sg * 1.6]), zl0, zl1), cil("z", (cierre_x, yi + sg * 0.2), 0.8, zl0, zl1)]
+tapa = D(U(tapa, *brazos, *pest), cil("y", (xa_, za_), PASADOR_D / 2 + 0.25, Yo0 - 1, Yo1 + 1))
+
+# ---- pasador (se imprime acostado; cara plana abajo, cabeza y tramo conico a presion) ----
+r = PASADOR_D / 2
+pas = U(cil("y", (xa_, za_), r, Yo0, Yo1), cil("y", (xa_, za_), r + 1.0, Yo0 - 1.5, Yo0),
+        casco(cil("y", (xa_, za_), r + 0.3, Yo0, Yo0 + 0.5), cil("y", (xa_, za_), r, Yo0 + 5, Yo0 + 5.5)))
+pasador = D(pas, B(xa_ - 5, xa_ + 5, Yo0 - 3, Yo1 + 1, za_ - 5, za_ - r + 0.35))
+
+# ---- paneles de MDF ----
+tabs = [(L * f - PESTANA / 2, L * f + PESTANA / 2) for f in (0.17, 0.5, 0.8)]
+p_tapa = box(0, Y0, L, Y1)
+for a_, b_ in tabs:
+    p_tapa = p_tapa.difference(box(a_, ys0, b_, -j)).difference(box(a_, h + j, b_, ys1))
+for yt in TR_Y:
+    p_tapa = p_tapa.difference(box(17.85, yt - 4.4, 22, yt + 4.4)).difference(box(L - 22, yt - 4.4, L - 17.85, yt + 4.4))
+p_tapa = p_tapa.difference(box(vx0, yc - VENTANA[0] / 2, vx1, yc + VENTANA[0] / 2))
+p_lat = box(0, 0, L, Hi)                               # coordenadas (x, z)
+for a_, b_ in tabs:
+    p_lat = p_lat.union(box(a_, -t, b_, 0.01)).union(box(a_, Hi - 0.01, b_, Hi + t))
+p_lat = p_lat.difference(box(L - TOPE_LARGO - 0.5, zm - 1.7, L + 1, zm + 1.7)).buffer(0)
+
+def m_tapa(z):
+    return extruir(p_tapa, z, z + t)
+def m_lat(y):
+    m = trimesh.creation.extrude_polygon(p_lat, t)     # (x, z, espesor) -> (x, y, z)
+    m.apply_transform(np.array([[1, 0, 0, 0], [0, 0, 1, y], [0, 1, 0, 0], [0, 0, 0, 1.0]])); m.fix_normals(); return m
+mdf = [m_tapa(Z0), m_tapa(Hi), m_lat(ys0), m_lat(h + j)]
+
+# ---- exporta STL en posicion de impresion ----
+def girar(m, ang, eje, quitar_min=True):
+    m = m.copy(); m.apply_transform(trimesh.transformations.rotation_matrix(np.radians(ang), eje))
+    m.apply_translation(-m.bounds[0]); return m
+girar(trasera, 90, [0, 1, 0]).export(os.path.join(aqui, "tapa_trasera.stl"))      # placa sobre la cama
+girar(marco, -90, [0, 1, 0]).export(os.path.join(aqui, "marco_frontal.stl"))       # cara frontal sobre la cama
+girar(tapa, -90, [0, 1, 0]).export(os.path.join(aqui, "tapa_bisagra.stl"))         # cara exterior sobre la cama
+girar(pasador, 0, [0, 0, 1]).export(os.path.join(aqui, "pasador.stl"))
+
+# ---- plano de corte del MDF (1:1, mm) ----
+def ruta_p(poly, ox, oy):
+    d = ""
+    for anillo in [poly.exterior] + list(poly.interiors):
+        d += "M" + " L".join(f"{x + ox:.2f},{y + oy:.2f}" for x, y in anillo.coords) + " Z "
+    return d
+el, yy = [], 5.0
+for nombre, poly, n in [("Tapa superior / base", p_tapa, 2), ("Lateral", p_lat, 2)]:
+    bx0, by0, bx1, by1 = poly.bounds
     for i in range(n):
-        if tipo == "muesca":  # semicirculo en la boca para tomar la bandeja
-            r = RADIO_MUESCA
-            d = (f"M5,{y:.2f} H{5 + a:.2f} V{y + b / 2 - r:.2f} "
-                 f"A{r},{r} 0 0 0 {5 + a:.2f},{y + b / 2 + r:.2f} V{y + b:.2f} H5 Z")
-            el.append(f'<path d="{d}" stroke="red"/>')
-        else:
-            el.append(f'<rect x="5" y="{y:.2f}" width="{a:.2f}" height="{b:.2f}" stroke="red"/>')
-        if tipo == "ranura":  # ranura donde se encola el tope
-            el.append(f'<rect x="{5 + tope_x:.2f}" y="{y + b - tope_z - t:.2f}" '
-                      f'width="{TOPE_LARGO:.2f}" height="{t:.2f}" stroke="red"/>')
-        if a > 60:
-            el.append(f'<text x="8" y="{y + min(b, 14) / 2 + 1.5:.2f}" font-size="4" fill="blue" stroke="none">'
-                      f'{nombre} {a:.1f} x {b:.1f}</text>')
-        y += b + 5
-        ancho_hoja = max(ancho_hoja, a + 10)
-    print(f"MDF {t:g} mm | {n} x {nombre}: {a:.2f} x {b:.2f} mm")
+        el.append(f'<path d="{ruta_p(poly, 5 - bx0, yy - by0)}" stroke="red"/>')
+        el.append(f'<text x="30" y="{yy + (by1 - by0) / 2 + 1.5:.2f}" font-size="4" fill="blue" stroke="none">'
+                  f'{nombre} {bx1 - bx0:.1f} x {by1 - by0:.1f}</text>')
+        yy += by1 - by0 + 5
+    print(f"MDF {t:g} mm | {n} x {nombre}: {bx1 - bx0:.2f} x {by1 - by0:.2f} mm")
 open(os.path.join(aqui, "caja_mdf.svg"), "w").write(
-    f'<svg xmlns="http://www.w3.org/2000/svg" width="{ancho_hoja:.2f}mm" height="{y:.2f}mm" '
-    f'viewBox="0 0 {ancho_hoja:.2f} {y:.2f}" fill="none" stroke-width="0.2" font-family="sans-serif">'
-    + "".join(el) + "</svg>")
-print(f"ranura del tope en cada lateral: {TOPE_LARGO:g} x {t:g} mm, a {tope_x:.1f} mm del extremo cerrado y {tope_z:.2f} mm del borde inferior")
-print(f"funda exterior: {La:.1f} x {Wi + 2 * t:.1f} x {Hi + 2 * t:.1f} mm | la bandeja sale {recorrido:.0f} mm de {w:.0f}")
+    f'<svg xmlns="http://www.w3.org/2000/svg" width="{L + 10:.2f}mm" height="{yy:.2f}mm" '
+    f'viewBox="0 0 {L + 10:.2f} {yy:.2f}" fill="none" stroke-width="0.2" font-family="sans-serif">' + "".join(el) + "</svg>")
 
-# ---------- vista previa ----------
-try:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-
-    def caja(x, y_, z, dx, dy, dz):
-        m = trimesh.creation.box([dx, dy, dz]); m.apply_translation([x + dx / 2, y_ + dy / 2, z + dz / 2]); return m
-    sal = recorrido
-    funda = [caja(-t, -j - t, -t, La, Wi + 2 * t, t), caja(-t, -j - t, 0, La, t, Hi),
-             caja(-t, h + j, 0, La, t, Hi), caja(-t, -j, 0, t, Wi, Hi)]
-    topes = [caja(tope_x - t, -j - t, tope_z, TOPE_LARGO, t + TOPE_SALIENTE, t),
-             caja(tope_x - t, h + j - TOPE_SALIENTE, tope_z, TOPE_LARGO, t + TOPE_SALIENTE, t)]
-    band = pieza.copy(); band.apply_translation([sal, 0, 0])
-    tapa = caja(w + sal, -j - t, -t, t, Wi + 2 * t, Hi + 2 * t)
-    fig = plt.figure(figsize=(14, 7)); ax = fig.add_subplot(projection="3d")
-    luz = np.array([0.3, -0.5, 0.8]); luz /= np.linalg.norm(luz)
-    for m, col in [(trimesh.util.concatenate(funda), (0.78, 0.62, 0.44)), (band, (0.85, 0.2, 0.15)),
-                   (tapa, (0.78, 0.62, 0.44)), (trimesh.util.concatenate(topes), (0.2, 0.2, 0.2))]:
-        sh = 0.4 + 0.6 * np.clip(m.face_normals @ luz, 0, 1)
-        ax.add_collection3d(Poly3DCollection(m.vertices[m.faces], facecolors=np.outer(sh, col), edgecolors="none"))
-    ax.set_xlim(-5, w + sal + 5); ax.set_ylim(-170, 230); ax.set_zlim(-90, 110)
-    ax.set_box_aspect((w + sal + 10, 400, 200)); ax.view_init(40, -60); ax.set_axis_off()
-    ax.set_title("Funda sin la tapa superior, bandeja abierta hasta los topes", fontsize=10)
-    fig.savefig(os.path.join(aqui, "vista_previa.png"), dpi=130, bbox_inches="tight")
-except ImportError:
-    pass
-
-# ---------- vista superior acotada ----------
-try:
-    fig, ax = plt.subplots(figsize=(13, 4.6))
-    def dib(poly, **k):
-        c = np.array(poly.exterior.coords); ax.fill(c[:, 0] - ex0, c[:, 1] - ey0, **k)
-    dib(box(ex0 - t, ey0 - j - t, ex0 + Li, ey1 + j + t), fc="#c9a26f", ec="k", lw=0.6)
-    dib(exterior, fc="#d9382b", ec="k", lw=0.6)
-    for g in getattr(corte, "geoms", [corte]):
-        dib(g, fc="#7c1810", ec="k", lw=0.6)
-    dib(herramienta, fc="#b9bec6", ec="k", lw=0.5)
-    for yy in (-j - t, h + j - TOPE_SALIENTE):
-        ax.add_patch(plt.Rectangle((tope_x - t, yy), TOPE_LARGO, t + TOPE_SALIENTE, fc="k"))
-    for yy in (0, h - CANAL_PROF):
-        ax.add_patch(plt.Rectangle((CANAL_INICIO, yy), w - CANAL_INICIO, CANAL_PROF, fc="none", ec="w", ls=":", lw=0.8))
-    ax.add_patch(plt.Rectangle((w, -j - t), t, Wi + 2 * t, fc="#a67c46", ec="k", lw=0.6))
-    ax.annotate("tope", (tope_x - t + 4, h + j + t), (tope_x - 30, h + 14), arrowprops=dict(arrowstyle="->"))
-    ax.annotate("canal del tope (cerrado al fondo)", (60, h - 1.2), (40, h + 14), arrowprops=dict(arrowstyle="->"))
-    ax.annotate("tapa frontal", (w + t, h / 2), (w + 10, h / 2), arrowprops=dict(arrowstyle="->"), va="center")
-    ax.set_title(f"Vista superior, cerrada (mm) - bandeja {w:.1f} x {h:.1f} x {alto:.0f}, "
-                 f"funda {La:.1f} x {Wi + 2 * t:.1f} x {Hi + 2 * t:.1f}", fontsize=10)
-    ax.set_aspect("equal"); ax.set_xlim(-8, w + 45); ax.set_ylim(-10, h + 20); ax.grid(alpha=0.3)
-    fig.savefig(os.path.join(aqui, "vista_superior.png"), dpi=130, bbox_inches="tight")
-except NameError:
-    pass
+recorrido = (L - TOPE_LARGO) - CANAL_INICIO
+print(f"caja armada: {xf + g + tl + 2.5:.1f} x {Yo1 - Yo0 + 3.6:.1f} x {za_ + R - Zb:.1f} mm | la bandeja sale {recorrido:.0f} mm de {w:.0f}")
+for n_, m in [("tapa trasera", trasera), ("marco frontal", marco), ("tapa con bisagra", tapa), ("pasador", pasador)]:
+    print(f"{n_}: {' x '.join(f'{v:.1f}' for v in m.extents)} mm | estanca: {m.is_watertight}")
