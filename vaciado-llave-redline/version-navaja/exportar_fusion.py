@@ -139,7 +139,12 @@ piezas = [("MDF_cara_inferior", ext(g.cara, zi0 - t, zi0), MDF), ("MDF_cara_supe
           ("broche_seguro_eje", seguro(P, False), AMAR), ("broche_seguro_esquina", seguro(C2, True), AMAR)]
 piezas.append(("llave_referencia_calcado", ext(g.herr, g.BASE, g.BASE + 13), cq.Color(0.75, 0.77, 0.8)))   # el calcado de la foto, como solido
 def guardar(solidos, archivo):                     # un solo conjunto de cuerpos, sin componentes ni ensamblaje
-    cq.exporters.export(cq.Compound.makeCompound(solidos), os.path.join(g.aqui, archivo))
+    from OCP.STEPControl import STEPControl_Writer, STEPControl_AsIs
+    from OCP.Interface import Interface_Static
+    w = STEPControl_Writer()
+    Interface_Static.SetIVal_s("write.step.assembly", 0)     # 0 = no escribir estructura de ensamblaje
+    w.Transfer(cq.Compound.makeCompound(solidos).wrapped, STEPControl_AsIs)
+    w.Write(os.path.join(g.aqui, archivo))
 for k, (n, s, col) in enumerate(piezas):
     print(f"Cuerpo {k + 1}:", end=" ")
     print(f"{n:24s} valido={s.isValid()} solidos={len(s.Solids())} caras={len(s.Faces())} volumen={s.Volume() / 1000:.2f} cm3")
