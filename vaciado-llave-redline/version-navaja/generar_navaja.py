@@ -261,6 +261,14 @@ cal = box(0, 0, 100, 40)
 for i, dx in enumerate(dxs):
     cal = cal.difference(cerr(dx, (17 + 33 * i, 27)))
     cal = cal.difference(box(8.5 + 33 * i - dx, 6 - dx, 8.5 + 33 * i + PESTANA + dx, 6 + t + dx))
+# 5) calibre impreso (placa de 3 mm que imita al MDF): para probar remache y seguro sin cortar MDF,
+#    y tres diametros de agujero para el cuerpo del remache (el eje de la bisagra)
+cal5 = cal
+for i, dd in enumerate((0.1, 0.15, 0.25)):
+    cal5 = cal5.difference(Point(17 + 33 * i, 12).buffer(EJE_D / 2 + dd, resolution=48))
+m5 = extruir(cal5.difference(unary_union([box(8.5 + 33 * i - 0.2, 5.8, 8.5 + 33 * i + PESTANA + 0.2, 6.2 + t) for i in range(3)])), 0, t)
+marcas = [B(6 + 33 * i, 6 + 33 * i + 1.2 * (i + 1), 37, 41, t - 0.6, t + 1) for i in range(3)]   # 1, 2 y 3 muescas = -0,1 / 0 / +0,1
+D(m5, *marcas).export(os.path.join(pr, "5_calibre_remache_impreso.stl"))
 el, yy = [], 5.0
 def pon(poly, etiqueta, marcas=()):
     global yy
