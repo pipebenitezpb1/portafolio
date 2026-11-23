@@ -2,8 +2,8 @@
 #
 # Construye el estuche tipo navaja DENTRO de Fusion, paso a paso, para que la linea de tiempo
 # guarde el proceso.  Cada paso de proceso.json es: un boceto con un perfil plano, y una
-# extrusion que crea un cuerpo, le suma o le resta.  Por cada pieza queda un grupo en la
-# linea de tiempo con su nombre.  Ademas pone la foto como lienzo y dibuja el calcado.
+# extrusion que crea un cuerpo, le suma o le resta.  Los pasos quedan sueltos, en orden, en la
+# linea de tiempo (sin grupos).  Ademas pone la foto como lienzo y dibuja el calcado.
 # Todo queda como cuerpos en la raiz (sin componentes).
 #
 # Uso: abrir un diseno nuevo > Utilidades > Complementos > Scripts y complementos > "+" >
@@ -12,7 +12,7 @@
 #      clic derecho > Calibrar > clic en las dos cruces rojas > 200 mm.
 import adsk.core, adsk.fusion, traceback, os, json
 
-AGRUPAR_POR_PIEZA = True     # False = dejar todos los pasos sueltos en la linea de tiempo, sin grupos
+AGRUPAR_POR_PIEZA = False    # False = dejar todos los pasos sueltos en la linea de tiempo, sin grupos
 
 
 def run(context):
