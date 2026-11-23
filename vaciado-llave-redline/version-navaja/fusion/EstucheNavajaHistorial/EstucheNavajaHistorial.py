@@ -12,6 +12,8 @@
 #      clic derecho > Calibrar > clic en las dos cruces rojas > 200 mm.
 import adsk.core, adsk.fusion, traceback, os, json
 
+AGRUPAR_POR_PIEZA = True     # False = dejar todos los pasos sueltos en la linea de tiempo, sin grupos
+
 
 def run(context):
     app = adsk.core.Application.get()
@@ -69,6 +71,8 @@ def run(context):
                         cur.sketchFittedSplines.add(col)
 
         def agrupar(inicio, nombre):
+            if not AGRUPAR_POR_PIEZA:
+                return
             try:
                 fin = tl.markerPosition - 1
                 if fin > inicio:
