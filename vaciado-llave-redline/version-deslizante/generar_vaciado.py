@@ -19,6 +19,8 @@ import trimesh
 from shapely.geometry import Polygon, Point, box
 
 # ---- herramienta / vaciado ----
+LARGO_MEDIDO = None        # mm, largo total real de la llave (None = usar el de la foto)
+ANCHO_MEDIDO = None        # mm, ancho maximo real, en la mordaza (None = usar el de la foto)
 HOLGURA = 1.0              # mm de juego alrededor de la llave
 ALTURA_HERRAMIENTA = 20.0  # mm, grosor maximo de la llave (mango). MEDIR Y AJUSTAR
 PROFUNDIDAD = ALTURA_HERRAMIENTA  # mm de profundidad del vaciado
@@ -52,6 +54,9 @@ PASADOR_D = 3.0            # mm, diametro del pasador impreso
 aqui = os.path.dirname(os.path.abspath(__file__))
 pts = np.array(json.load(open(os.path.join(aqui, "contorno_mm.json"))))
 herramienta = Polygon(pts).buffer(0)
+if LARGO_MEDIDO or ANCHO_MEDIDO:
+    from shapely import affinity as _af
+    herramienta = _af.scale(herramienta, (LARGO_MEDIDO or herramienta.bounds[2]) / herramienta.bounds[2], (ANCHO_MEDIDO or herramienta.bounds[3]) / herramienta.bounds[3], origin=(0, 0))
 # suaviza el ruido del trazado y agrega la holgura
 vaciado = herramienta.buffer(0.8).buffer(-0.8).simplify(0.05).buffer(HOLGURA, resolution=16)
 

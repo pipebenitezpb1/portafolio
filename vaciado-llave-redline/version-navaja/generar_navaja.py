@@ -25,6 +25,8 @@ from shapely.ops import unary_union
 from shapely import affinity
 
 # ---- llave / vaciado ----
+LARGO_MEDIDO = None        # mm, largo total real de la llave (None = usar el de la foto, 200,0)
+ANCHO_MEDIDO = None        # mm, ancho maximo real, en la mordaza (None = usar el de la foto, 49,9)
 HOLGURA = 1.0              # mm de juego alrededor de la llave
 ALTURA_HERRAMIENTA = 20.0  # mm, grosor maximo de la llave (mango). MEDIR Y AJUSTAR
 BASE = 2.0                 # mm de piso bajo la llave
@@ -54,6 +56,8 @@ FIADOR_SALIENTE = 1.3      # mm que sobresale el resalte
 
 aqui = os.path.dirname(os.path.abspath(__file__))
 herr = Polygon(np.array(json.load(open(os.path.join(aqui, "contorno_mm.json"))))).buffer(0)
+if LARGO_MEDIDO or ANCHO_MEDIDO:                   # corrige el calcado de la foto con medidas reales
+    herr = affinity.scale(herr, (LARGO_MEDIDO or herr.bounds[2]) / herr.bounds[2], (ANCHO_MEDIDO or herr.bounds[3]) / herr.bounds[3], origin=(0, 0))
 vaciado = herr.buffer(0.8).buffer(-0.8).simplify(0.05).buffer(HOLGURA, resolution=16)
 alto = BASE + ALTURA_HERRAMIENTA
 t = ESPESOR_MDF
