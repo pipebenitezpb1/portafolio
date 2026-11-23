@@ -5,8 +5,10 @@ Sin pegamento ni tornillos; solo MDF cortado e impresion 3D:
     unidas por pestanas y ranuras;
   - bandeja impresa con el vaciado de la llave, que gira hacia afuera como la
     hoja de una navaja;
-  - 2 remaches impresos de un cuarto de vuelta que sujetan las caras; el del
-    extremo de la corona es ademas el eje (bisagra) de la bandeja;
+  - bisagra impresa de nudillos y pasador en la esquina de la corona: una hoja
+    fija apoyada en el lomo (dos nudillos) y un nudillo central en la bandeja;
+  - 2 remaches impresos de un cuarto de vuelta que sujetan las caras; el de la
+    corona es ademas el pasador de la bisagra;
   - 2 seguros impresos que impiden que los remaches se giren solos;
   - un fiador flexible en la punta de la bandeja que hace "clic" al cerrar.
 
@@ -27,6 +29,7 @@ HOLGURA = 0.7              # mm de juego alrededor de la llave
 ALTURA_HERRAMIENTA = 20.0  # mm, grosor maximo de la llave (mango). MEDIR Y AJUSTAR
 BASE = 2.0                 # mm de piso bajo la llave
 PARED = 4.0                # mm de pared alrededor del vaciado
+PARED_LOMO = 5.5           # mm de pared hacia el lomo (deja sitio a la hoja de la bisagra)
 PARED_PUNTA = 6.0          # mm de pared en la punta (aloja el fiador)
 DEDO_ANCHO = 24.0          # mm, ancho de la ranura para sacar la llave
 DEDO_POS = 0.60            # posicion de la ranura (0 = corona, 1 = mordaza)
@@ -41,6 +44,10 @@ PESTANA = 16.0             # mm, largo de las pestanas
 EJE_D = 10.0               # mm, diametro del cuerpo del remache (eje de giro)
 CUELLO_D = 6.2             # mm, cuello que atraviesa el MDF
 ALA = (11.0, 4.0, 3.0)     # mm, largo x ancho x alto de la cabeza
+# ---- bisagra ----
+NUDILLO_R = 8.0            # mm, radio exterior de los nudillos
+HOJA = (40.0, 2.2)         # mm, largo y espesor de la hoja fija
+NUDILLO_Z = (5.75, 16.25)  # mm, entre estas alturas va el nudillo de la bandeja
 # ---- fiador ----
 FIADOR_LARGO = 18.0        # mm, largo de la lamina flexible
 FIADOR_SALIENTE = 1.3      # mm que sobresale el resalte
@@ -54,12 +61,13 @@ vx0, vy0, vx1, vy1 = vaciado.bounds
 
 # ---------------- contorno de la bandeja (2D) ----------------
 T0 = vaciado.buffer(PARED, resolution=16)
-yb = vy0 - PARED                                  # borde recto de la bandeja (lado del lomo)
+yb = vy0 - PARED_LOMO                                  # borde recto de la bandeja (lado del lomo)
 ur = vx1 + PARED_PUNTA                            # cara plana de la punta
-rho = EJE_D / 2 + 0.25 + 3.2                      # radio del talon alrededor del eje
-for up in np.arange(15, -20, -0.25):              # eje lo mas cerca posible de la corona
-    P = np.array([up, yb + rho])
-    if vaciado.distance(Point(P)) >= EJE_D / 2 + 0.25 + 2.5:
+rho = NUDILLO_R                                   # radio del nudillo alrededor del eje
+y_lomo = yb - JUEGO_LOMO                          # cara interior del lomo
+for up in np.arange(15, -30, -0.25):              # eje lo mas cerca posible de la corona
+    P = np.array([up, y_lomo + HOJA[1] + 0.4 + rho])
+    if vaciado.distance(Point(P)) >= rho + 0.4 + 1.3:
         break
 def envolvente(u):
     g = T0.intersection(LineString([(u, -100), (u, 200)]))
@@ -104,20 +112,43 @@ bandeja = U(D(extruir(bandeja2d, 0, alto), extruir(corte, BASE, alto + 1)), D(re
 
 # ---------------- MDF: caras, lomo y extremo ----------------
 zi0, zi1 = -JUEGO_Z, alto + JUEGO_Z               # caras interiores de las dos tapas
-y_lomo = yb - JUEGO_LOMO                          # cara interior del lomo
 x_ext = ur + JUEGO_PUNTA                          # cara interior del extremo
 def abre(ang, poly=None):
     return affinity.rotate(silueta if poly is None else poly, ang, origin=tuple(P))
 def lomo_desde(u_ini): return box(u_ini, y_lomo - t, x_ext + t, y_lomo)
 extremo2d = box(x_ext, y_lomo, x_ext + t, v_plano)
-# el lomo empieza donde deja abrir la bandeja ~180 grados (como una navaja)
+# bisagra: hoja fija contra el lomo, con dos nudillos (arriba y abajo) unidos por un refuerzo
+def bisagra2d(u_ini):
+    hoja = box(u_ini, y_lomo, u_ini + HOJA[0], y_lomo + HOJA[1])
+    ref = unary_union([Point(P).buffer(rho, resolution=32), box(u_ini, y_lomo, u_ini + 12, y_lomo + HOJA[1])]).convex_hull
+    ref = unary_union([ref.intersection(box(u_ini, -100, 500, 200)), Point(P).buffer(rho, resolution=32)])
+    return hoja, ref
+def bandejas2d(u_ini):                             # contorno de la bandeja en el tramo central y en los extremos
+    hoja, ref = bisagra2d(u_ini)
+    centro = silueta.difference(hoja.buffer(0.4, join_style=2))
+    return centro, centro.difference(ref.buffer(0.4))
+def choca(u_ini, ang):
+    hoja, ref = bisagra2d(u_ini); centro, extremos = bandejas2d(u_ini)
+    fijo = unary_union([lomo_desde(u_ini), hoja])
+    return abre(ang, centro).intersection(fijo).area + abre(ang, extremos).intersection(fijo.union(ref)).area > 0.02
+# el lomo y la hoja empiezan donde dejan abrir la bandeja al menos 170 grados
 u_lomo = P[0] + 1
-while abre(178).intersection(lomo_desde(u_lomo)).area > 0.01:
+while choca(u_lomo, 170):
     u_lomo += 0.5
 lomo2d = lomo_desde(u_lomo)
-ang_max = next(a for a in np.arange(150, 360, 0.5) if abre(a).intersection(lomo2d).area > 0.05)
+hoja2d, ref2d = bisagra2d(u_lomo)
+b_centro, b_extremos = bandejas2d(u_lomo)
+assert vaciado.distance(ref2d) > 1.2 and not choca(u_lomo, 0)
+ang_max = next(a for a in np.arange(150, 360, 0.5) if choca(u_lomo, a))
+zc0, zc1 = NUDILLO_Z
+bandeja = D(bandeja, D(extruir(silueta.buffer(1), -1, alto + 1), U(extruir(b_centro, zc0 + 0.15, zc1 - 0.15),
+            extruir(b_extremos, -2, zc0 + 0.15), extruir(b_extremos, zc1 - 0.15, alto + 2))))
+agujero = cil(P[0], P[1], EJE_D / 2 + 0.15, zi0 - 1, zi1 + 1)
+tab_h = (u_lomo + 3, u_lomo + 13)                  # pestanas de la hoja hacia las caras
+bisagra = D(U(extruir(hoja2d, zi0, zi1), extruir(ref2d, zi0, zc0 - 0.15), extruir(ref2d, zc1 + 0.15, zi1),
+              B(*tab_h, y_lomo, y_lomo + HOJA[1], zi0 - t, zi1 + t)), agujero)
 
-cara = unary_union([silueta, Point(P).buffer(rho + 1.5, resolution=32),
+cara = unary_union([silueta, Point(P).buffer(rho + 2.5, resolution=32),
                     box(u_lomo - MARGEN, y_lomo - t - MARGEN, x_ext + t + MARGEN, yb + 3),
                     box(ur - 3, y_lomo - t - MARGEN, x_ext + t + MARGEN, v_plano + MARGEN)])
 cara = cara.buffer(2).buffer(-4).buffer(2)
@@ -133,7 +164,7 @@ assert tabs_e[0][0] > v_res + 3
 pulgar = Point(145, envolvente(145) + 3).buffer(10, resolution=32)   # rebaje para empujar la bandeja
 cara = cara.difference(unary_union(
     [cerradura(P, True), cerradura(C2, False), pulgar] +
-    [box(a, y_lomo - t, b, y_lomo) for a, b in tabs_l] + [box(x_ext, a, x_ext + t, b) for a, b in tabs_e]))
+    [box(a, y_lomo - t, b, y_lomo) for a, b in tabs_l] + [box(tab_h[0] - 0.1, y_lomo, tab_h[1] + 0.1, y_lomo + HOJA[1] + 0.15)] + [box(x_ext, a, x_ext + t, b) for a, b in tabs_e]))
 
 def tira(largo, tabs, o, muescas=()):              # tira con pestanas arriba y abajo, coords (s, z)
     p = box(0, zi0, largo, zi1)
@@ -177,6 +208,7 @@ def girar(m, ang, eje):
     m = m.copy(); m.apply_transform(trimesh.transformations.rotation_matrix(np.radians(ang), eje))
     m.apply_translation(-m.bounds[0]); return m
 girar(bandeja, 0, [0, 0, 1]).export(os.path.join(aqui, "bandeja_navaja.stl"))
+girar(bisagra, 90, [1, 0, 0]).export(os.path.join(aqui, "bisagra_fija.stl"))   # acostada sobre el dorso de la hoja
 girar(remache((0, 0), True), 90, [1, 0, 0]).export(os.path.join(aqui, "remache_x2.stl"))
 girar(seguro((0, 0), True), 180, [1, 0, 0]).export(os.path.join(aqui, "seguro_x2.stl"))
 
@@ -200,4 +232,5 @@ cb = cara.bounds
 print(f"llave: {herr.bounds[2]:.1f} x {herr.bounds[3]:.1f} mm")
 print(f"estuche cerrado: {cb[2] - cb[0]:.1f} x {cb[3] - cb[1]:.1f} x {alto + 2 * JUEGO_Z + 2 * t:.1f} mm (+ cabezas de remache)")
 print(f"bandeja: {' x '.join(f'{v:.1f}' for v in bandeja.extents)} mm | estanca: {bandeja.is_watertight} | {bandeja.volume / 1000:.0f} cm3")
+print(f"bisagra fija: {' x '.join(f'{v:.1f}' for v in bisagra.extents)} mm | estanca: {bisagra.is_watertight}")
 print(f"remache estanco: {rem[0].is_watertight} | seguro estanco: {seg[0].is_watertight} | apertura maxima: {ang_max:.0f} grados")
