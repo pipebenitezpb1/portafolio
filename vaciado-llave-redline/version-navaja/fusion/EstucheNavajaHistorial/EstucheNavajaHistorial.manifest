@@ -1,0 +1,8 @@
+{
+	"autodeskProduct": "Fusion360",
+	"type": "script",
+	"author": "",
+	"description": {"": "Estuche tipo navaja: construye todas las piezas paso a paso para que quede el historial en la linea de tiempo"},
+	"supportedOS": "windows|mac",
+	"editEnabled": true
+}
