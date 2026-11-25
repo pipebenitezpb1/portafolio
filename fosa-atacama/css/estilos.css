@@ -1,0 +1,164 @@
+:root {
+  --abismo: #03060c;
+  --abismo-suave: rgba(3, 8, 16, 0.74);
+  --cian: #5fd4e6;
+  --cian-claro: #9fe8f2;
+  --amarillo: #f2b705;
+  --espuma: #eef4f8;
+  --espuma-tenue: rgba(238, 244, 248, 0.7);
+  --borde: rgba(95, 212, 230, 0.28);
+  --fuente-titulo: 'Fraunces', Georgia, serif;
+  --fuente-texto: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--abismo);
+  color: var(--espuma);
+  font-family: var(--fuente-texto);
+  overflow: hidden;
+}
+
+.oculto { display: none !important; }
+
+.telon {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+  z-index: 20;
+}
+.telon.activo { opacity: 1; }
+
+/* ---------- Portada ---------- */
+.portada {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(43, 123, 185, 0.35), transparent 60%),
+    linear-gradient(180deg, rgba(3, 8, 16, 0.55) 0%, rgba(3, 6, 12, 0.96) 70%, #000 100%);
+  z-index: 30;
+}
+.portada__contenido { max-width: 660px; text-align: center; }
+.portada__antetitulo { margin: 0 0 10px; letter-spacing: 0.32em; text-transform: uppercase; font-size: 12px; color: var(--cian); }
+.portada__titulo {
+  margin: 0;
+  font-family: var(--fuente-titulo);
+  font-weight: 800;
+  font-size: clamp(46px, 10vw, 108px);
+  line-height: 0.95;
+  color: var(--espuma);
+  text-shadow: 0 0 50px rgba(95, 212, 230, 0.35);
+}
+.portada__bajada { margin: 14px 0 22px; font-family: var(--fuente-titulo); font-size: clamp(18px, 3vw, 26px); color: var(--cian-claro); }
+.portada__texto { margin: 0 auto 28px; max-width: 500px; line-height: 1.55; color: var(--espuma-tenue); }
+.portada__botones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.portada__aviso { margin-top: 18px; font-size: 13px; color: var(--espuma-tenue); }
+
+.boton {
+  font: 500 15px/1 var(--fuente-texto);
+  padding: 14px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: rgba(238, 244, 248, 0.06);
+  color: var(--espuma);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+}
+.boton:hover { background: rgba(95, 212, 230, 0.16); border-color: var(--cian); }
+.boton:active { transform: scale(0.98); }
+.boton:disabled { opacity: 0.4; cursor: not-allowed; }
+.boton--principal { background: var(--amarillo); color: #111; border-color: var(--amarillo); font-weight: 600; }
+.boton--principal:hover { background: #ffd23f; }
+
+/* ---------- HUD ---------- */
+.hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+.hud button { pointer-events: auto; }
+.hud.sin-controles .controles { display: none !important; }
+
+.puntos-fase { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.puntos-fase li { width: 34px; height: 4px; border-radius: 2px; background: rgba(238, 244, 248, 0.2); transition: background 0.6s; }
+.puntos-fase li.hecho { background: var(--cian); }
+.puntos-fase li.actual { background: var(--cian-claro); box-shadow: 0 0 10px var(--cian); }
+
+.indicacion {
+  position: absolute;
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--cian-claro);
+  background: rgba(3, 8, 16, 0.55);
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: opacity 0.5s;
+}
+.indicacion:empty { opacity: 0; }
+
+.relato {
+  position: absolute;
+  left: 32px;
+  bottom: 40px;
+  max-width: min(580px, calc(100vw - 240px));
+  padding: 20px 24px;
+  border-left: 3px solid var(--amarillo);
+  background: linear-gradient(90deg, var(--abismo-suave), rgba(3, 8, 16, 0.25));
+  backdrop-filter: blur(4px);
+  border-radius: 0 10px 10px 0;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.relato.saliendo { opacity: 0; transform: translateY(10px); }
+.relato__lugar { margin: 0 0 8px; font-size: 12px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--cian); }
+.relato__texto {
+  margin: 0;
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  font-size: clamp(18px, 2.1vw, 25px);
+  line-height: 1.38;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+}
+
+.medidor {
+  position: absolute;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 132px;
+  padding: 16px 14px;
+  text-align: center;
+  background: var(--abismo-suave);
+  border: 1px solid var(--borde);
+  border-radius: 16px;
+  backdrop-filter: blur(4px);
+}
+.medidor__etiqueta { margin: 0; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--espuma-tenue); }
+.medidor__cifra { margin: 4px 0 10px; font: 700 24px var(--fuente-texto); color: var(--amarillo); font-variant-numeric: tabular-nums; }
+.medidor__cifra small { font-size: 13px; color: var(--espuma-tenue); }
+.medidor__tubo { position: relative; width: 10px; height: 180px; margin: 0 auto 12px; border-radius: 5px; background: linear-gradient(180deg, #2b7bb9, #0b2a44 30%, #000); overflow: hidden; }
+.medidor__relleno { position: absolute; left: 0; right: 0; top: 0; height: 0; background: rgba(242, 183, 5, 0.85); box-shadow: 0 0 10px var(--amarillo); }
+.medidor__presion { margin: 4px 0 0; font: 600 16px var(--fuente-texto); color: var(--cian-claro); font-variant-numeric: tabular-nums; }
+
+.boton-accion { position: absolute; right: 28px; bottom: 40px; }
+
+.atajos { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); margin: 0; font-size: 11px; color: rgba(238, 244, 248, 0.45); white-space: nowrap; }
+
+@media (max-width: 720px) {
+  .relato { left: 16px; right: 16px; bottom: 96px; max-width: none; padding: 14px 16px; }
+  .medidor { top: auto; bottom: 16px; right: auto; left: 16px; transform: none; width: auto; display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; }
+  .medidor__tubo, .medidor__etiqueta { display: none; }
+  .medidor__cifra { margin: 0; font-size: 18px; }
+  .boton-accion { right: 16px; bottom: 16px; }
+  .atajos { display: none; }
+  .indicacion { white-space: normal; text-align: center; width: calc(100vw - 32px); }
+}

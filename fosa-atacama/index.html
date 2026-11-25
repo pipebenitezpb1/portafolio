@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fosa de Atacama · 8.000 metros</title>
+  <meta name="description" content="Experiencia de realidad virtual para Meta Quest: desciende en un lander hasta el fondo de la Fosa de Atacama y descubre la vida que resiste la presión, la oscuridad y la escasez.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="js/componentes.js"></script>
+</head>
+<body>
+  <a-scene id="escena"
+           renderer="antialias: true; colorManagement: true; foveationLevel: 1"
+           fog="type: exponential; color: #0a1424; density: 0.006"
+           background="color: #0a1424"
+           vr-mode-ui="enabled: false"
+           loading-screen="dotsColor: #f2b705; backgroundColor: #03060c"
+           device-orientation-permission-ui="enabled: false"
+           operador-vr>
+
+    <a-entity id="luzAmbiente" light="type: hemisphere; color: #8fb6e0; groundColor: #0b1a26; intensity: 0.5"></a-entity>
+    <a-entity id="luzSol" light="type: directional; color: #c9dcff; intensity: 0.5" position="-30 40 10"></a-entity>
+
+    <!-- ============ SUPERFICIE: barco frente a Antofagasta ============ -->
+    <a-entity id="superficie" position="200 0 0">
+      <a-entity cielo-estrellas></a-entity>
+      <a-entity oceano position="0 -2.5 0"></a-entity>
+      <a-entity costa></a-entity>
+      <a-entity barco></a-entity>
+      <a-entity lander="modo: colgando" position="0 2.3 -5.2"></a-entity>
+      <a-entity light="type: point; color: #ffd9a0; intensity: 2.5; distance: 12; decay: 1.5" position="0 4.2 -2"></a-entity>
+    </a-entity>
+
+    <!-- ============ PROFUNDIDAD: alrededor del lander ============ -->
+    <a-entity id="profundidad">
+      <a-entity lander="modo: interior"></a-entity>
+      <a-entity fondo-marino></a-entity>
+      <a-entity nieve-marina></a-entity>
+      <a-entity bioluminiscencia></a-entity>
+      <a-entity rayos-sol></a-entity>
+      <a-entity medusa></a-entity>
+      <a-entity medusa="color: #8ef5c8"></a-entity>
+      <a-entity medusa></a-entity>
+      <a-entity medusa="color: #b49cff"></a-entity>
+      <a-entity anfipodos></a-entity>
+      <a-entity pez-caracol></a-entity>
+    </a-entity>
+
+    <!-- ============ Persona ============ -->
+    <a-entity id="rig" position="200 0 0">
+      <a-entity id="camara" camera="fov: 72; near: 0.03" look-controls="pointerLockEnabled: false; magicWindowTrackingEnabled: true" wasd-controls="enabled: false" position="0 1.6 0">
+        <a-entity telon-vr></a-entity>
+        <a-entity id="linternaPantalla" linterna="intensidad: 3; alcance: 11" position="0.15 -0.2 0"></a-entity>
+      </a-entity>
+
+      <a-entity id="manoIzquierda" hand-controls="hand: left; handModelStyle: lowPoly; color: #d9b38c">
+        <a-entity id="linternaMano" visible="false">
+          <a-cylinder radius="0.018" height="0.14" rotation="90 0 0" position="0 0 -0.06" color="#30353a" material="metalness: 0.6; roughness: 0.4"></a-cylinder>
+          <a-entity linterna="intensidad: 7; alcance: 13" position="0 0 -0.14"></a-entity>
+        </a-entity>
+      </a-entity>
+      <a-entity id="manoDerecha" hand-controls="hand: right; handModelStyle: lowPoly; color: #d9b38c"></a-entity>
+
+      <a-entity id="consola" position="0 0 -0.45" visible="false">
+        <a-cylinder position="0 0.45 0" radius="0.035" height="0.9" color="#3a3f45"></a-cylinder>
+        <a-box position="0 0.915 0" rotation="20 0 0" width="0.34" height="0.03" depth="0.28" color="#2b2f33"></a-box>
+        <a-entity id="palanca" palanca="etiqueta: SOLTAR EL LANDER" position="0 0.935 0" rotation="20 0 0"></a-entity>
+      </a-entity>
+
+      <a-entity id="panelVR" panel-relato position="-0.62 1.28 -1.1" rotation="-10 28 0" visible="false"></a-entity>
+    </a-entity>
+  </a-scene>
+
+  <!-- ============ Interfaz en pantalla ============ -->
+  <div id="telon" class="telon"></div>
+
+  <section id="portada" class="portada">
+    <div class="portada__contenido">
+      <p class="portada__antetitulo">Chile Re-Descubre · Hecho en Chile</p>
+      <h1 class="portada__titulo">Fosa de Atacama</h1>
+      <p class="portada__bajada">8.000 metros bajo el Pacífico</p>
+      <p class="portada__texto">
+        Desciende en un lander hasta el fondo de la fosa y descubre cómo la vida resiste
+        la presión, la oscuridad y la escasez de alimento.
+      </p>
+      <div class="portada__botones">
+        <button id="botonVR" class="boton boton--principal" disabled>Entrar en realidad virtual</button>
+        <button id="botonPantalla" class="boton">Ver en pantalla</button>
+      </div>
+      <p id="avisoPortada" class="portada__aviso">Revisando si este navegador permite realidad virtual…</p>
+    </div>
+  </section>
+
+  <div id="hud" class="hud oculto">
+    <ol id="puntosFase" class="puntos-fase" aria-label="Avance del relato"></ol>
+    <p id="indicacion" class="indicacion"></p>
+
+    <article id="relato" class="relato">
+      <p id="relatoLugar" class="relato__lugar"></p>
+      <p id="relatoTexto" class="relato__texto"></p>
+    </article>
+
+    <aside class="medidor">
+      <p class="medidor__etiqueta">Profundidad</p>
+      <p class="medidor__cifra"><span id="cifraProfundidad">0</span><small> m</small></p>
+      <div class="medidor__tubo"><div id="tuboRelleno" class="medidor__relleno"></div></div>
+      <p class="medidor__etiqueta">Presión</p>
+      <p class="medidor__presion"><span id="cifraPresion">1</span> atm</p>
+    </aside>
+
+    <button id="botonAccion" class="boton boton--principal boton-accion controles oculto"></button>
+    <p class="atajos controles">Arrastra para mirar · Enter: acción · H: ocultar controles</p>
+  </div>
+
+  <script type="module" src="js/principal.js"></script>
+</body>
+</html>
