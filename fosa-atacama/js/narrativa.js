@@ -18,9 +18,7 @@ export const FASES = [
     id: 'superficie',
     vista: 'barco',
     lugar: 'Océano Pacífico · frente a Antofagasta',
-    texto:
-      'Bajo estas aguas se abre la Fosa de Atacama, uno de los ambientes más extremos y ' +
-      'desconocidos del planeta: alcanza profundidades cercanas a los 8.000 metros.',
+    texto: 'Bajo estas aguas se abre la Fosa de Atacama: casi 8.000 metros, uno de los lugares más extremos del planeta.',
     requiere: 'palanca',
     accion: 'soltar',
     etiqueta: 'SOLTAR EL LANDER',
@@ -41,9 +39,7 @@ export const FASES = [
     id: 'fondo',
     vista: 'lander',
     lugar: 'Casi 8.000 metros',
-    texto:
-      'Llegaste al fondo de la fosa. La presión es unas 800 veces la de la superficie ' +
-      'y aquí nunca ha llegado la luz del sol.',
+    texto: 'El fondo de la fosa. La presión es 800 veces la de la superficie y nunca ha llegado la luz del sol.',
     requiere: 'palanca',
     accion: 'focos',
     etiqueta: 'ENCENDER LOS FOCOS',
@@ -56,9 +52,7 @@ export const FASES = [
     id: 'carnada',
     vista: 'lander',
     lugar: 'Zona hadal',
-    texto:
-      'Aquí abajo casi no hay alimento: lo que llega cae desde arriba como nieve marina. ' +
-      'Por eso los científicos ponen carnada frente a las cámaras: atrae a la vida que se esconde en la oscuridad.',
+    texto: 'Aquí casi no llega alimento. Por eso los científicos ponen carnada frente a las cámaras.',
     requiere: 'palanca',
     accion: 'carnada',
     etiqueta: 'BAJAR LA CARNADA',
@@ -72,22 +66,31 @@ export const FASES = [
     vista: 'lander',
     lugar: 'Especies nuevas para la ciencia',
     texto:
-      'En la fosa viven especies que nadie conocía: el pez caracol azul Paraliparis selti ' +
-      '(«selti» significa azul en kunza) y Dulcibella camanchaca, un crustáceo cazador ' +
-      'hallado a 7.902 m y nombrado como la niebla del desierto.',
+      'El anfípodo gigante Eurythenes atacamensis, de 8 centímetros. El pez caracol azul Paraliparis selti. ' +
+      'Y Dulcibella camanchaca, un cazador hallado a 7.902 metros.',
     requiere: 'continuar',
     duracionMinima: 10,
   },
   {
-    id: 'final',
+    id: 'ascenso',
     vista: 'lander',
+    lugar: 'El regreso',
+    texto: 'Para volver, el lander suelta su lastre y sube solo, impulsado por sus esferas de vidrio.',
+    requiere: 'palanca',
+    accion: 'lastre',
+    etiqueta: 'SOLTAR EL LASTRE',
+    indicacion: 'Empuja la palanca hacia ti para soltar el lastre',
+    botonPantalla: 'Soltar el lastre',
+    duracionMinima: 5,
+    segundosDespues: 27,
+  },
+  {
+    id: 'final',
+    vista: 'barco',
     lugar: 'Expediciones chilenas · desde 2018',
-    texto:
-      'En 2018, la expedición Atacamex llevó el lander Audacia a 8.081 metros, la primera vez que la ciencia ' +
-      'chilena tocó el punto más profundo de la fosa. Desde entonces, cada descenso revela cómo la vida ' +
-      'resiste la presión, la oscuridad y la escasez.',
+    texto: 'En 2018, el Audacia tocó por primera vez el punto más profundo de la fosa: 8.081 metros. Cada descenso trae algo que nadie había visto.',
     requiere: 'continuar',
-    duracionMinima: 6,
+    duracionMinima: 8,
     reinicia: true,
   },
 ];
@@ -96,57 +99,14 @@ export const FASES = [
 // que marca el medidor en ese momento; entre hitos la profundidad avanza de forma pareja.
 // evento: 'sumergible' hace aparecer el Limiting Factor; 'idoos', la línea de sensores.
 export const HITOS = [
-  {
-    t: 0,
-    profundidad: 0,
-    lugar: 'Descenso',
-    texto: 'Acompañas a un lander: un vehículo sin tripulación que cae libre hasta el fondo con cámaras, luces y sensores. Mira a tu alrededor.',
-  },
-  {
-    t: 11,
-    profundidad: 200,
-    lugar: '200 metros',
-    texto: 'Aquí se acaba la luz del sol. Desde este punto, el océano está siempre a oscuras.',
-  },
-  {
-    t: 22,
-    profundidad: 1000,
-    lugar: '1.000 metros · Zona de medianoche',
-    texto: 'La única luz es la que producen los propios animales: la bioluminiscencia.',
-  },
-  {
-    t: 34,
-    profundidad: 4000,
-    lugar: '4.000 metros · Zona abisal',
-    texto: 'El agua está cerca de los 2 °C y la presión supera las 400 atmósferas. La mayor parte del fondo de los océanos está a esta profundidad; la fosa sigue bajando.',
-  },
-  {
-    t: 46,
-    profundidad: 5400,
-    lugar: '21 de enero de 2022',
-    texto: 'Por aquí bajaron los primeros seres humanos: Osvaldo Ulloa, del Instituto Milenio de Oceanografía, y el explorador Victor Vescovo llegaron a 8.069 metros en el sumergible Limiting Factor.',
-    evento: 'sumergible',
-    foto: true,
-  },
-  {
-    t: 63,
-    profundidad: 6000,
-    lugar: '6.000 metros · Zona hadal',
-    texto: 'Bajo los 6.000 metros solo quedan las fosas. Su nombre viene de Hades, el inframundo griego. Las paredes de la Fosa de Atacama se cierran a tu alrededor.',
-  },
-  {
-    t: 75,
-    profundidad: 7000,
-    lugar: 'Observatorio IDOOS · desde 2023',
-    texto: 'Chile instaló en la fosa su primer observatorio del océano profundo: líneas de sensores que miden corrientes, temperatura, salinidad y oxígeno, y sensores de presión en el fondo que registran cómo se deforma la placa.',
-    evento: 'idoos',
-  },
-  {
-    t: 90,
-    profundidad: 7700,
-    lugar: 'Llegando al fondo',
-    texto: 'A esta profundidad cabría el Aconcagua completo, y todavía quedaría agua encima.',
-  },
+  { t: 0, profundidad: 0, lugar: 'Descenso', texto: 'Acompañas al lander Audacia, que cae libre hacia el fondo. Apunta la linterna a lo que veas.' },
+  { t: 11, profundidad: 200, lugar: '200 metros', texto: 'Se acaba la luz del sol. Aquí casi no hay oxígeno: es la zona de mínimo de oxígeno del norte de Chile.' },
+  { t: 22, profundidad: 1000, lugar: '1.000 metros · Zona de medianoche', texto: 'La única luz es la de los propios animales.' },
+  { t: 34, profundidad: 4000, lugar: '4.000 metros · Zona abisal', texto: 'Aparece la ladera de la fosa. Aquí las cámaras registraron peces granadero.' },
+  { t: 46, profundidad: 5400, lugar: '21 de enero de 2022', texto: 'Osvaldo Ulloa y Victor Vescovo bajan en el sumergible Limiting Factor: los primeros humanos en el fondo de la fosa.', evento: 'sumergible', foto: true },
+  { t: 63, profundidad: 6000, lugar: '6.000 metros · Zona hadal', texto: 'Solo las fosas llegan tan hondo. Entre las rocas nadan congrios de profundidad.' },
+  { t: 75, profundidad: 7000, lugar: 'Observatorio IDOOS · desde 2023', texto: 'Líneas de sensores chilenos miden el océano profundo y cómo se deforma la placa.', evento: 'idoos' },
+  { t: 90, profundidad: 7700, lugar: 'Llegando al fondo', texto: 'El Aconcagua cabría completo aquí, y sobraría agua.' },
   { t: 100, profundidad: 8000, fin: true },
 ];
 

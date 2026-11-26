@@ -463,9 +463,20 @@
     },
   });
 
+  // Cuánto ilumina la linterna un punto del mundo (0 a 1). Lo usan los animales para reaccionar.
+  const _haciaPunto = new V3();
+  function iluminado(punto) {
+    if (U.uLinterna.value < 0.05) return 0;
+    _haciaPunto.copy(punto).sub(U.uLinternaPos.value);
+    const distancia = _haciaPunto.length();
+    if (distancia > 13) return 0;
+    const coseno = _haciaPunto.dot(U.uLinternaDir.value) / Math.max(distancia, 0.0001);
+    return suave(0.9, 0.97, coseno) * (1 - suave(8, 13, distancia));
+  }
+
   window.FOSA_BASE = {
     THREE, V3, U, estado, POSICION_CARNADA, ALTURA_FONDO,
-    segundos, limitar, suave, azar2, fbm, fbmP,
+    segundos, limitar, suave, iluminado, azar2, fbm, fbmP,
     texturaColor, texturaNormal, texArchivo, texPBR, texSedimento, texDesgaste, texCubierta, texRejilla, texPunto,
     material, metal, pintura, Lote, fusionar, deformar,
     GLSL_RUIDO, GLSL_HACES, GLSL_NIEBLA, GLSL_SALIDA, GLSL_CIELO,

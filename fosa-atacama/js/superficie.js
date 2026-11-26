@@ -115,6 +115,14 @@
             float cerca = exp(-length(p - vec2(200.0, -3.0)) * 0.10);
             c += vec3(1.0, 0.72, 0.42) * cerca * 0.05 * (0.4 + fresnel * 2.0);
 
+            // Espuma junto al casco del barco y en las crestas más altas.
+            vec2 alBarco = p - vec2(200.0, 5.0);
+            vec2 fuera = max(abs(alBarco) - vec2(4.65, 9.15), 0.0);
+            float borde = length(fuera);
+            float espuma = smoothstep(1.6, 0.0, borde) * smoothstep(0.35, 0.75, fbm(p * 1.3 + uTiempo * 0.25));
+            espuma += smoothstep(0.55, 0.9, vMundo.y + 2.6 + fbm(p * 0.8 - uTiempo * 0.2) * 0.5) * 0.5 * detalle;
+            c = mix(c, vec3(0.80, 0.84, 0.86) * (0.55 + 0.45 * max(dot(N, uSol), 0.0)), clamp(espuma, 0.0, 1.0) * 0.8);
+
             // Bruma hacia el horizonte.
             float bruma = 1.0 - exp(-pow(distancia / 1100.0, 2.0));
             c = mix(c, colorCielo(normalize(vec3(-V.x, 0.004, -V.z))), bruma);

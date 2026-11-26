@@ -399,7 +399,10 @@
       const empuje = Math.max(0, Math.sin(U.uTiempo.value * 1.5 + this.semilla + 1.2));
       p.y += (estado.velocidad * 7 + 0.03 + empuje * 0.08) * s;
       if (p.y > 10) this.reubicar(false);
-      this.uniforms.uBio.value = estado.bio * 0.85;
+      // Al alumbrarla responde con un destello, como defensa.
+      const luz = B.iluminado(p);
+      this.destello = (this.destello || 0) + (luz - (this.destello || 0)) * Math.min(1, s * 4);
+      this.uniforms.uBio.value = estado.bio * 0.85 * (1 + this.destello * 2.6);
       this.cuerpo.visible = estado.bio > 0.01;
     },
   });

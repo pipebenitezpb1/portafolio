@@ -182,6 +182,177 @@
   let geoCuerpo = null;
   let geoAletas = null;
 
+  // Pez de cuerpo alargado (cabeza grande y cola que se afina), hecho con la misma malla del
+  // pez caracol y otras proporciones. Sirve para granaderos y congrios de profundidad.
+  function crearPez(opciones) {
+    geoCuerpo = geoCuerpo || geometriaCuerpo();
+    geoAletas = geoAletas || geometriaAletas();
+    const ritmo = { value: 0 };
+    const fase = { value: Math.random() * 10 };
+    const ondular = (mat) => {
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.uRitmo = ritmo;
+        shader.uniforms.uFase = fase;
+        shader.vertexShader = 'uniform float uRitmo;\nuniform float uFase;\n' + shader.vertexShader.replace(
+          '#include <begin_vertex>',
+          `#include <begin_vertex>
+           float cola = smoothstep(0.03, -0.24, position.z);
+           transformed.x += sin(uRitmo + position.z * 15.0 + uFase) * 0.034 * cola * cola;`
+        );
+      };
+      return mat;
+    };
+    const piel = ondular(new THREE.MeshStandardMaterial({ color: opciones.color, roughness: 0.42, metalness: 0.05, emissive: new THREE.Color(opciones.color), emissiveIntensity: 0.05 }));
+    const aleta = ondular(new THREE.MeshStandardMaterial({ color: opciones.colorAleta || opciones.color, transparent: true, opacity: 0.6, roughness: 0.4, side: THREE.DoubleSide, depthWrite: false }));
+    const ojo = new THREE.MeshStandardMaterial({ color: '#0a0c10', roughness: 0.06, metalness: 0.3 });
+    const brillo = new THREE.MeshStandardMaterial({ color: '#9fb4c2', roughness: 0.1, metalness: 0.6 });
+    const pez = new THREE.Group();
+    pez.add(new THREE.Mesh(geoCuerpo, piel));
+    pez.add(new THREE.Mesh(geoAletas, aleta));
+    [-1, 1].forEach((lado) => {
+      const anillo = new THREE.Mesh(new THREE.SphereGeometry(opciones.ojo * 1.15, 12, 8), brillo);
+      anillo.position.set(lado * 0.03, 0.014, 0.05);
+      pez.add(anillo);
+      const o = new THREE.Mesh(new THREE.SphereGeometry(opciones.ojo, 12, 8), ojo);
+      o.position.set(lado * 0.034, 0.014, 0.052);
+      pez.add(o);
+    });
+    pez.scale.fromArray(opciones.escala);
+    pez.traverse((o) => (o.frustumCulled = false));
+    return { pez: pez, ritmo: ritmo };
+  }
+
+  const TIPOS_PEZ = {
+    // Granaderos ("colas de ratón"): los carroñeros que las cámaras registraron entre 4.000 y 5.500 m.
+    granadero: { desde: 4000, hasta: 5450, color: '#6e7479', colorAleta: '#4d5257', ojo: 0.011, escala: [1.7, 2.0, 2.7] },
+    // Congrios de profundidad (Bassozetus): dominan la transición hacia la zona hadal, cerca de los 6.000 m.
+    congrio: { desde: 5950, hasta: 6650, color: '#c8a79c', colorAleta: '#b08c82', ojo: 0.005, escala: [1.1, 1.2, 2.6] },
+  };
+
+  AFRAME.registerComponent('peces-ladera', {
+    schema: { tipo: { default: 'granadero' }, cantidad: { default: 5 } },
+    init: function () {
+      const tipo = TIPOS_PEZ[this.data.tipo];
+      this.tipo = tipo;
+      this.grupo = new THREE.Group();
+      this.peces = [];
+      for (let i = 0; i < this.data.cantidad; i++) {
+        const { pez, ritmo } = crearPez(tipo);
+        this.grupo.add(pez);
+        this.peces.push({
+          objeto: pez, ritmo: ritmo, fase: i / this.data.cantidad, susto: 0,
+          x: 2.2 + Math.random() * 2.6, z: -6.5 + Math.random() * 5, sentido: Math.random() < 0.5 ? -1 : 1,
+          tamano: 0.8 + Math.random() * 0.5,
+        });
+      }
+      this.grupo.visible = false;
+      this.mundo = new V3();
+      this.mira = new V3();
+      this.el.setObject3D('mesh', this.grupo);
+    },
+    tick: function (t, dt) {
+      const p = estado.profundidad;
+      const tipo = this.tipo;
+      const dentro = !estado.enSuperficie && estado.desdeFondo === 0 && p > tipo.desde && p < tipo.hasta;
+      this.grupo.visible = dentro;
+      if (!dentro) return;
+      const s = segundos(dt);
+      const ahora = U.uTiempo.value;
+      const borde = B.suave(tipo.desde, tipo.desde + 150, p) * (1 - B.suave(tipo.hasta - 150, tipo.hasta, p));
+      this.peces.forEach((pez) => {
+        // Se van quedando arriba a medida que se baja; cada uno vuelve a aparecer desde abajo.
+        const ciclo = (ahora * 0.11 + pez.fase) % 1;
+        const y = -5 + ciclo * 12;
+        const nado = Math.sin(ahora * 0.35 + pez.fase * 20) * 1.2;
+        pez.objeto.getWorldPosition(this.mundo);
+        const luz = B.iluminado(this.mundo);
+        pez.susto += (luz - pez.susto) * Math.min(1, s * (luz > pez.susto ? 5 : 0.6));
+        // Si los alumbran, se alejan hacia la roca.
+        const x = pez.x + pez.susto * 2.4;
+        const z = pez.z + nado * pez.sentido;
+        pez.objeto.position.set(x, y, z);
+        this.mira.set(x + pez.susto * 2, y + 0.25, z + Math.cos(ahora * 0.35 + pez.fase * 20) * pez.sentido * 1.5);
+        pez.objeto.lookAt(this.mira);
+        pez.objeto.scale.fromArray(tipo.escala).multiplyScalar(pez.tamano * (ciclo < 0.08 ? ciclo / 0.08 : ciclo > 0.92 ? (1 - ciclo) / 0.08 : 1) * borde + 0.0001);
+        pez.ritmo.value += s * (2.4 + pez.susto * 9);
+      });
+    },
+  });
+
+  /* ---------- Isópodos munnópsidos: del tamaño de una mano, con patas larguísimas ---------- */
+  AFRAME.registerComponent('isopodos', {
+    schema: { cantidad: { default: 3 } },
+    init: function () {
+      const mCuerpo = new THREE.MeshStandardMaterial({ color: '#e6d9cf', roughness: 0.45 });
+      const mPata = new THREE.MeshStandardMaterial({ color: '#d9c9bd', roughness: 0.5 });
+      this.grupo = new THREE.Group();
+      this.animales = [];
+      const inicios = [[-2.6, -4.4], [2.4, -4.9], [1.9, -1.2]];
+      for (let i = 0; i < this.data.cantidad; i++) {
+        const animal = new THREE.Group();
+        const cuerpo = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), mCuerpo);
+        cuerpo.scale.set(0.018, 0.012, 0.034);
+        cuerpo.position.y = 0.05;
+        animal.add(cuerpo);
+        const patas = [];
+        for (let k = 0; k < 8; k++) {
+          const lado = k % 2 ? 1 : -1;
+          const fila = Math.floor(k / 2);
+          const pivote = new THREE.Group();
+          pivote.position.set(lado * 0.012, 0.05, 0.022 - fila * 0.014);
+          // Cada pata sube, se quiebra en la "rodilla" y baja hasta el sedimento.
+          const muslo = new THREE.Mesh(new THREE.CylinderGeometry(0.0016, 0.0016, 0.06, 5), mPata);
+          muslo.position.set(lado * 0.026, 0.014, 0);
+          muslo.rotation.z = -lado * 1.1;
+          const canilla = new THREE.Mesh(new THREE.CylinderGeometry(0.0012, 0.0008, 0.085, 5), mPata);
+          canilla.position.set(lado * 0.068, -0.012, 0);
+          canilla.rotation.z = lado * 0.5;
+          pivote.add(muslo);
+          pivote.add(canilla);
+          animal.add(pivote);
+          patas.push({ pivote: pivote, fila: fila, lado: lado });
+        }
+        // Antenas largas hacia adelante.
+        [-1, 1].forEach((lado) => {
+          const antena = new THREE.Mesh(new THREE.CylinderGeometry(0.0009, 0.0005, 0.09, 4), mPata);
+          antena.position.set(lado * 0.016, 0.055, 0.075);
+          antena.rotation.set(Math.PI / 2, 0, -lado * 0.25);
+          animal.add(antena);
+        });
+        animal.scale.setScalar(1.5 + i * 0.25);
+        animal.position.set(inicios[i % 3][0], ALTURA_FONDO, inicios[i % 3][1]);
+        this.grupo.add(animal);
+        this.animales.push({ objeto: animal, patas: patas, fase: i * 2.1, destino: new V3(POSICION_CARNADA.x + (i - 1) * 0.5, ALTURA_FONDO, POSICION_CARNADA.z + 0.55 - i * 0.35) });
+      }
+      this.grupo.visible = false;
+      this.dir = new V3();
+      this.el.setObject3D('mesh', this.grupo);
+    },
+    tick: function (t, dt) {
+      const activo = estado.carnada > 4;
+      this.grupo.visible = activo;
+      if (!activo) return;
+      const s = segundos(dt);
+      const ahora = U.uTiempo.value;
+      this.animales.forEach((a) => {
+        this.dir.copy(a.destino).sub(a.objeto.position);
+        this.dir.y = 0;
+        const distancia = this.dir.length();
+        const camina = distancia > 0.05;
+        if (camina) {
+          a.objeto.position.addScaledVector(this.dir.normalize(), Math.min(distancia, 0.11 * s));
+          a.objeto.rotation.y = Math.atan2(this.dir.x, this.dir.z);
+        }
+        // Caminan de a pasos: las patas de un lado se alternan con las del otro.
+        a.patas.forEach((pata) => {
+          const paso = camina ? Math.sin(ahora * 4 + a.fase + pata.fila * 1.6 + (pata.lado > 0 ? Math.PI : 0)) : Math.sin(ahora * 0.8 + pata.fila) * 0.2;
+          pata.pivote.rotation.y = paso * 0.3;
+          pata.pivote.rotation.z = pata.lado * Math.max(0, paso) * 0.12;
+        });
+      });
+    },
+  });
+
   AFRAME.registerComponent('pez-caracol', {
     schema: { retraso: { default: 6 }, tamano: { default: 1 }, radio: { default: 0.7 }, altura: { default: 0.3 }, angulo: { default: 200 }, sentido: { default: 1 } },
     init: function () {

@@ -1,8 +1,8 @@
 // Lógica principal: avance del relato, descenso, luz y color según la profundidad,
 // modo VR (Meta Quest, con controles o con las manos) y modo en pantalla.
 
-import { FASES, HITOS, PROFUNDIDAD_FINAL, VISTAS } from './narrativa.js?v=3';
-import { crearSonido } from './sonido.js?v=3';
+import { FASES, HITOS, PROFUNDIDAD_FINAL, VISTAS } from './narrativa.js?v=5';
+import { crearSonido } from './sonido.js?v=5';
 
 const { THREE, U, estado, ALTURA_FONDO, limitar, suave } = window.FOSA_BASE;
 const $ = (id) => document.getElementById(id);
@@ -21,7 +21,7 @@ const consola = $('consola');
 const palanca = $('palanca');
 const botonAccion = $('botonAccion');
 
-const sinSonido = { iniciar() {}, actualizar() {}, sonar() {}, clic() {}, chapuzon() {}, golpe() {}, encenderFocos() {}, soltarCarnada() {}, hito() {} };
+const sinSonido = { iniciar() {}, actualizar() {}, sonar() {}, clic() {}, chapuzon() {}, golpe() {}, encenderFocos() {}, soltarCarnada() {}, hito() {}, muestra() {} };
 const sonido = parametros.has('silencio') ? sinSonido : crearSonido();
 const modoDemo = parametros.has('demo');
 
@@ -41,6 +41,16 @@ let lugarActual = '';
 let textoActual = '';
 const DURACION_DESCENSO = HITOS[HITOS.length - 1].t;
 const hitoCon = (evento) => HITOS.find((h) => h.evento === evento);
+
+// Durante el descenso se pueden tomar tres muestras de agua, cada una en su tramo (en segundos).
+const TRAMOS_MUESTRA = [[22.5, 33], [34.5, 45.5], [76, 89]];
+let muestras = [false, false, false];
+let muestraVigente = -1;
+let avisoMuestra = { hasta: 0, texto: '' };
+function muestraActiva() {
+  if (FASES[indiceFase].id !== 'descenso' || cambiandoFase) return -1;
+  return TRAMOS_MUESTRA.findIndex(([desde, hasta], i) => !muestras[i] && tiempoFase > desde && tiempoFase < hasta);
+}
 
 const colorAgua = new THREE.Color();
 const COLORES_AGUA = [
@@ -94,21 +104,47 @@ function actualizarRelato(s) {
     estado.sumergible = desdeSub > 0 && desdeSub < 17 ? desdeSub : 0;
     const observatorio = hitoCon('idoos');
     estado.idoos = suave(observatorio.t, observatorio.t + 2.5, t) * (1 - suave(observatorio.t + 11, observatorio.t + 14, t));
-    estado.pared = suave(64, 70, t) * (1 - suave(DURACION_DESCENSO - 8, DURACION_DESCENSO - 3, t));
+    estado.pared = suave(34, 40, t) * (1 - suave(DURACION_DESCENSO - 8, DURACION_DESCENSO - 3, t));
     estado.foto += ((desde.foto ? 1 : 0) - estado.foto) * Math.min(1, s * 2.5);
+    const ventana = (inicio, duracion) => (t > inicio && t < inicio + duracion ? t - inicio : 0);
+    estado.jibias = ventana(13.5, 17);
+
+    // Cuando se abre un tramo de muestreo, la palanca vuelve a quedar lista.
+    const activa = muestraActiva();
+    if (activa >= 0 && activa !== muestraVigente) {
+      palanca.setAttribute('palanca', 'etiqueta', 'TOMAR MUESTRA DE AGUA');
+      palanca.components.palanca.reiniciar();
+    }
+    muestraVigente = activa;
+    if (modoDemo && activa >= 0 && t > TRAMOS_MUESTRA[activa][0] + 3) accionar();
 
     if (t >= DURACION_DESCENSO && !cambiandoFase) avanzarFase();
   } else {
-    estado.velocidad = 0;
+    if (fase.id !== 'ascenso') estado.velocidad = 0;
     estado.sumergible = 0;
+    estado.jibias = 0;
+    muestraVigente = -1;
     estado.idoos = 0;
     estado.pared = 0;
     estado.foto += (0 - estado.foto) * Math.min(1, s * 2.5);
-    if (despuesDe('descenso')) estado.profundidad = PROFUNDIDAD_FINAL;
+    if (despuesDe('descenso') && fase.id !== 'ascenso' && fase.id !== 'final') estado.profundidad = PROFUNDIDAD_FINAL;
+  }
+
+  // --- Ascenso: sin el lastre, el lander sube solo hasta la superficie ---
+  if (fase.id === 'ascenso') {
+    const subida = tiempoAccion === null ? 0 : suave(1.5, 26, tiempoAccion);
+    estado.profundidad = PROFUNDIDAD_FINAL * (1 - subida);
+    estado.velocidad = tiempoAccion === null ? 0 : -0.95 * suave(0.5, 3, tiempoAccion) * (1 - suave(24, 26.5, tiempoAccion));
+  }
+  if (fase.id === 'final') {
+    estado.profundidad = 0;
+    estado.caida = 0; // el Audacia ya está de vuelta, colgado de la grúa
+    estado.chapuzon = 0;
   }
 
   const p = estado.profundidad;
   estado.alturaSuelo = enProfundidad && p > 7700 ? -(PROFUNDIDAD_FINAL - p) * 0.12 + ALTURA_FONDO : -60;
+  if (fase.id === 'ascenso' && tiempoAccion !== null) estado.desdeFondo = Math.max(estado.desdeFondo, 80); // la nube de sedimento ya se disipó
   estado.luzSol = enProfundidad ? Math.pow(limitar(1 - p / 240), 1.5) : 1;
   estado.bio = enProfundidad ? limitar((p - 260) / 400) * limitar((5800 - p) / 1500) : 0;
   estado.linterna = enProfundidad ? limitar((p - 60) / 200) : 0;
@@ -136,9 +172,10 @@ function actualizarRelato(s) {
   } else {
     estado.focos = despuesDe('fondo') ? 1 : 0;
   }
+  const subiendo = (fase.id === 'ascenso' && tiempoAccion !== null) || fase.id === 'final';
   if (fase.id === 'carnada' && tiempoAccion !== null) estado.carnada = tiempoAccion + 0.001;
-  else if (despuesDe('carnada')) estado.carnada += s;
-  else estado.carnada = 0;
+  else if (despuesDe('carnada') && !subiendo) estado.carnada += s;
+  else estado.carnada = 0; // al subir, el brazo se recoge y la fauna queda atrás
 
   // --- Avance ---
   if (!cambiandoFase) {
@@ -163,6 +200,17 @@ function actualizarRelato(s) {
 // Acciona la palanca de la etapa (desde el visor, el botón en pantalla o el teclado).
 function accionar() {
   const fase = FASES[indiceFase];
+  if (fase.id === 'descenso') {
+    // Cierra una botella y guarda agua de esta profundidad.
+    const i = muestraActiva();
+    if (i < 0) return false;
+    muestras[i] = true;
+    palanca.components.palanca.activar();
+    sonido.muestra();
+    vibrar(0.8, 160);
+    avisoMuestra = { hasta: reloj + 4.5, texto: `Muestra de agua tomada a ${formatear(estado.profundidad)} m` };
+    return true;
+  }
   if (cambiandoFase || fase.requiere !== 'palanca' || tiempoAccion !== null || tiempoFase < 1) return false;
   tiempoAccion = 0;
   palanca.components.palanca.activar();
@@ -170,6 +218,7 @@ function accionar() {
   if (fase.accion === 'soltar') setTimeout(() => sonido.chapuzon(), 950);
   if (fase.accion === 'focos') sonido.encenderFocos();
   if (fase.accion === 'carnada') sonido.soltarCarnada();
+  if (fase.accion === 'lastre') sonido.golpe();
   return true;
 }
 
@@ -213,6 +262,12 @@ async function mostrarFase(indice) {
   indiceHito = -1;
   lugarActual = fase.lugar;
   textoActual = fase.texto;
+  if (fase.reinicia) {
+    // Ficha del descenso: lo que la persona hizo, al lado del hito real.
+    const tomadas = muestras.filter(Boolean).length;
+    lugarActual = 'De vuelta en la superficie';
+    textoActual = `Bajaste a 8.000 metros, tomaste ${tomadas} de 3 muestras de agua y viste peces caracol, anfípodos gigantes e isópodos. ` + fase.texto;
+  }
   $('relatoLugar').textContent = lugarActual;
   $('relatoTexto').textContent = textoActual;
   if (fase.id !== 'descenso') relato.classList.remove('saliendo');
@@ -238,6 +293,7 @@ async function mostrarHito(hito) {
 function reiniciar() {
   cambiandoFase = true;
   toco = false;
+  muestras = [false, false, false];
   Object.assign(estado, { carnada: 0, caida: 0, chapuzon: 0, desdeFondo: 0, focos: 0, profundidad: 0, sumergible: 0, idoos: 0, pared: 0, foto: 0 });
   mostrarFase(1).then(() => (cambiandoFase = false));
 }
@@ -327,7 +383,18 @@ function vibrar(fuerza, ms) {
 function textoIndicacion() {
   const fase = FASES[indiceFase];
   if (cambiandoFase) return '';
-  if (fase.id === 'descenso') return estado.sumergible > 0 ? 'Mira a tu derecha: el sumergible Limiting Factor' : estado.idoos > 0.5 ? 'A tu izquierda, una línea de sensores' : '';
+  if (fase.id === 'descenso') {
+    if (reloj < avisoMuestra.hasta) return avisoMuestra.texto;
+    if (muestraActiva() >= 0) return enVR ? 'Empuja la palanca hacia ti para tomar una muestra de agua' : 'Puedes tomar una muestra de agua';
+    if (estado.sumergible > 0) return 'Mira a tu derecha: el sumergible Limiting Factor';
+    if (estado.idoos > 0.5) return 'A tu izquierda, una línea de sensores';
+    if (estado.jibias > 1 && estado.jibias < 13) return 'Jibias: alúmbralas con la linterna';
+    if (estado.profundidad > 280 && estado.profundidad < 1000) return 'Arriba, un banco de peces linterna';
+    if (estado.profundidad > 1100 && estado.profundidad < 3800 && estado.bio > 0.3) return 'Alumbra una medusa y mira cómo responde';
+    if (estado.profundidad > 4100 && estado.profundidad < 5300) return 'A tu derecha, en la ladera: peces granadero';
+    if (estado.profundidad > 6000 && estado.profundidad < 6600) return 'Congrios de profundidad entre las rocas';
+    return '';
+  }
   if (fase.requiere === 'palanca') return tiempoAccion === null && enVR ? fase.indicacion : '';
   if (fase.requiere === 'continuar' && tiempoFase >= fase.duracionMinima) {
     const accion = fase.reinicia ? 'volver a empezar' : 'continuar';
@@ -351,7 +418,12 @@ function pintarInterfaz() {
   if (!cambiandoFase) {
     if (fase.requiere === 'palanca' && tiempoAccion === null && tiempoFase >= 1) etiqueta = fase.botonPantalla;
     if (fase.requiere === 'continuar' && tiempoFase >= fase.duracionMinima) etiqueta = fase.reinicia ? 'Volver a empezar' : 'Continuar';
+    if (muestraActiva() >= 0) etiqueta = 'Tomar muestra de agua';
   }
+  const tomadas = muestras.filter(Boolean).length;
+  $('cifraMuestras').textContent = tomadas;
+  consola.object3D.visible = enVR && (fase.requiere === 'palanca' || muestraActiva() >= 0 || (fase.id === 'descenso' && reloj < avisoMuestra.hasta));
+  $('aroPies').object3D.visible = enVR && !estado.enSuperficie;
   if (botonAccion.textContent !== etiqueta) botonAccion.textContent = etiqueta;
   botonAccion.classList.toggle('oculto', !etiqueta);
   $('ficha').style.opacity = estado.foto;
@@ -362,7 +434,7 @@ function pintarInterfaz() {
       lugar: cambiandoFase ? '' : lugarActual,
       texto: cambiandoFase ? '' : textoActual,
       indicacion,
-      medidor: vistaActual.lugar === 'profundidad' ? `${formatear(p)} m  ·  ${formatear(presion)} atm` : '',
+      medidor: vistaActual.lugar === 'profundidad' ? `${formatear(p)} m  ·  ${formatear(presion)} atm  ·  muestras ${tomadas}/3` : '',
     });
   }
 }
@@ -429,7 +501,7 @@ async function prepararPortada() {
 
 function accionPantalla() {
   const fase = FASES[indiceFase];
-  if (fase.requiere === 'palanca') accionar();
+  if (fase.requiere === 'palanca' || fase.id === 'descenso') accionar();
   else continuar();
 }
 
@@ -443,7 +515,9 @@ function prepararEventos() {
   escena.addEventListener('exit-vr', alCambiarModo);
   // La palanca avisa cuando la persona la acciona con la mano.
   escena.addEventListener('palanca-activada', () => {
-    if (tiempoAccion === null && !accionar()) palanca.components.palanca.reiniciar();
+    if (FASES[indiceFase].id === 'descenso') {
+      if (!accionar() && muestraActiva() >= 0) palanca.components.palanca.reiniciar();
+    } else if (tiempoAccion === null && !accionar()) palanca.components.palanca.reiniciar();
   });
   escena.addEventListener('continuar', continuar);
 

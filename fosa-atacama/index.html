@@ -8,15 +8,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/estilos.css?v=3">
+  <link rel="stylesheet" href="css/estilos.css?v=5">
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="js/base.js?v=3"></script>
-  <script src="js/superficie.js?v=3"></script>
-  <script src="js/lander.js?v=3"></script>
-  <script src="js/agua.js?v=3"></script>
-  <script src="js/fauna.js?v=3"></script>
-  <script src="js/descenso.js?v=3"></script>
-  <script src="js/interaccion.js?v=3"></script>
+  <script src="js/base.js?v=5"></script>
+  <script src="js/superficie.js?v=5"></script>
+  <script src="js/lander.js?v=5"></script>
+  <script src="js/agua.js?v=5"></script>
+  <script src="js/fauna.js?v=5"></script>
+  <script src="js/descenso.js?v=5"></script>
+  <script src="js/interaccion.js?v=5"></script>
 </head>
 <body>
   <a-scene id="escena"
@@ -55,12 +55,18 @@
       <a-entity medusa="color: #8ef5c8; tamano: 0.7"></a-entity>
       <a-entity medusa="tamano: 1.3"></a-entity>
       <a-entity medusa="color: #b49cff; tamano: 0.85"></a-entity>
-      <a-entity nube-sedimento="fuente: desdeFondo; radio: 0.95; alcance: 2.6; cantidad: 170; tamano: 1.2"></a-entity>
+      <a-entity nube-sedimento="fuente: desdeFondo; origen: -1.15 -0.35 -1.95; radio: 0.3; alcance: 2.4; cantidad: 170; tamano: 1.2"></a-entity>
       <a-entity nube-sedimento="fuente: carnada; retraso: 2.1; origen: 0 -0.35 -2.55; radio: 0.05; alcance: 0.7; cantidad: 50; tamano: 0.5"></a-entity>
       <a-entity sumergible></a-entity>
-      <a-entity pared-fosa></a-entity>
+      <a-entity pared-fosa="lado: 1; distancia: 8"></a-entity>
+      <a-entity pared-fosa="lado: -1; distancia: 15"></a-entity>
+      <a-entity jibias></a-entity>
+      <a-entity peces-linterna></a-entity>
+      <a-entity peces-ladera="tipo: granadero; cantidad: 5"></a-entity>
+      <a-entity peces-ladera="tipo: congrio; cantidad: 5"></a-entity>
+      <a-entity isopodos></a-entity>
       <a-entity linea-idoos></a-entity>
-      <a-entity luz-descenso position="0 2.7 0"></a-entity>
+      <a-entity luz-descenso position="-0.6 2.6 -1.2"></a-entity>
       <a-entity anfipodos></a-entity>
       <a-entity pez-caracol="retraso: 7; tamano: 1; radio: 0.62; altura: 0.26; angulo: 205; sentido: 1"></a-entity>
       <a-entity pez-caracol="retraso: 12; tamano: 0.8; radio: 0.95; altura: 0.42; angulo: 320; sentido: -1"></a-entity>
@@ -82,6 +88,8 @@
       <!-- Manos sin controles -->
       <a-entity id="manoLeft" class="mano-libre" hand-tracking-controls="hand: left; modelColor: #c9a27c"></a-entity>
       <a-entity id="manoRight" class="mano-libre" hand-tracking-controls="hand: right; modelColor: #c9a27c"></a-entity>
+
+      <a-ring id="aroPies" radius-inner="0.74" radius-outer="0.76" rotation="-90 0 0" position="0 0.01 0" material="shader: flat; color: #5fd4e6; opacity: 0.22; transparent: true; fog: false" visible="false"></a-ring>
 
       <a-entity id="consola" position="0 0 -0.52" visible="false">
         <a-entity id="palanca" palanca="etiqueta: SOLTAR EL LANDER"></a-entity>
@@ -132,12 +140,14 @@
       <div class="medidor__tubo"><div id="tuboRelleno" class="medidor__relleno"></div></div>
       <p class="medidor__etiqueta">Presión</p>
       <p class="medidor__presion"><span id="cifraPresion">1</span> atm</p>
+      <p class="medidor__etiqueta medidor__muestras">Muestras de agua</p>
+      <p class="medidor__presion"><span id="cifraMuestras">0</span> de 3</p>
     </aside>
 
     <button id="botonAccion" class="boton boton--principal boton-accion controles oculto"></button>
     <p class="atajos controles">Arrastra para mirar · Enter: acción · H: ocultar controles</p>
   </div>
 
-  <script type="module" src="js/principal.js?v=3"></script>
+  <script type="module" src="js/principal.js?v=5"></script>
 </body>
 </html>

@@ -258,6 +258,17 @@ export function crearSonido() {
     tono({ frecuencia: 90, final: 45, duracion: 0.5, volumen: 0.2, retraso: 2.25 });
     rafaga({ duracion: 1.4, volumen: 0.06, frecuencia: 380, barrido: 160, retraso: 2.3, reverb: 0.4 });
   };
+  // Una botella de muestras se cierra: golpe de válvula, burbujas y una nota de confirmación.
+  const muestra = () => {
+    tono({ frecuencia: 240, final: 90, duracion: 0.18, volumen: 0.3, tipo: 'triangle' });
+    rafaga({ duracion: 0.09, volumen: 0.3, frecuencia: 2600, tipo: 'bandpass', q: 2 });
+    for (let i = 0; i < 7; i++) {
+      const f = 500 + Math.random() * 700;
+      tono({ frecuencia: f, final: f * 1.8, duracion: 0.08, volumen: 0.04, retraso: 0.15 + Math.random() * 0.9, reverb: 0.4 });
+    }
+    [0, 4, 7].forEach((intervalo, i) => tono({ frecuencia: NOTA(-5 + intervalo), duracion: 1.8, volumen: 0.04, ataque: 0.02, reverb: 0.9, retraso: 0.25 + i * 0.12 }));
+  };
+
   // Nota suave que acompaña cada hito del relato.
   const hito = () => {
     if (!ctx) return;
@@ -322,5 +333,5 @@ export function crearSonido() {
     }
   }
 
-  return { iniciar, actualizar, sonar, clic, chapuzon, golpe, encenderFocos, soltarCarnada, hito };
+  return { iniciar, actualizar, sonar, clic, chapuzon, golpe, encenderFocos, soltarCarnada, hito, muestra };
 }

@@ -147,6 +147,7 @@ html, body {
 .medidor__cifra small { font-size: 13px; color: var(--espuma-tenue); }
 .medidor__tubo { position: relative; width: 10px; height: 180px; margin: 0 auto 12px; border-radius: 5px; background: linear-gradient(180deg, #2b7bb9, #0b2a44 30%, #000); overflow: hidden; }
 .medidor__relleno { position: absolute; left: 0; right: 0; top: 0; height: 0; background: rgba(242, 183, 5, 0.85); box-shadow: 0 0 10px var(--amarillo); }
+.medidor__muestras { margin-top: 12px; }
 .medidor__presion { margin: 4px 0 0; font: 600 16px var(--fuente-texto); color: var(--cian-claro); font-variant-numeric: tabular-nums; }
 
 .ficha {
@@ -173,7 +174,7 @@ html, body {
 @media (max-width: 720px) {
   .relato { left: 16px; right: 16px; bottom: 96px; max-width: none; padding: 14px 16px; }
   .medidor { top: auto; bottom: 16px; right: auto; left: 16px; transform: none; width: auto; display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; }
-  .medidor__tubo, .medidor__etiqueta { display: none; }
+  .medidor__tubo, .medidor__etiqueta, .medidor__muestras + .medidor__presion { display: none; }
   .medidor__cifra { margin: 0; font-size: 18px; }
   .boton-accion { right: 16px; bottom: 16px; }
   .atajos { display: none; }

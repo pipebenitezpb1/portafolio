@@ -15,7 +15,7 @@
   const B = window.FOSA_BASE;
   const { THREE, V3, U, estado, Lote, material, metal, pintura, segundos, limitar, suave, fbm } = B;
 
-  Object.assign(estado, { sumergible: 0, idoos: 0, pared: 0, foto: 0 });
+  Object.assign(estado, { sumergible: 0, idoos: 0, pared: 0, foto: 0, jibias: 0 });
 
   // Caja de esquinas redondeadas, con normales suaves.
   function cajaRedondeada(ancho, alto, largo, radio) {
@@ -160,40 +160,50 @@
     },
   });
 
-  /* ---------- Pared de la fosa ---------- */
+  /* ---------- Laderas de la fosa ---------- */
+  // Dos laderas de roca con relieve real (cornisas, grietas y salientes) que pasan hacia arriba
+  // mientras se baja. El relieve se repite cada 40 m para poder dar la vuelta sin saltos.
+  const PERIODO_LADERA = 40;
+  let geometriaLadera = null;
+  function crearLadera() {
+    const ANCHO = 54;
+    const geo = new THREE.PlaneGeometry(ANCHO, PERIODO_LADERA * 2, 90, 150);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const u = (x / ANCHO + 0.5) * 6;
+      const v = (((y / PERIODO_LADERA) % 1) + 1) % 1 * 6;
+      const grande = B.fbmP(u, v, 6, 4) - 0.5;
+      const cornisas = Math.abs(B.fbmP(u * 0.7 + 3, v * 2.2, 6, 3) - 0.5) * 2;
+      const fino = B.fbmP(u * 5, v * 5, 30, 2) - 0.5;
+      // Las cornisas sobresalen y las grietas se hunden.
+      pos.setZ(i, grande * 5.5 + (1 - cornisas) * 1.6 + fino * 0.5);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+
   AFRAME.registerComponent('pared-fosa', {
+    schema: { lado: { default: 1 }, distancia: { default: 8 } },
     init: function () {
-      const ALTO = 40;
-      const geo = new THREE.CylinderGeometry(9, 9, ALTO, 72, 40, true, 0.15, 2.7);
-      const pos = geo.attributes.position;
-      const p = new V3();
-      for (let i = 0; i < pos.count; i++) {
-        p.fromBufferAttribute(pos, i);
-        const angulo = Math.atan2(p.x, p.z);
-        // Relieve de roca: salientes grandes y rugosidad fina. Se repite en vertical para que el
-        // desplazamiento de la textura no delate la costura.
-        const relieve = (fbm(angulo * 2.2 + 5, Math.sin((p.y / ALTO) * Math.PI * 2) * 1.5 + 9, 4) - 0.5) * 3.2;
-        const radio = 9 + relieve;
-        pos.setXYZ(i, Math.sin(angulo) * radio, p.y, Math.cos(angulo) * radio);
-      }
-      geo.computeVertexNormals();
-      const roca = B.texPBR('boulder_01', [3, 4], null);
-      this.texturas = [roca.map, roca.normalMap];
-      const mat = new THREE.MeshStandardMaterial({ map: roca.map, normalMap: roca.normalMap, normalScale: new THREE.Vector2(1.6, 1.6), roughness: 0.95, color: '#a09a90', side: THREE.BackSide });
-      this.malla = new THREE.Mesh(geo, mat);
-      this.malla.position.y = 4;
+      geometriaLadera = geometriaLadera || crearLadera();
+      const roca = B.texPBR('boulder_01', [5, 8], null);
+      const mat = new THREE.MeshStandardMaterial({ map: roca.map, normalMap: roca.normalMap, normalScale: new THREE.Vector2(1.8, 1.8), roughness: 1, color: '#a8a195', side: THREE.DoubleSide });
+      this.malla = new THREE.Mesh(geometriaLadera, mat);
+      // La ladera mira hacia la persona y se inclina un poco, como el talud de la fosa.
+      this.malla.rotation.set(0, -this.data.lado * (Math.PI / 2 - 0.35), 0);
       this.malla.visible = false;
-      this.tramo = ALTO / 4;
       this.el.setObject3D('mesh', this.malla);
     },
     tick: function () {
       const k = estado.pared;
       this.malla.visible = k > 0.01;
       if (!this.malla.visible) return;
-      // Lejos, la pared queda oculta por el agua; se acerca al entrar en la zona hadal.
-      this.malla.position.x = 0.5 + (1 - k) * 26;
-      const corrimiento = -(U.uDesplazamiento.value / this.tramo);
-      this.texturas.forEach((t) => (t.offset.y = corrimiento));
+      const d = this.data;
+      const subida = ((U.uDesplazamiento.value % PERIODO_LADERA) + PERIODO_LADERA) % PERIODO_LADERA;
+      // Lejos queda oculta por el agua; se acerca al entrar en la zona hadal.
+      this.malla.position.set(d.lado * (d.distancia + (1 - k) * 30), subida - PERIODO_LADERA / 2, -3 - d.lado * 2);
     },
   });
 
@@ -243,14 +253,185 @@
     },
   });
 
-  /* ---------- Luz de posición del lander: deja ver la pared y los sensores al pasar ---------- */
+  /* ---------- Luz de posición del lander: deja ver lo que pasa cerca durante la bajada ---------- */
   AFRAME.registerComponent('luz-descenso', {
     init: function () {
-      this.luz = new THREE.PointLight('#cfe0ff', 0, 17, 1.2);
+      this.luz = new THREE.PointLight('#cfe0ff', 0, 18, 1.2);
       this.el.setObject3D('luz', this.luz);
     },
     tick: function () {
-      this.luz.intensity = Math.max(estado.pared, estado.idoos) * 9;
+      const p = estado.profundidad;
+      const bajando = estado.enSuperficie || estado.desdeFondo > 0 ? 0 : limitar((p - 250) / 350) * limitar((7950 - p) / 250);
+      this.luz.intensity = bajando * (2.6 + Math.max(estado.pared, estado.idoos) * 9);
+    },
+  });
+
+  /* ---------- Jibias (calamar de Humboldt) ---------- */
+  // Pasan en grupo, nadando hacia atrás a impulsos, entre los 300 y los 900 m.
+  function crearJibia() {
+    const lote = new Lote();
+    const piel = new THREE.MeshStandardMaterial({ color: '#8e2f2a', roughness: 0.35, metalness: 0.05, emissive: new THREE.Color('#2a0806'), emissiveIntensity: 0.6 });
+    const ojo = new THREE.MeshStandardMaterial({ color: '#d9d2c0', roughness: 0.15 });
+    const pupila = new THREE.MeshStandardMaterial({ color: '#050505', roughness: 0.1 });
+    // Manto: un huso que termina en punta (la punta mira hacia −Z).
+    const perfil = [];
+    for (let i = 0; i <= 14; i++) {
+      const t = i / 14;
+      perfil.push(new THREE.Vector2(0.004 + Math.pow(Math.sin(t * Math.PI * 0.62), 0.75) * 0.105, t * 0.62));
+    }
+    lote.agregar(new THREE.LatheGeometry(perfil, 22), piel, [0, 0, -0.62], [Math.PI / 2, 0, 0]);
+    lote.agregar(new THREE.SphereGeometry(0.1, 18, 12), piel, [0, 0, 0.02], [0, 0, 0], [0.85, 0.85, 1.1]);
+    // Aletas en rombo cerca de la punta.
+    [-1, 1].forEach((lado) => lote.agregar(new THREE.ConeGeometry(0.16, 0.3, 3), piel, [lado * 0.11, 0, -0.5], [Math.PI / 2, 0, lado * 0.35], [1, 1, 0.08]));
+    [-1, 1].forEach((lado) => {
+      lote.agregar(new THREE.SphereGeometry(0.036, 14, 10), ojo, [lado * 0.078, 0.01, 0.05]);
+      lote.agregar(new THREE.SphereGeometry(0.02, 10, 8), pupila, [lado * 0.103, 0.01, 0.055]);
+    });
+    const cuerpo = lote.construir();
+    cuerpo.userData.piel = piel;
+    // Brazos y tentáculos, que se abren y cierran con cada impulso.
+    const brazos = new THREE.Group();
+    brazos.position.z = 0.1;
+    const lista = [];
+    for (let i = 0; i < 10; i++) {
+      const largo = i < 2 ? 0.75 : 0.42;
+      const brazo = new THREE.Mesh(new THREE.ConeGeometry(i < 2 ? 0.012 : 0.02, largo, 6), piel);
+      brazo.geometry.translate(0, -largo / 2, 0);
+      const pivote = new THREE.Group();
+      pivote.rotation.z = (i / 10) * Math.PI * 2;
+      const codo = new THREE.Group();
+      codo.rotation.x = -Math.PI / 2;
+      codo.add(brazo);
+      pivote.add(codo);
+      pivote.position.set(Math.cos((i / 10) * Math.PI * 2) * 0.05, Math.sin((i / 10) * Math.PI * 2) * 0.05, 0);
+      brazos.add(pivote);
+      lista.push(codo);
+    }
+    cuerpo.add(brazos);
+    cuerpo.userData.brazos = lista;
+    return cuerpo;
+  }
+
+  AFRAME.registerComponent('jibias', {
+    schema: { cantidad: { default: 4 }, duracion: { default: 13 } },
+    init: function () {
+      const grupo = new THREE.Group();
+      this.animales = [];
+      for (let i = 0; i < this.data.cantidad; i++) {
+        const jibia = crearJibia();
+        jibia.scale.setScalar(1.3 + Math.random() * 0.7);
+        grupo.add(jibia);
+        this.animales.push({ objeto: jibia, avance: 0, susto: 0, desfase: new V3((Math.random() - 0.5) * 3.5, (Math.random() - 0.5) * 2.4, (Math.random() - 0.5) * 2.5 - i * 0.3), fase: Math.random() * 6, retraso: i * 0.6 });
+      }
+      grupo.visible = false;
+      this.grupo = grupo;
+      this.ruta = new THREE.CatmullRomCurve3([new V3(-11, 3.5, -7), new V3(-4, 1.8, -4.6), new V3(1.5, 1.2, -3.6), new V3(6, 0.2, -5), new V3(13, -3, -9)]);
+      this.punto = new V3();
+      this.siguiente = new V3();
+      this.el.setObject3D('mesh', grupo);
+    },
+    tick: function (tiempo, dt) {
+      const t = estado.jibias;
+      this.grupo.visible = t > 0;
+      if (!this.grupo.visible) {
+        this.animales.forEach((a) => (a.avance = 0));
+        return;
+      }
+      const s = segundos(dt);
+      const ahora = U.uTiempo.value;
+      this.animales.forEach((a) => {
+        // Si la alumbran, la jibia destella en blanco y rojo y escapa más rápido.
+        const luz = a.objeto.visible ? B.iluminado(a.objeto.position) : 0;
+        a.susto += (luz - a.susto) * Math.min(1, s * (luz > a.susto ? 6 : 0.8));
+        const piel = a.objeto.userData.piel;
+        const destello = a.susto * (0.5 + 0.5 * Math.sin(ahora * 14 + a.fase));
+        piel.emissive.setRGB(0.16 + destello * 0.9, 0.03 + destello * 0.55, 0.02 + destello * 0.45);
+        if (t > a.retraso) a.avance += (s / this.data.duracion) * (1 + a.susto * 1.8);
+        const k = limitar(a.avance);
+        // Avanza a impulsos: cada chorro la empuja y luego se desliza.
+        const pulso = Math.sin(ahora * (2.6 + a.susto * 3) + a.fase);
+        const avance = limitar(k + pulso * 0.006);
+        this.ruta.getPointAt(avance, this.punto);
+        this.ruta.getPointAt(Math.max(0, avance - 0.02), this.siguiente);
+        a.objeto.position.copy(this.punto).add(a.desfase);
+        // Nadan con la punta del manto por delante: miran hacia atrás.
+        a.objeto.lookAt(this.siguiente.add(a.desfase));
+        a.objeto.visible = k > 0 && k < 1;
+        const apertura = 0.12 + Math.max(0, pulso) * 0.28;
+        a.objeto.userData.brazos.forEach((codo, i) => (codo.rotation.x = -Math.PI / 2 + apertura * (i < 2 ? 0.5 : 1)));
+      });
+    },
+  });
+
+  /* ---------- Peces linterna: un banco de luces pequeñas ---------- */
+  AFRAME.registerComponent('peces-linterna', {
+    schema: { cantidad: { default: 220 } },
+    init: function () {
+      const n = this.data.cantidad;
+      const posiciones = new Float32Array(n * 3);
+      const datos = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        posiciones[i * 3] = (Math.random() - 0.5) * 7;
+        posiciones[i * 3 + 1] = (Math.random() - 0.5) * 2.6;
+        posiciones[i * 3 + 2] = (Math.random() - 0.5) * 3.2;
+        datos[i * 3] = Math.random();
+        datos[i * 3 + 1] = 0.6 + Math.random() * 0.8;
+        datos[i * 3 + 2] = Math.random();
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(posiciones, 3));
+      geo.setAttribute('aDatos', new THREE.BufferAttribute(datos, 3));
+      this.uFuerza = { value: 0 };
+      this.uDispersion = { value: 0 };
+      const mat = new THREE.ShaderMaterial({
+        uniforms: { uTiempo: U.uTiempo, uEscalaPuntos: U.uEscalaPuntos, uFuerza: this.uFuerza, uDispersion: this.uDispersion, uMapa: { value: B.texPunto() } },
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        fog: false,
+        vertexShader: `
+          attribute vec3 aDatos;
+          uniform float uTiempo;
+          uniform float uEscalaPuntos;
+          uniform float uDispersion;
+          varying float vBrillo;
+          void main(){
+            // Al alumbrarlo, el banco se abre y se dispersa.
+            vec3 p = position * (1.0 + uDispersion * 1.7);
+            // El banco ondula y cada pez se mueve un poco por su cuenta.
+            p.x += sin(uTiempo * 1.3 * aDatos.y + aDatos.x * 30.0) * 0.25;
+            p.y += sin(uTiempo * 0.9 + p.x * 0.8 + aDatos.z * 10.0) * 0.3;
+            p.z += cos(uTiempo * 1.1 * aDatos.y + aDatos.z * 20.0) * 0.2;
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            vBrillo = (0.45 + 0.55 * sin(uTiempo * 5.0 * aDatos.y + aDatos.x * 50.0)) * exp(mv.z * 0.05) * (1.0 + uDispersion * 0.8);
+            gl_PointSize = clamp(0.035 * uEscalaPuntos / max(-mv.z, 0.3), 1.0, 22.0);
+            gl_Position = projectionMatrix * mv;
+          }`,
+        fragmentShader: `
+          uniform sampler2D uMapa;
+          uniform float uFuerza;
+          varying float vBrillo;
+          void main(){
+            float a = texture2D(uMapa, gl_PointCoord).a * vBrillo * uFuerza;
+            gl_FragColor = vec4(vec3(0.35, 0.75, 1.0) * a * 1.4, 1.0);
+            ${B.GLSL_SALIDA}
+          }`,
+      });
+      this.puntos = new THREE.Points(geo, mat);
+      this.puntos.frustumCulled = false;
+      this.el.setObject3D('mesh', this.puntos);
+    },
+    tick: function (tiempo, dt) {
+      const p = estado.profundidad;
+      const luz = this.puntos.visible ? B.iluminado(this.puntos.position) : 0;
+      this.uDispersion.value += (luz - this.uDispersion.value) * Math.min(1, segundos(dt) * (luz > this.uDispersion.value ? 3 : 0.5));
+      const fuerza = estado.enSuperficie ? 0 : limitar((p - 230) / 120) * limitar((1150 - p) / 200);
+      this.uFuerza.value = fuerza;
+      this.puntos.visible = fuerza > 0.01;
+      if (!this.puntos.visible) return;
+      // El banco cruza de derecha a izquierda y queda arriba a medida que se baja.
+      const k = (p - 230) / 920;
+      this.puntos.position.set(7 - k * 15, 2.2 + k * 3.5, -5.5 + Math.sin(k * 3.1) * 1.5);
     },
   });
 

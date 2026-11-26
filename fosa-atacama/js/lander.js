@@ -1,16 +1,29 @@
 /*
- * Lander: vehículo autónomo de caída libre, como los que se usan para estudiar las fosas.
- * Bastidor de aluminio, esferas de flotación de vidrio en cascos amarillos, focos, cámara,
- * instrumentos, lastre y un brazo con carnada y barra de escala frente a la cámara.
+ * Lander Audacia: el vehículo de caída libre de la expedición Atacamex 2018, modelado a partir
+ * de las fotografías publicadas. Es una torre blanca, alta y angosta: arriba lleva esferas de
+ * vidrio que la hacen flotar (tres en una columna lateral), abajo cilindros negros con las
+ * botellas de muestras y los instrumentos, y encima antenas y un banderín para encontrarla.
+ * Los focos, la cámara y el brazo con carnada son los que usa la experiencia.
  */
 (function () {
   const B = window.FOSA_BASE;
   const { THREE, V3, U, estado, Lote, material, metal, pintura, texRejilla, suave } = B;
 
-  const MEDIO = 0.8; // medio lado del bastidor
-  const ALTO = 2.3;
-  const PIVOTE_BRAZO = new V3(MEDIO, 0.08, -MEDIO - 0.02);
-  const LARGO_BRAZO = 1.926;
+  // La torre queda adelante y a la izquierda de la persona; ilumina el fondo frente a ella.
+  const BASE = new V3(-1.15, B.ALTURA_FONDO, -1.95);
+  const LADO = 0.31; // medio lado de la torre
+  const ALTO = 2.6;
+  const PIVOTE_BRAZO = new V3(BASE.x + LADO, B.ALTURA_FONDO + 0.38, BASE.z + LADO);
+  const HACIA_CARNADA = B.POSICION_CARNADA.clone().sub(PIVOTE_BRAZO);
+  const LARGO_BRAZO = HACIA_CARNADA.length();
+  const GIRO_BRAZO = Math.atan2(-HACIA_CARNADA.x, -HACIA_CARNADA.z);
+  const CAIDA_BRAZO = Math.asin(HACIA_CARNADA.y / LARGO_BRAZO);
+
+  // Los focos van en la torre y apuntan a la zona de la carnada.
+  [[BASE.x + LADO + 0.05, B.ALTURA_FONDO + 2.2, BASE.z + LADO], [BASE.x + LADO + 0.05, B.ALTURA_FONDO + 1.55, BASE.z + LADO]].forEach((p, i) => {
+    U.uFocoPos.value[i].fromArray(p);
+    U.uFocoDir.value[i].copy(B.POSICION_CARNADA).add(new V3(i ? 0.5 : -0.3, 0, i ? -0.6 : 0.2)).sub(U.uFocoPos.value[i]).normalize();
+  });
 
   function hazDeLuz(largo, radio, intensidad) {
     const geo = new THREE.ConeGeometry(radio, largo, 96, 16, true);
@@ -65,152 +78,145 @@
     init: function () {
       const interior = this.data.modo === 'interior';
       const lote = new Lote();
-      const mAlu = metal('#b3b8bc', 0.5);
-      const mAluOscuro = metal('#6c7177', 0.55);
+      const mBlanco = material('#d9dcda', { roughness: 0.55 });
+      const mNegro = material('#131415', { roughness: 0.5 });
+      const mAcero = metal('#9a9fa4', 0.35);
       const mTitanio = metal('#8d8f8c', 0.4);
-      const mAcero = metal('#4d5055', 0.7);
-      const oxido = B.texPBR('green_metal_rust', [1, 1], 'arm');
-      const mLastre = new THREE.MeshStandardMaterial({ map: oxido.map, normalMap: oxido.normalMap, roughnessMap: oxido.extra, metalnessMap: oxido.extra, roughness: 1, metalness: 1, color: '#8d8f8c' });
-      const mAmarillo = pintura('#d99a00', { roughness: 0.45 });
-      const mNaranja = pintura('#ff5a14', { roughness: 0.6, side: THREE.DoubleSide });
-      const mNegro = material('#131415', { roughness: 0.55 });
-      const mPVC = material('#737b84', { roughness: 0.5 });
-      const mVidrio = new THREE.MeshStandardMaterial({ color: '#cfeee8', transparent: true, opacity: 0.32, roughness: 0.04, metalness: 0 });
+      const mRosa = material('#d8457f', { roughness: 0.7 });
+      const mVerde = new THREE.MeshStandardMaterial({ color: '#b8f000', roughness: 0.7, side: THREE.DoubleSide, emissive: new THREE.Color('#3a4d00'), emissiveIntensity: 0.25 });
+      const mRojo = new THREE.MeshStandardMaterial({ color: '#d8261c', roughness: 0.7, side: THREE.DoubleSide });
+      const mVidrio = new THREE.MeshStandardMaterial({ color: '#dff2f0', transparent: true, opacity: 0.38, roughness: 0.03, metalness: 0.1 });
       const cilindro = (r, h, lados) => new THREE.CylinderGeometry(r, r, h, lados || 18);
       const caja = (w, h, d) => new THREE.BoxGeometry(w, h, d);
-      const a = MEDIO;
+      const a = LADO;
 
-      // Bastidor de perfiles de aluminio.
+      // Bastidor de placas blancas: cuatro esquinas y marcos horizontales.
       [[-a, -a], [a, -a], [-a, a], [a, a]].forEach(([x, z]) => {
-        lote.tubo(mAlu, [x, -0.33, z], [x, ALTO, z], 0.034, 4);
-        lote.agregar(cilindro(0.1, 0.03, 20), mAcero, [x, -0.335, z]);
-        lote.agregar(caja(0.11, 0.11, 0.11), mAluOscuro, [x, 0.02, z]);
-        lote.agregar(caja(0.11, 0.11, 0.11), mAluOscuro, [x, ALTO, z]);
+        lote.agregar(caja(0.07, ALTO, 0.018), mBlanco, [x, ALTO / 2, z + Math.sign(z) * 0.0]);
+        lote.agregar(caja(0.018, ALTO, 0.07), mBlanco, [x, ALTO / 2, z]);
       });
-      [0.02, ALTO].forEach((y) => {
-        lote.tubo(mAlu, [-a, y, -a], [a, y, -a], 0.03, 4);
-        lote.tubo(mAlu, [-a, y, a], [a, y, a], 0.03, 4);
-        lote.tubo(mAlu, [-a, y, -a], [-a, y, a], 0.03, 4);
-        lote.tubo(mAlu, [a, y, -a], [a, y, a], 0.03, 4);
+      [0.02, 0.5, 1.02, 1.48, 1.92, 2.34, ALTO].forEach((y) => {
+        lote.agregar(caja(a * 2 + 0.07, 0.06, 0.018), mBlanco, [0, y, -a]);
+        lote.agregar(caja(a * 2 + 0.07, 0.06, 0.018), mBlanco, [0, y, a]);
+        lote.agregar(caja(0.018, 0.06, a * 2 + 0.07), mBlanco, [-a, y, 0]);
+        lote.agregar(caja(0.018, 0.06, a * 2 + 0.07), mBlanco, [a, y, 0]);
       });
-      // Barandas a media altura (el frente queda libre para operar).
-      lote.tubo(mAlu, [-a, 1.02, a], [a, 1.02, a], 0.024, 4);
-      lote.tubo(mAlu, [-a, 1.02, -a], [-a, 1.02, a], 0.024, 4);
-      lote.tubo(mAlu, [a, 1.02, -a], [a, 1.02, a], 0.024, 4);
-      // Cruces de refuerzo atrás.
-      lote.tubo(mAlu, [-a, 1.02, a], [a, ALTO, a], 0.016, 4);
-      lote.tubo(mAlu, [a, 1.02, a], [-a, ALTO, a], 0.016, 4);
-      // Pernos en las uniones.
-      [[-a, -a], [a, -a], [-a, a], [a, a]].forEach(([x, z]) => {
-        [0.02, 1.02, ALTO].forEach((y) => lote.agregar(cilindro(0.012, 0.012, 6), mAcero, [x + Math.sign(x) * 0.058, y, z], [0, 0, Math.PI / 2]));
-      });
+      lote.agregar(caja(a * 2, 0.02, a * 2), mBlanco, [0, 0.02, 0]);
+      lote.agregar(caja(a * 2, 0.02, a * 2), mBlanco, [0, 1.12, 0]);
 
-      // Esferas de flotación de vidrio dentro de cascos amarillos.
-      [[-0.42, -0.42], [0.42, -0.42], [-0.42, 0.42], [0.42, 0.42]].forEach(([x, z]) => {
-        lote.agregar(new THREE.SphereGeometry(0.235, 28, 18), mAmarillo, [x, ALTO + 0.3, z]);
-        lote.agregar(cilindro(0.262, 0.035, 28), mAmarillo, [x, ALTO + 0.3, z]);
-        for (let i = 0; i < 8; i++) {
-          const ang = (i / 8) * Math.PI * 2;
-          lote.agregar(cilindro(0.012, 0.05, 6), mAcero, [x + Math.cos(ang) * 0.245, ALTO + 0.3, z + Math.sin(ang) * 0.245]);
-        }
-        lote.agregar(cilindro(0.06, 0.08, 12), mNegro, [x, ALTO + 0.055, z]);
+      // Columna lateral con tres esferas de vidrio, en sus placas con ventana redonda.
+      const xAla = -a - 0.2;
+      [a, a - 0.34].forEach((z) => {
+        [-0.18, 0.18].forEach((dx) => lote.agregar(caja(0.045, 1.32, 0.018), mBlanco, [xAla + dx, 1.86, z]));
       });
-      lote.tubo(mAlu, [-a, ALTO, 0], [a, ALTO, 0], 0.025, 4);
-      lote.tubo(mAlu, [0, ALTO, -a], [0, ALTO, a], 0.025, 4);
+      [1.3, 1.74, 2.18, 2.52].forEach((y) => lote.agregar(caja(0.4, 0.018, 0.36), mBlanco, [xAla, y - 0.1, a - 0.17]));
+      this.esferas = [];
+      [1.42, 1.86, 2.3].forEach((y) => this.esferas.push([xAla, y, a - 0.17]));
+      // Dos esferas más dentro de la parte alta de la torre.
+      this.esferas.push([0.02, 1.4, 0], [0.02, 1.84, 0], [0.02, 2.28, 0]);
+      this.esferas.forEach(([x, y, z]) => {
+        lote.agregar(new THREE.TorusGeometry(0.168, 0.012, 8, 32), mAcero, [x, y, z]);
+        lote.agregar(new THREE.SphereGeometry(0.05, 12, 8), mAcero, [x, y - 0.1, z]);
+      });
+      // Boya rosada de recuperación.
+      lote.agregar(new THREE.SphereGeometry(0.11, 18, 12), mRosa, [0.12, 1.62, a - 0.06]);
 
-      // Mástil con banderín y baliza, para encontrarlo al volver a la superficie.
-      lote.tubo(mAlu, [0, ALTO, a], [0, ALTO + 1.25, a], 0.014);
-      lote.agregar(new THREE.PlaneGeometry(0.34, 0.22), mNaranja, [0.18, ALTO + 1.12, a]);
-      lote.agregar(cilindro(0.03, 0.09, 12), mNegro, [0, ALTO + 0.86, a]);
+      // Parte baja: botellas de muestras y cilindros de instrumentos.
+      [[-0.13, 0.12], [0.13, 0.12]].forEach(([x, z]) => {
+        lote.agregar(cilindro(0.105, 0.86, 22), mNegro, [x, 0.56, z]);
+        lote.agregar(cilindro(0.112, 0.03, 22), mAcero, [x, 0.99, z]);
+        lote.agregar(cilindro(0.112, 0.03, 22), mAcero, [x, 0.13, z]);
+      });
+      lote.agregar(cilindro(0.045, 0.9, 14), mTitanio, [-0.12, 0.56, -0.16]);
+      lote.agregar(cilindro(0.035, 0.7, 12), mAcero, [0.13, 0.5, -0.17]);
+      lote.agregar(cilindro(0.06, 0.34, 14), mTitanio, [0.02, 0.3, -0.05]);
+      // Cables.
+      lote.agregar(new THREE.TorusGeometry(0.16, 0.009, 6, 20, Math.PI), mNegro, [0.05, 1.12, -0.1], [0, 0.6, 0]);
+      lote.agregar(new THREE.TorusGeometry(0.12, 0.009, 6, 20, Math.PI), mNegro, [-0.08, 1.12, 0.1], [0, -0.9, 0]);
 
-      // Focos LED en los brazos delanteros.
+      // Antenas, banderín y bandera chilena.
+      [[-0.2, -0.2], [0.05, -0.24]].forEach(([x, z], i) => lote.tubo(mAcero, [x, ALTO, z], [x, ALTO + 0.34 + i * 0.1, z], 0.012));
+      lote.agregar(cilindro(0.02, 0.07, 10), mNegro, [-0.2, ALTO + 0.36, -0.2]);
+      lote.tubo(mAcero, [0.22, ALTO, 0.22], [0.22, ALTO + 0.95, 0.22], 0.008);
+      lote.agregar(new THREE.PlaneGeometry(0.4, 0.3), mVerde, [0.43, ALTO + 0.78, 0.22]);
+      lote.agregar(new THREE.PlaneGeometry(0.46, 0.035), mRojo, [0.43, ALTO + 0.78, 0.221], [0, 0, 0.62]);
+      // Eslinga para izarlo.
+      [[-a, -a], [a, -a], [-a, a], [a, a]].forEach(([x, z]) => lote.tubo(mAcero, [x, ALTO, z], [0, ALTO + 0.55, 0], 0.006, 6));
+      lote.agregar(new THREE.TorusGeometry(0.045, 0.01, 8, 16), mAcero, [0, ALTO + 0.58, 0]);
+
+      // Lastre: cuelga bajo la torre y se suelta para volver a la superficie.
+      lote.agregar(cilindro(0.16, 0.12, 20), metal('#3c3f43', 0.75), [0, -0.02, 0]);
+
+      // Focos LED y cámara, en el costado que mira a la carnada.
       const dirFoco = U.uFocoDir.value;
-      [-1, 1].forEach((lado, i) => {
-        const centro = U.uFocoPos.value[i];
-        lote.tubo(mAlu, [lado * a, ALTO, -a], [centro.x, centro.y + 0.03, centro.z + 0.12], 0.018, 4);
-        const orientacion = new THREE.Quaternion().setFromUnitVectors(new V3(0, -1, 0), dirFoco[i]);
-        const matriz = (desplazamiento) =>
-          new THREE.Matrix4().compose(centro.clone().addScaledVector(dirFoco[i], desplazamiento), orientacion, new V3(1, 1, 1));
-        lote.agregarM(cilindro(0.055, 0.14, 20), mTitanio, matriz(-0.07));
-        lote.agregarM(cilindro(0.066, 0.03, 20), mNegro, matriz(-0.005));
-        [-0.045, -0.075, -0.105].forEach((d) => lote.agregarM(cilindro(0.064, 0.008, 20), mTitanio, matriz(d)));
+      const local = (v) => v.clone().sub(BASE);
+      [0, 1].forEach((i) => {
+        const centro = local(U.uFocoPos.value[i]);
+        const giro = new THREE.Quaternion().setFromUnitVectors(new V3(0, -1, 0), dirFoco[i]);
+        const matriz = (d) => new THREE.Matrix4().compose(centro.clone().addScaledVector(dirFoco[i], d), giro, new V3(1, 1, 1));
+        lote.agregarM(cilindro(0.05, 0.13, 20), mTitanio, matriz(-0.065));
+        lote.agregarM(cilindro(0.06, 0.025, 20), mNegro, matriz(-0.005));
+        lote.agregar(caja(0.1, 0.03, 0.05), mBlanco, [centro.x - 0.05, centro.y, centro.z]);
       });
-
-      // Cámara en carcasa de titanio con cúpula de vidrio.
-      const dirCamara = new V3(0, -0.5, -0.87).normalize();
+      const dirCamara = B.POSICION_CARNADA.clone().sub(BASE).sub(new V3(a, 1.9, a)).normalize();
+      const centroCamara = new V3(a + 0.03, 1.9, a - 0.12);
       const qCamara = new THREE.Quaternion().setFromUnitVectors(new V3(0, -1, 0), dirCamara);
-      const centroCamara = new V3(0, ALTO - 0.06, -a - 0.02);
       const mCamara = (d) => new THREE.Matrix4().compose(centroCamara.clone().addScaledVector(dirCamara, d), qCamara, new V3(1, 1, 1));
-      lote.agregarM(cilindro(0.06, 0.3, 20), mTitanio, mCamara(-0.15));
-      lote.agregarM(cilindro(0.068, 0.03, 20), mAluOscuro, mCamara(-0.01));
-      lote.agregarM(cilindro(0.045, 0.01, 20), mNegro, mCamara(0.01));
-      lote.agregar(caja(0.16, 0.04, 0.1), mAluOscuro, [0, ALTO - 0.02, -a + 0.02]);
-
-      // CTD (salinidad, temperatura y presión) con su jaula.
-      lote.agregar(cilindro(0.048, 0.62, 16), mTitanio, [-a + 0.11, 1.55, a - 0.11]);
-      [1.3, 1.8].forEach((y) => lote.agregar(new THREE.TorusGeometry(0.075, 0.008, 6, 20), mAlu, [-a + 0.11, y, a - 0.11], [Math.PI / 2, 0, 0]));
-      lote.agregar(cilindro(0.03, 0.1, 12), mNegro, [-a + 0.11, 1.2, a - 0.11]);
-
-      // Botellas para muestras de agua.
-      [0.25, 0.45].forEach((dx) => {
-        lote.agregar(cilindro(0.058, 0.7, 16), mPVC, [a - dx, 1.5, a - 0.1]);
-        lote.agregar(cilindro(0.063, 0.04, 16), mNegro, [a - dx, 1.87, a - 0.1]);
-        lote.agregar(cilindro(0.063, 0.04, 16), mNegro, [a - dx, 1.13, a - 0.1]);
-      });
-      lote.agregar(caja(0.34, 0.03, 0.05), mAlu, [a - 0.35, 1.5, a - 0.03]);
-
-      // Baterías y electrónica en cilindros de presión.
-      lote.agregar(cilindro(0.09, 1.0, 20), mAluOscuro, [0, 0.2, a - 0.14], [0, 0, Math.PI / 2]);
-      [-0.52, 0.52].forEach((x) => lote.agregar(cilindro(0.1, 0.05, 20), mTitanio, [x, 0.2, a - 0.14], [0, 0, Math.PI / 2]));
-      lote.agregar(new THREE.TorusGeometry(0.16, 0.012, 6, 20, Math.PI), mNegro, [0.56, 0.36, a - 0.14], [0, Math.PI / 2, 0]);
-      lote.agregar(new THREE.TorusGeometry(0.2, 0.012, 6, 20, Math.PI), mNegro, [-0.56, 0.4, a - 0.14], [0, Math.PI / 2, 0]);
-
-      // Lastre de acero: se suelta al terminar para que el lander suba solo.
-      [-1, 1].forEach((lado) => {
-        for (let i = 0; i < 3; i++) lote.agregar(caja(0.12, 0.05, 0.6), mLastre, [lado * (a + 0.085), 0.1 + i * 0.055, 0]);
-        lote.agregar(caja(0.03, 0.22, 0.05), mAluOscuro, [lado * (a + 0.085), 0.13, 0.22]);
-        lote.agregar(caja(0.03, 0.22, 0.05), mAluOscuro, [lado * (a + 0.085), 0.13, -0.22]);
-      });
+      lote.agregarM(cilindro(0.055, 0.26, 20), mTitanio, mCamara(-0.13));
+      lote.agregarM(cilindro(0.04, 0.01, 20), mNegro, mCamara(0.006));
 
       const grupo = lote.construir();
 
-      // Plataforma de rejilla.
-      const rejilla = new THREE.Mesh(
-        new THREE.PlaneGeometry(a * 2, a * 2),
-        new THREE.MeshStandardMaterial({ map: texRejilla(), color: '#5d6166', alphaTest: 0.5, metalness: 0.85, roughness: 0.55, side: THREE.DoubleSide })
-      );
-      rejilla.rotation.x = -Math.PI / 2;
-      rejilla.position.y = 0.045;
-      grupo.add(rejilla);
+      // Esferas de vidrio (transparentes) con su carga interior.
+      this.esferas.forEach(([x, y, z]) => {
+        const vidrio = new THREE.Mesh(new THREE.SphereGeometry(0.165, 28, 18), mVidrio);
+        vidrio.position.set(x, y, z);
+        vidrio.renderOrder = 4;
+        grupo.add(vidrio);
+      });
 
-      // Cúpula de la cámara y baliza intermitente.
-      const cupula = new THREE.Mesh(new THREE.SphereGeometry(0.055, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), mVidrio);
-      cupula.position.copy(centroCamara).addScaledVector(dirCamara, 0.0);
-      cupula.quaternion.setFromUnitVectors(new V3(0, 1, 0), dirCamara);
-      grupo.add(cupula);
-      this.baliza = new THREE.MeshBasicMaterial({ color: '#111111' });
-      const luzBaliza = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 8), this.baliza);
-      luzBaliza.position.set(0, ALTO + 0.93, a);
-      grupo.add(luzBaliza);
+      // Bandera chilena en la placa superior.
+      const lienzo = document.createElement('canvas');
+      lienzo.width = 96;
+      lienzo.height = 64;
+      const c = lienzo.getContext('2d');
+      c.fillStyle = '#ffffff';
+      c.fillRect(0, 0, 96, 32);
+      c.fillStyle = '#d52b1e';
+      c.fillRect(0, 32, 96, 32);
+      c.fillStyle = '#0039a6';
+      c.fillRect(0, 0, 32, 32);
+      c.fillStyle = '#ffffff';
+      c.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const ang = -Math.PI / 2 + (i * 4 * Math.PI) / 5;
+        c.lineTo(16 + Math.cos(ang) * 9, 16 + Math.sin(ang) * 9);
+      }
+      c.fill();
+      const texBandera = new THREE.CanvasTexture(lienzo);
+      texBandera.colorSpace = THREE.SRGBColorSpace;
+      const bandera = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.08), new THREE.MeshStandardMaterial({ map: texBandera, roughness: 0.6 }));
+      bandera.position.set(-a + 0.12, 2.47, a + 0.012);
+      grupo.add(bandera);
 
-      // Lentes de los focos, luces y haces.
+      // Lentes, luces y haces.
       this.lente = new THREE.MeshBasicMaterial({ color: '#1c1c18' });
       this.focos = [];
       this.haces = [];
       [0, 1].forEach((i) => {
-        const centro = U.uFocoPos.value[i];
-        const lente = new THREE.Mesh(new THREE.CircleGeometry(0.052, 24), this.lente);
-        lente.position.copy(centro).addScaledVector(dirFoco[i], 0.012);
+        const centro = local(U.uFocoPos.value[i]);
+        const lente = new THREE.Mesh(new THREE.CircleGeometry(0.047, 24), this.lente);
+        lente.position.copy(centro).addScaledVector(dirFoco[i], 0.011);
         lente.quaternion.setFromUnitVectors(new V3(0, 0, 1), dirFoco[i]);
         grupo.add(lente);
         if (interior) {
-          const foco = new THREE.SpotLight('#eaf3ff', 0, 20, 0.64, 0.6, 1.3);
+          const foco = new THREE.SpotLight('#eaf3ff', 0, 20, 0.7, 0.6, 1.3);
           foco.position.copy(centro);
           foco.target.position.copy(centro).addScaledVector(dirFoco[i], 4);
           grupo.add(foco);
           grupo.add(foco.target);
           this.focos.push(foco);
-          const haz = hazDeLuz(9, 4.4, 0.09);
+          const haz = hazDeLuz(7, 3.6, 0.09);
           haz.position.copy(centro);
           haz.quaternion.setFromUnitVectors(new V3(0, -1, 0), dirFoco[i]);
           grupo.add(haz);
@@ -219,22 +225,11 @@
       });
 
       // Brazo de la carnada, con barra de escala.
-      this.brazo = this.crearBrazo(mAlu, mNegro, mAcero);
-      this.brazo.position.copy(PIVOTE_BRAZO);
+      this.brazo = this.crearBrazo(material('#c9ccca', { roughness: 0.5 }), mNegro, mAcero);
+      this.brazo.position.copy(local(PIVOTE_BRAZO));
       grupo.add(this.brazo);
-      const bisagra = new THREE.Mesh(caja(0.12, 0.1, 0.08), mAluOscuro);
-      bisagra.position.copy(PIVOTE_BRAZO);
-      grupo.add(bisagra);
 
-      // Eslingas para colgarlo de la grúa.
-      if (!interior) {
-        const mCable = metal('#2c2f33', 0.6);
-        const eslingas = new Lote();
-        [[-a, -a], [a, -a], [-a, a], [a, a]].forEach(([x, z]) => eslingas.tubo(mCable, [x, ALTO, z], [0, ALTO + 1.3, 0], 0.008, 6));
-        eslingas.agregar(new THREE.TorusGeometry(0.06, 0.014, 8, 16), mAcero, [0, ALTO + 1.35, 0]);
-        grupo.add(eslingas.construir());
-      }
-
+      grupo.position.copy(interior ? BASE : new V3(0, 0, 0));
       this.grupo = grupo;
       this.el.setObject3D('mesh', grupo);
     },
@@ -266,9 +261,10 @@
       [0.1, 0.26].forEach((d) => lote.agregar(new THREE.TorusGeometry(0.04, 0.004, 6, 16), mNegro, [0, 0.022, -L + d]));
       lote.agregar(new THREE.CylinderGeometry(0.012, 0.012, 0.03, 8), mAcero, [0, 0, -L]);
       const grupo = lote.construir();
-      // Guardado, el brazo va plegado a lo largo del borde delantero.
+      // Guardado, el brazo va plegado hacia arriba, pegado a la torre.
       grupo.rotation.order = 'YXZ';
-      grupo.rotation.y = Math.PI / 2;
+      grupo.rotation.y = GIRO_BRAZO;
+      grupo.rotation.x = 1.5;
       return grupo;
     },
 
@@ -282,15 +278,10 @@
       });
       this.lente.color.setRGB(0.1 + f * 1.6, 0.1 + f * 1.7, 0.09 + f * 1.8);
 
-      // Baliza: un destello corto cada dos segundos.
-      const destello = t % 2000 < 90 ? 1 : 0;
-      this.baliza.color.setRGB(0.06 + destello * 1.5, 0.06 + destello * 1.5, 0.06 + destello * 1.4);
-
       if (interior) {
-        // El brazo gira y baja la carnada frente a la cámara.
+        // El brazo baja la carnada frente a la cámara.
         const k = estado.carnada > 0 ? suave(0, 2.4, estado.carnada) : 0;
-        this.brazo.rotation.y = Math.PI / 2 + (0.433 - Math.PI / 2) * k;
-        this.brazo.rotation.x = -0.146 * k;
+        this.brazo.rotation.x = 1.5 + (CAIDA_BRAZO - 1.5) * k;
       } else {
         // Colgado de la grúa: se balancea y cae al soltarlo.
         this.grupo.rotation.z = Math.sin(t * 0.0011) * 0.035;
