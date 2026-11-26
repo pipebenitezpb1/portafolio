@@ -438,3 +438,14 @@ open(os.path.join(aqui, "hoja_corte_600x600.svg"), "w").write(
     f'<svg xmlns="http://www.w3.org/2000/svg" width="{HOJA:g}mm" height="{HOJA:g}mm" viewBox="0 0 {HOJA:g} {HOJA:g}" '
     f'fill="none" stroke-width="0.1" font-family="sans-serif">' + "".join(h10) + "</svg>")
 print(f"hoja de corte 600 x 600: ocupa hasta x = {max(10 + wc, x2 + w9):.0f} mm, y = {max(yy, y2 + hm):.0f} mm")
+
+# 11) hoja de 600 x 600 mm solo con las piezas de prueba
+h10 = []
+w9, h9 = poner(placa9, 10, 10, textos=rot9)
+wt, ht = poner(tira9, 10, 10 + h9 + 6, nombre="tira de prueba"); poner(tira9, 10 + wt + 6, 10 + h9 + 6)
+y2 = 10 + h9 + 6 + ht + 8
+wm, hm = poner(mini, 10, y2, nombre="esquina del pasador"); poner(mini, 10 + wm + 6, y2); poner(mini_lomo, 10 + 2 * (wm + 6), y2)
+open(os.path.join(aqui, "hoja_pruebas_600x600.svg"), "w").write(
+    f'<svg xmlns="http://www.w3.org/2000/svg" width="{HOJA:g}mm" height="{HOJA:g}mm" viewBox="0 0 {HOJA:g} {HOJA:g}" '
+    f'fill="none" stroke-width="0.1" font-family="sans-serif">' + "".join(h10) + "</svg>")
+print(f"hoja de pruebas 600 x 600: ocupa hasta x = {10 + w9:.0f} mm, y = {y2 + hm:.0f} mm")
