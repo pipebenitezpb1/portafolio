@@ -30,7 +30,8 @@ ANCHO_MEDIDO = None        # mm, ancho maximo real, en la mordaza (None = usar A
 CON_VACIADO = True         # False = bandeja maciza (el vaciado se hace despues, con la llave bien medida); True = con vaciado
 # Medidas reales de la llave (mm), segun calcado/medidas_a_tomar.png.  None = todavia sin medir (se estima).
 # B (58) no se usa: la cabeza no se toca, porque ya calza casi perfecta en la bandeja impresa.
-MEDIDAS = dict(A=None, B=None, C=33.0, D=26.4, E=22.0, F=30.0, G=None, H=None)
+# A = 203,5 es una estimacion: en la foto de la bandeja impresa sobraban unos 4,5 mm tras la corona (el vaciado era 207 + 1 de holgura).
+MEDIDAS = dict(A=203.5, B=None, C=33.0, D=26.4, E=22.0, F=30.0, G=None, H=None)
 CABEZA_REAL = 0.95         # mm por lado que la cabeza real supera al calcado: sale de que el vaciado anterior (calcado + 1,0) quedo justo,
                            # mas los 0,15 mm hacia afuera pedidos.  Asi el vaciado de la cabeza es el de hoy + 0,15.
 EXTRA_CABEZA = (0.0, 0.66) # mm de holgura adicional en la cabeza de la llave, y desde que fraccion del largo se aplica
@@ -101,7 +102,7 @@ def llave_medida():
     kx, ky, cx, cy = LARGO_ESTIMADO / hb[2], ANCHO_ESTIMADO / hb[3], hb[2] / 2, hb[3] / 2
     ub = lambda u: cx + kx * (u - cx)                                                   # posicion a lo largo en el modelo que ya calzo
     A = M["A"] or LARGO_ESTIMADO; punta = ub(Lf) - A                                    # punta de la corona
-    F = M["F"] or (ub(23.0) - ub(0)); G = M["G"] or (ub(109.0) - ub(0))
+    F = M["F"] or (ub(23.0) - punta); G = M["G"] or (ub(109.0) - punta)      # sin G, el final de la goma queda donde ya calzo
     ku, kU = [0.0, 23.0, 109.0, 140.0, Lf], [punta, punta + F, punta + G, ub(140.0), ub(Lf)]   # corona | mango | cuello | cabeza
     assert all(b_ > a_ for a_, b_ in zip(kU, kU[1:])), "medidas a lo largo incoherentes"
     us = np.arange(0.5, Lf, 0.5); cen = np.array([sum(ext_v(herr_foto, u)) / 2 for u in us])
