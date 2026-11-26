@@ -160,14 +160,14 @@ def acostar(s, eje=None, ang=0):
     if eje: s = s.rotate(Vector(0, 0, 0), Vector(*eje), ang)
     bb = s.BoundingBox(); return s.translate(Vector(-bb.xmin, -bb.ymin, -bb.zmin))
 pr = [("1_calce_llave", acostar(resta(ext(g.vaciado.buffer(2.5), 0, 3.0), ext(g.vaciado, 0.6, 4.0)))),
-      ("2_bisagra_trozo_bandeja", acostar(band.intersect(cil(P[0], P[1], 26, -1, alto + 1)))),
+      ("2_bisagra_trozo_bandeja", acostar(band.intersect(cil(P[0], P[1], 17, -1, alto + 1)))),
       ("5_calibre_remache", acostar(ext(g.cal5.difference(unary_union([box(8.5 + 33 * i - 0.2, 5.8, 8.5 + 33 * i + g.PESTANA + 0.2, 6.2 + t) for i in range(3)])), 0, t))),
       ] + ([("bisagra_fija", acostar(bisagra(), (1, 0, 0), 90))] if g.CON_BISAGRA_FIJA else [])
 pr += [(f"pasador_{i + 1}_marcas_cuello_+{e_:.1f}", acostar(remache((0, 0), True, e_, i + 1), (1, 0, 0), 90)) for i, e_ in enumerate(g.VAR_REMACHE)]
 pr += [(f"broche_seguro_{i + 1}_marcas_pata_{p_:.1f}", acostar(seguro((0, 0), True, p_, i + 1), (1, 0, 0), 180)) for i, p_ in enumerate(g.VAR_SEGURO)]
-zona = caja(ur - 30, ur + 3, yb - 1, g.vs1 + 7, -1, alto + 1)
+zona = caja(ur - 14, ur + 3, yb - 1, g.vs1 + 7, -1, alto + 1)
 for i, sal in enumerate(g.VAR_FIADOR):
-    b_ = resta(bandeja(sal).intersect(zona), *[caja(ur - 27 + 3 * k, ur - 25.8 + 3 * k, yb - 1, yb + 3, alto - 1, alto + 1) for k in range(i + 1)])
+    b_ = resta(bandeja(sal).intersect(zona), *[caja(ur - 12.5 + 2.6 * k, ur - 11.3 + 2.6 * k, g.vs1 + 3, g.vs1 + 8, alto - 1, alto + 1) for k in range(i + 1)])
     pr.append((f"broche_fiador_{i + 1}_marcas_saliente_{sal:.1f}", acostar(b_)))
 x = y = fila = 0.0; sueltos = []
 for k, (n, s) in enumerate(pr):
@@ -254,7 +254,7 @@ def pasos_bandeja(pz, rec=TODO2D, sal=g.FIADOR_SALIENTE, d=(0, 0), marcas=0):
     paso(pz, "Espacio del nudillo superior", "restar", nud, zc1 - 0.15, alto + 0.5, d)
     paso(pz, "Resalte del fiador (clic)", "sumar", disco((ur, g.v_res), sal).intersection(rec.buffer(5)), 0, 16, d)
     for k in range(marcas):
-        paso(pz, "Marca de variante", "restar", box(ur - 27 + 3 * k, yb - 1, ur - 25.8 + 3 * k, yb + 3), alto - 1, alto + 0.5, d)
+        paso(pz, "Marca de variante", "restar", box(ur - 12.5 + 2.6 * k, g.vs1 + 3, ur - 11.3 + 2.6 * k, g.vs1 + 8), alto - 1, alto + 0.5, d)
 def pasos_remache(pz, c, alas_en_u, extra=0.2, d=(0, 0), marcas=0):
     ln, (al, aa, ah) = t + extra, g.ALA
     def T(p):
@@ -312,11 +312,11 @@ N_ARMADO = len(PASOS)
 Y = -150
 paso("P1 Prueba: calce de la llave", "Anillo exterior", "nuevo", g.vaciado.buffer(2.5), 0, 3.0, (0, Y))
 paso("P1 Prueba: calce de la llave", "Vaciado", "restar", g.vaciado, 0.6, 3.5, (0, Y))
-pasos_bandeja("P2 Prueba: trozo de bandeja con bisagra", disco(P, 26), d=(0, Y - 70))
+pasos_bandeja("P2 Prueba: trozo de bandeja con bisagra", disco(P, 17), d=(0, Y - 70))
 paso("P5 Prueba: calibre impreso", "Placa con agujeros", "nuevo", g.cal5.difference(unary_union([box(8.5 + 33 * i - 0.2, 5.8, 8.5 + 33 * i + g.PESTANA + 0.2, 6.2 + t) for i in range(3)])), 0, t, (40, Y - 80))
 for i, e_ in enumerate(g.VAR_REMACHE): pasos_remache(f"P6 Prueba: pasador cuello +{e_:.1f} ({i + 1} marcas)", (160 + 18 * i, Y - 55), True, e_, marcas=i + 1)
 for i, p_ in enumerate(g.VAR_SEGURO): pasos_seguro(f"P7 Prueba: seguro pata {p_:.1f} ({i + 1} marcas)", (160 + 20 * i, Y - 80), True, p_, marcas=i + 1)
-for i, sal in enumerate(g.VAR_FIADOR): pasos_bandeja(f"P8 Prueba: fiador saliente {sal:.1f} ({i + 1} marcas)", box(ur - 30, yb - 1, ur + 3, g.vs1 + 7), sal, (-ur + 60 + 40 * i, Y - 130), i + 1)
+for i, sal in enumerate(g.VAR_FIADOR): pasos_bandeja(f"P8 Prueba: fiador saliente {sal:.1f} ({i + 1} marcas)", box(ur - 14, yb - 1, ur + 3, g.vs1 + 7), sal, (-ur + 60 + 40 * i, Y - 130), i + 1)
 # --- MDF plano: definitivo y de prueba ---
 def plano_mdf(pz, p, x_, y_):
     b_ = p.bounds; d = (x_ - b_[0], y_ - b_[1])

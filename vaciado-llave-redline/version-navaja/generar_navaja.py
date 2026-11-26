@@ -310,9 +310,9 @@ def recorte(m, poly, z0=-5, z1=alto + 5):
 p1 = D(extruir(vaciado.buffer(2.5), 0, 3.0), extruir(vaciado, 0.6, 4.0)); p1.apply_translation(-p1.bounds[0])
 p1.export(os.path.join(pr, "1_calce_llave.stl"))
 # 2) bisagra: trozo de la bandeja alrededor del eje (se prueba con bisagra_fija + remache)
-recorte(bandeja, Point(P).buffer(26, resolution=32)).export(os.path.join(pr, "2_bisagra_trozo_bandeja.stl"))
+recorte(bandeja, Point(P).buffer(17, resolution=32)).export(os.path.join(pr, "2_bisagra_trozo_bandeja.stl"))
 # 3) fiador: punta de la bandeja con la lamina flexible (se prueba contra el Extremo de MDF)
-recorte(bandeja, box(ur - 30, yb - 1, ur + 3, vs1 + 7)).export(os.path.join(pr, "3_fiador_punta_bandeja.stl"))
+recorte(bandeja, box(ur - 14, yb - 1, ur + 3, vs1 + 7)).export(os.path.join(pr, "3_fiador_punta_bandeja.stl"))
 
 # 4) MDF: mini estuche (2 caras + lomo corto) para probar remache, seguro, pestanas y hoja de bisagra,
 #    recortado de la esquina real de la bisagra, y un calibre con tres holguras de cada encaje
@@ -394,8 +394,8 @@ ms7 += [girar(seguro((0, 0), True, p_, i + 1), 180, [1, 0, 0]) for i, p_ in enum
 sin_resalte = D(bandeja, B(ur + 0.001, ur + 4, v_res - 4, v_res + 4, -1, 18))
 for i, sal in enumerate(VAR_FIADOR):
     b_ = U(sin_resalte, D(cil(ur, v_res, sal, 0, 16), B(ur - 5, ur - 0.5, v_res - 4, v_res + 4, -1, 17)))
-    b_ = D(b_, *[B(ur - 27 + 3 * k, ur - 25.8 + 3 * k, yb - 1, yb + 3, alto - 1, alto + 1) for k in range(i + 1)])
-    ms7.append(recorte(b_, box(ur - 30, yb - 1, ur + 3, vs1 + 7)))
+    b_ = D(b_, *[B(ur - 12.5 + 2.6 * k, ur - 11.3 + 2.6 * k, vs1 + 3, vs1 + 8, alto - 1, alto + 1) for k in range(i + 1)])
+    ms7.append(recorte(b_, box(ur - 14, yb - 1, ur + 3, vs1 + 7)))
 x = y = fila = 0.0
 for m in ms7:
     ex = m.extents
@@ -468,3 +468,15 @@ wl, hl = poner(p_lomo, 10, yy); poner(p_ext, 10 + wl + 8, yy)
 open(os.path.join(aqui, "hoja_caja_sin_diseno_600x600.svg"), "w").write(
     f'<svg xmlns="http://www.w3.org/2000/svg" width="{HOJA:g}mm" height="{HOJA:g}mm" viewBox="0 0 {HOJA:g} {HOJA:g}" '
     f'fill="none" stroke-width="0.1" font-family="sans-serif">' + "".join(h10) + "</svg>")
+
+# 14) PRUEBA DE IMPRESION contra el acrilico ya cortado, en una sola placa:
+#     anillo de calce de la llave + trozo de bandeja con el agujero del pasador + variantes de pasador, seguro y fiador
+ms14 = [trimesh.load(os.path.join(pr, "1_calce_llave.stl")), trimesh.load(os.path.join(pr, "2_bisagra_trozo_bandeja.stl"))] + [m.copy() for m in ms7]
+x = y = fila = 0.0
+for m in ms14:
+    m.apply_translation(-m.bounds[0]); ex = m.extents
+    if x > 0 and x + ex[0] > ms14[0].extents[0] + 0.5: x, y, fila = 0.0, y + fila + 5, 0.0
+    m.apply_translation([x, y, 0]); x += ex[0] + 5; fila = max(fila, ex[1])
+placa14 = trimesh.util.concatenate(ms14); placa14.export(os.path.join(pr, "prueba_impresion.stl"))
+print(f"prueba de impresion: {' x '.join(f'{v:.1f}' for v in placa14.extents)} mm, {len(placa14.split())} piezas, {sum(m.volume for m in ms14) / 1000:.0f} cm3")
+for m in ms14: print("   ", " x ".join(f"{v:.1f}" for v in m.extents), "en", " ".join(f"{v:.0f}" for v in m.bounds[0][:2]), "| estanca", m.is_watertight)
