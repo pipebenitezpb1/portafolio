@@ -25,11 +25,14 @@ from shapely.ops import unary_union
 from shapely import affinity
 
 # ---- llave / vaciado ----
-LARGO_MEDIDO = None        # mm, largo total real de la llave (None = usar el de la foto, 200,0)
-ANCHO_MEDIDO = None        # mm, ancho maximo real, en la mordaza (None = usar el de la foto, 49,9)
+LARGO_MEDIDO = None        # mm, largo total real de la llave (None = usar LARGO_ESTIMADO)
+ANCHO_MEDIDO = None        # mm, ancho maximo real, en la mordaza (None = usar ANCHO_ESTIMADO)
+CON_VACIADO = False        # False = bandeja maciza (el vaciado se hace despues, con la llave bien medida); True = con vaciado
 HOLGURA = 1.0              # mm de juego alrededor de la llave (ajuste fino, solo afecta a la bandeja impresa)
 ALTURA_HERRAMIENTA = 20.0  # mm, grosor maximo de la llave (ajuste fino: fija la profundidad del vaciado)
 # ---- caja de corte: estas medidas NO deben cambiar despues de cortar ----
+LARGO_ESTIMADO = 207.0     # mm: el calcado de la foto (200,0) quedo unos 5 mm corto, mas holgura
+ANCHO_ESTIMADO = 53.0      # mm: el calcado (49,9) quedo unos 3 mm angosto
 MARGEN_CAJA = 4.0          # mm de margen alrededor del calcado de la foto con que se dimensiona la caja
 ALTURA_MAX = 24.0          # mm, grosor maximo de llave que admite la caja (fija el alto de lomo y extremo)
 BASE = 2.0                 # mm de piso minimo bajo la llave
@@ -38,6 +41,11 @@ PARED_LOMO = 5.5           # mm de pared hacia el lomo (deja sitio a la hoja de 
 PARED_PUNTA = 6.0          # mm de pared en la punta (aloja el fiador)
 DEDO_ANCHO = 24.0          # mm, ancho de la ranura para sacar la llave
 DEDO_POS = 0.60            # posicion de la ranura (0 = corona, 1 = mordaza)
+# ---- forma de la tapa y labio para abrir ----
+RADIO_ESTETICO = 250.0     # mm: las entradas del contorno se rellenan con arcos de este radio (curva limpia)
+RADIO_ESQUINA = 7.0        # mm: redondeo de las esquinas de la tapa
+LABIO = (5.0, 55.0, 0.62)  # mm que asoma la bandeja sobre la tapa, largo del labio y posicion (0 = corona, 1 = mordaza)
+UNERO = (1.8, 1.5)         # mm, ancho y profundidad de la ranura del labio (por las dos caras)
 # ---- material de corte (MDF o acrilico) ----
 ESPESOR_MDF = 3.0          # mm, espesor de la plancha
 JUEGO_Z = 0.25             # mm de juego entre bandeja y cada cara
@@ -45,6 +53,8 @@ JUEGO_LOMO = 0.5           # mm entre bandeja y lomo
 JUEGO_PUNTA = 0.6          # mm entre bandeja y extremo
 MARGEN = 3.0               # mm de MDF por fuera de las ranuras
 PESTANA = 16.0             # mm, largo de las pestanas
+RANURA_EXTRA = (0.0, 0.0)  # mm que se agregan al ancho y al largo de las ranuras (segun la prueba de ranuras)
+CERRADURA_EXTRA = 0.0      # mm por lado que se agregan a los agujeros de los pasadores
 # ---- remaches / eje ----
 EJE_D = 10.0               # mm, diametro del cuerpo del remache (eje de giro)
 CUELLO_D = 6.2             # mm, cuello que atraviesa el MDF
@@ -60,13 +70,13 @@ FIADOR_SALIENTE = 1.3      # mm que sobresale el resalte
 
 aqui = os.path.dirname(os.path.abspath(__file__))
 herr_foto = Polygon(np.array(json.load(open(os.path.join(aqui, "contorno_mm.json"))))).buffer(0)   # calcado de la foto
-herr = herr_foto
-if LARGO_MEDIDO or ANCHO_MEDIDO:                   # corrige el calcado con medidas reales, creciendo desde el centro
-    hb = herr_foto.bounds
-    herr = affinity.scale(herr_foto, (LARGO_MEDIDO or hb[2]) / hb[2], (ANCHO_MEDIDO or hb[3]) / hb[3], origin=(hb[2] / 2, hb[3] / 2))
+hb = herr_foto.bounds
+def a_medida(largo, ancho):                        # el calcado estirado a un largo y ancho dados, desde su centro
+    return affinity.scale(herr_foto, largo / hb[2], ancho / hb[3], origin=(hb[2] / 2, hb[3] / 2))
+herr = a_medida(LARGO_MEDIDO or LARGO_ESTIMADO, ANCHO_MEDIDO or ANCHO_ESTIMADO)     # la llave (ajuste fino)
 suave = lambda p: p.buffer(0.8).buffer(-0.8).simplify(0.05)
 vaciado = suave(herr).buffer(HOLGURA, resolution=16)             # vaciado real de la bandeja (ajuste fino)
-caja_ref = suave(herr_foto).buffer(MARGEN_CAJA, resolution=16)   # contorno con margen que dimensiona la caja (fijo)
+caja_ref = suave(a_medida(LARGO_ESTIMADO, ANCHO_ESTIMADO)).buffer(MARGEN_CAJA, resolution=16)   # contorno con margen que dimensiona la caja (fijo)
 alto = BASE + ALTURA_MAX                          # espesor de la bandeja = hueco entre las dos caras
 PISO = alto - ALTURA_HERRAMIENTA                  # altura del piso del vaciado (la llave queda a ras por arriba)
 assert PISO >= BASE - 1e-9, "La llave es mas gruesa que ALTURA_MAX: no cabe en la caja."
@@ -94,6 +104,20 @@ cuerpo = Polygon([(P[0], yb)] + [(u, envolvente(u)) for u in us] + [(ur, v_plano
 talon = Point(P).buffer(rho, resolution=32)
 silueta = unary_union([cuerpo, T0.intersection(box(-50, -50, P[0] + 1, 200)), talon])
 silueta = silueta.buffer(1).buffer(-3).buffer(2)   # cierra rendijas y redondea esquinas
+# forma estetica: en vez de seguir el calcado, las entradas se rellenan con arcos amplios y se redondean las esquinas
+silueta_func = silueta
+silueta_cara = silueta_func.buffer(RADIO_ESTETICO, resolution=64).buffer(-RADIO_ESTETICO, resolution=64)
+silueta_cara = silueta_cara.buffer(-RADIO_ESQUINA).buffer(RADIO_ESQUINA, resolution=32).simplify(0.02)
+# labio de la bandeja: asoma sobre la tapa para abrirla con los dedos, con una ranura (unero) por cada cara
+ua = vx0 + LABIO[2] * (vx1 - vx0) - LABIO[1] / 2; ub = ua + LABIO[1]
+zona_labio = box(ua, yb + 15, ub, 400)
+labio = silueta_cara.buffer(LABIO[0], resolution=32).intersection(zona_labio)
+silueta = unary_union([silueta_cara, labio]).buffer(4).buffer(-8).buffer(4, resolution=32).simplify(0.02)
+def borde_cara(u):                                 # altura del borde de la tapa en la abscisa u
+    return silueta_cara.intersection(LineString([(u, -100), (u, 400)])).bounds[3]
+e0, e1 = np.array([ua + 13, borde_cara(ua + 13)]), np.array([ub - 13, borde_cara(ub - 13)])
+nrm = np.array([-(e1 - e0)[1], (e1 - e0)[0]]) / np.hypot(*(e1 - e0))
+unero2d = LineString([e0 + nrm * LABIO[0] * 0.5, e1 + nrm * LABIO[0] * 0.5]).buffer(UNERO[0] / 2, resolution=16)   # ranura recta de extremos redondos
 
 C2 = np.array([ur + JUEGO_PUNTA - EJE_D / 2 - 0.2, yb - JUEGO_LOMO + EJE_D / 2 + 0.2])   # remache de la esquina
 rn = EJE_D / 2 + 0.7
@@ -109,10 +133,10 @@ bandeja2d = silueta.difference(unary_union([Point(P).buffer(EJE_D / 2 + 0.25, re
 ud = vx0 + DEDO_POS * (vx1 - vx0); r = DEDO_ANCHO / 2
 loc = vaciado.intersection(box(ud - r, -100, ud + r, 200)).bounds
 dedo = unary_union([box(ud - r, loc[1] - 4, ud + r, 200), Point(ud, loc[1] - 4).buffer(r, resolution=16)])
-dedo = dedo.intersection(box(-100, yb + 3, 500, 200))
+dedo = dedo.intersection(box(-100, yb + 3, 500, 200)).intersection(silueta_cara.buffer(-3.5))   # no rompe la pared exterior
 corte = vaciado.union(dedo)
 sobra = vaciado.difference(silueta.buffer(-2.0)).area
-assert sobra < 0.01, "La llave medida no cabe en la caja ya cortada con 2 mm de pared: revisa las medidas o aumenta MARGEN_CAJA."
+assert sobra < 0.01 or not CON_VACIADO, "La llave medida no cabe en la caja ya cortada con 2 mm de pared: revisa las medidas o aumenta MARGEN_CAJA."
 
 def extruir(poly, z0, z1):
     m = trimesh.creation.extrude_polygon(poly, z1 - z0); m.apply_translation([0, 0, z0]); return m
@@ -125,7 +149,7 @@ def cil(x, y, r_, za, zb):
     m = trimesh.creation.cylinder(radius=r_, height=zb - za, sections=48); m.apply_translation([x, y, (za + zb) / 2]); return m
 
 resalte = cil(ur, v_res, FIADOR_SALIENTE, 0, 16)
-bandeja = D(extruir(bandeja2d, 0, alto), extruir(corte, PISO, alto + 1))
+bandeja = D(extruir(bandeja2d, 0, alto), *([extruir(corte, PISO, alto + 1)] if CON_VACIADO else []), extruir(unero2d, -1, UNERO[1]), extruir(unero2d, alto - UNERO[1], alto + 1))
 
 # ---------------- MDF: caras, lomo y extremo ----------------
 zi0, zi1 = -JUEGO_Z, alto + JUEGO_Z               # caras interiores de las dos tapas
@@ -170,10 +194,10 @@ tab_h = (u_lomo + 3, u_lomo + 13)                  # pestanas de la hoja hacia l
 bisagra = D(U(extruir(hoja2d, zi0, zi1), extruir(ref2d, zi0, zc0 - 0.15), extruir(ref2d, zc1 + 0.15, zi1),
               B(*tab_h, y_lomo, y_lomo + HOJA[1], zi0 - t, zi1 + t)), agujero) if CON_BISAGRA_FIJA else None
 
-cara = unary_union([silueta, Point(P).buffer(rho + 2.5, resolution=32),
+cara = unary_union([silueta_cara, Point(P).buffer(rho + 2.5, resolution=32),
                     box(u_lomo - MARGEN, y_lomo - t - MARGEN, x_ext + t + MARGEN, yb + 3),
                     box(ur - 3, y_lomo - t - MARGEN, x_ext + t + MARGEN, v_plano + MARGEN)])
-cara = cara.buffer(2).buffer(-4).buffer(2)
+cara = cara.buffer(RADIO_ESTETICO, resolution=64).buffer(-RADIO_ESTETICO, resolution=64).buffer(-6).buffer(6, resolution=32).simplify(0.02)
 def cerradura(c, a_lo_largo_de_u):                 # agujero redondo con dos orejas para el remache
     o = box(-ALA[0] / 2 - 0.3, -ALA[1] / 2 - 0.2, ALA[0] / 2 + 0.3, ALA[1] / 2 + 0.2)
     if not a_lo_largo_de_u: o = affinity.rotate(o, 90, origin=(0, 0))
@@ -185,8 +209,8 @@ tabs_e = [(vt - 6, vt + 6)]
 assert tabs_e[0][0] > v_res + 3
 pulgar = Point(75, envolvente(75) + 3).buffer(10, resolution=32)   # rebaje para empujar la bandeja
 cara = cara.difference(unary_union(
-    [cerradura(P, True), cerradura(C2, False), pulgar] +
-    [box(a, y_lomo - t, b, y_lomo) for a, b in tabs_l] + ([box(tab_h[0] - 0.1, y_lomo, tab_h[1] + 0.1, y_lomo + HOJA[1] + 0.15)] if CON_BISAGRA_FIJA else []) + [box(x_ext, a, x_ext + t, b) for a, b in tabs_e]))
+    [cerradura(P, True).buffer(CERRADURA_EXTRA, join_style=2), cerradura(C2, False).buffer(CERRADURA_EXTRA, join_style=2)] +
+    [box(a - RANURA_EXTRA[1] / 2, y_lomo - t - RANURA_EXTRA[0] / 2, b + RANURA_EXTRA[1] / 2, y_lomo + RANURA_EXTRA[0] / 2) for a, b in tabs_l] + ([box(tab_h[0] - 0.1, y_lomo, tab_h[1] + 0.1, y_lomo + HOJA[1] + 0.15)] if CON_BISAGRA_FIJA else []) + [box(x_ext - RANURA_EXTRA[0] / 2, a - RANURA_EXTRA[1] / 2, x_ext + t + RANURA_EXTRA[0] / 2, b + RANURA_EXTRA[1] / 2) for a, b in tabs_e]))
 
 def tira(largo, tabs, o, muescas=()):              # tira con pestanas arriba y abajo, coords (s, z)
     p = box(0, zi0, largo, zi1)
@@ -240,6 +264,16 @@ if CON_BISAGRA_FIJA: girar(bisagra, 90, [1, 0, 0]).export(os.path.join(aqui, "bi
 girar(remache((0, 0), True), 90, [1, 0, 0]).export(os.path.join(aqui, "remache_x2.stl"))
 girar(seguro((0, 0), True), 180, [1, 0, 0]).export(os.path.join(aqui, "seguro_x2.stl"))
 
+# diseno para grabar (score) sobre la tapa superior: la llave que va dentro, en su posicion real,
+# con sus detalles tomados de la foto (corona, mango de goma, agujeros hexagonales y ventana del tornillo)
+def _foto(geom): return affinity.scale(geom, LARGO_ESTIMADO / hb[2], ANCHO_ESTIMADO / hb[3], origin=(hb[2] / 2, hb[3] / 2))
+def _hex(c, r): return Polygon([(c[0] + r * np.cos(a_), c[1] + r * np.sin(a_)) for a_ in np.radians(np.arange(0, 360, 60))])
+_llave = suave(herr_foto)
+_mango = _llave.intersection(box(23, -10, 109, 80))
+DISENO = [_foto(x_) for x_ in [_llave, Point(12.6, 16.6).buffer(7.4, resolution=24), 
+                               _mango.buffer(-1.2), _mango.buffer(-5.0), _hex((119.2, 21.8), 3.9), _hex((133.4, 22.6), 3.4),
+                               Polygon([(144.5, 24.5), (158.5, 28.5), (160.5, 16.5), (147.5, 13.5)]).buffer(-0.01)]]
+DISENO = [x_ for x_ in DISENO if not x_.is_empty and x_.geom_type == "Polygon"]
 def ruta(poly, ox, oy, sy=1):
     d = ""
     for an in [poly.exterior] + list(poly.interiors):
@@ -249,13 +283,15 @@ el, yy, wmax = [], 5.0, 0
 for nombre, poly, n in [("Cara (silueta)", cara, 2), ("Lomo", p_lomo, 1), ("Extremo", p_ext, 1)]:
     bx0, by0, bx1, by1 = poly.bounds
     for i in range(n):
-        el.append(f'<path d="{ruta(poly, 5 - bx0, yy + by1, -1)}" stroke="red"/>')
+        el.append(f'<path d="{ruta(poly, 5 - bx0, yy + by1, -1)}" stroke="black"/>')
+        if poly is cara and i == 0:            # la tapa superior lleva el diseno grabado
+            el += [f'<path d="{ruta(x_, 5 - bx0, yy + by1, -1)}" stroke="red"/>' for x_ in DISENO]
         yy += by1 - by0 + 5
     wmax = max(wmax, bx1 - bx0 + 10)
     print(f"Corte {t:g} mm | {n} x {nombre}: {bx1 - bx0:.1f} x {by1 - by0:.1f} mm")
 open(os.path.join(aqui, "caja_corte_navaja.svg"), "w").write(
     f'<svg xmlns="http://www.w3.org/2000/svg" width="{wmax:.2f}mm" height="{yy:.2f}mm" viewBox="0 0 {wmax:.2f} {yy:.2f}" '
-    f'fill="none" stroke-width="0.2">' + "".join(el) + "</svg>")
+    f'fill="none" stroke-width="0.1">' + "".join(el) + "</svg>")
 cb = cara.bounds
 print(f"llave: {herr.bounds[2] - herr.bounds[0]:.1f} x {herr.bounds[3] - herr.bounds[1]:.1f} x {ALTURA_HERRAMIENTA:g} mm | la caja admite hasta {ALTURA_MAX:g} mm de grosor")
 print(f"estuche cerrado: {cb[2] - cb[0]:.1f} x {cb[3] - cb[1]:.1f} x {alto + 2 * JUEGO_Z + 2 * t:.1f} mm (+ cabezas de remache)")
@@ -289,6 +325,28 @@ cal = box(0, 0, 100, 40)
 for i, dx in enumerate(dxs):
     cal = cal.difference(cerr(dx, (17 + 33 * i, 27)))
     cal = cal.difference(box(8.5 + 33 * i - dx, 6 - dx, 8.5 + 33 * i + PESTANA + dx, 6 + t + dx))
+# 9) set de pruebas de ranuras para la plancha de corte (acrilico): cada ranura con una medida distinta,
+#    y una tira con pestanas reales para probarlas.  Lo que calce mejor se copia a RANURA_EXTRA y CERRADURA_EXTRA.
+VAR_ANCHO = (-0.2, -0.1, 0.0, 0.1, 0.2, 0.3)     # se suma al ancho de la ranura (espesor de la plancha)
+VAR_LARGO = (-0.2, -0.1, 0.0, 0.1, 0.2, 0.3)     # se suma al largo de la ranura (largo de la pestana)
+VAR_CERR = (-0.1, 0.0, 0.1, 0.2)                 # por lado, en el agujero del pasador
+paso_x = 25.0
+placa9 = box(0, 0, 12 + paso_x * 6, 74); rot9 = []
+for i, dv in enumerate(VAR_ANCHO):
+    x_ = 8 + paso_x * i; placa9 = placa9.difference(box(x_, 58 - dv / 2, x_ + PESTANA, 58 + t + dv / 2)); rot9.append((x_ + 8, 67, f"ancho {t + dv:.1f}"))
+for i, dv in enumerate(VAR_LARGO):
+    x_ = 8 + paso_x * i; placa9 = placa9.difference(box(x_ - dv / 2, 38, x_ + PESTANA + dv / 2, 38 + t)); rot9.append((x_ + 8, 47, f"largo {PESTANA + dv:.1f}"))
+for i, dv in enumerate(VAR_CERR):
+    x_ = 20 + 38 * i; placa9 = placa9.difference(affinity.translate(cerradura((0, 0), True).buffer(dv, join_style=2), x_, 14)); rot9.append((x_, 26, f"pasador {dv:+.1f}"))
+tira9 = box(0, 0, 60, 18).union(box(8, 17.99, 8 + PESTANA, 18 + t)).union(box(36, -t, 36 + PESTANA, 0.01)).buffer(0)
+el9 = [f'<path d="{ruta(placa9, 5, 79, -1)}" stroke="black"/>', f'<path d="{ruta(tira9, 5, 79 + 8 + 18 + t, -1)}" stroke="black"/>',
+       f'<path d="{ruta(tira9, 75, 79 + 8 + 18 + t, -1)}" stroke="black"/>']
+el9 += [f'<text x="{5 + x_:.1f}" y="{79 - y_:.1f}" font-size="3" fill="none" stroke="red" stroke-width="0.12" text-anchor="middle">{txt}</text>' for x_, y_, txt in rot9]
+el9.append(f'<text x="35" y="{79 + 8 + 10:.1f}" font-size="3" fill="none" stroke="red" stroke-width="0.12" text-anchor="middle">tira de prueba</text>')
+open(os.path.join(pr, "9_pruebas_ranuras_acrilico.svg"), "w").write(
+    f'<svg xmlns="http://www.w3.org/2000/svg" width="{placa9.bounds[2] + 10:.2f}mm" height="118mm" viewBox="0 0 {placa9.bounds[2] + 10:.2f} 118" '
+    f'fill="none" stroke-width="0.1" font-family="sans-serif">' + "".join(el9) + "</svg>")
+
 # 5) calibre impreso (placa de 3 mm que imita al MDF): para probar remache y seguro sin cortar MDF,
 #    y tres diametros de agujero para el cuerpo del remache (el eje de la bisagra)
 cal5 = cal
@@ -301,10 +359,10 @@ el, yy = [], 5.0
 def pon(poly, etiqueta, marcas=()):
     global yy
     bx0, by0, bx1, by1 = poly.bounds
-    el.append(f'<path d="{ruta(poly, 5 - bx0, yy + by1, -1)}" stroke="red"/>')
-    el.append(f'<text x="{bx1 - bx0 + 9:.1f}" y="{yy + 6:.1f}" font-size="3.5" fill="blue" stroke="none">{etiqueta}</text>')
+    el.append(f'<path d="{ruta(poly, 5 - bx0, yy + by1, -1)}" stroke="black"/>')
+    el.append(f'<text x="{bx1 - bx0 + 9:.1f}" y="{yy + 6:.1f}" font-size="3.5" fill="none" stroke="red" stroke-width="0.12">{etiqueta}</text>')
     for mx, my, txt in marcas:
-        el.append(f'<text x="{5 + mx:.1f}" y="{yy + by1 - my:.1f}" font-size="3" fill="blue" stroke="none" text-anchor="middle">{txt}</text>')
+        el.append(f'<text x="{5 + mx:.1f}" y="{yy + by1 - my:.1f}" font-size="3" fill="none" stroke="red" stroke-width="0.12" text-anchor="middle">{txt}</text>')
     yy += by1 - by0 + 5
 pon(mini, "esquina de la bisagra (x2)"); pon(mini, "")
 pon(mini_lomo, "lomo corto")
@@ -312,7 +370,7 @@ pon(cal, "calibre de holguras (mm por lado)", [(17 + 33 * i, 16, f"{dx:+.1f}") f
 pon(p_ext, "extremo real (prueba del fiador)")
 open(os.path.join(pr, "4_pruebas_mdf.svg"), "w").write(
     f'<svg xmlns="http://www.w3.org/2000/svg" width="170mm" height="{yy:.2f}mm" viewBox="0 0 170 {yy:.2f}" '
-    f'fill="none" stroke-width="0.2" font-family="sans-serif">' + "".join(el) + "</svg>")
+    f'fill="none" stroke-width="0.1" font-family="sans-serif">' + "".join(el) + "</svg>")
 print("piezas de prueba en pruebas/")
 
 # 6) todas las pruebas impresas en una sola placa

@@ -7,7 +7,7 @@
 # Todo queda como cuerpos en la raiz (sin componentes).
 #
 # Uso: abrir un diseno nuevo > Utilidades > Complementos > Scripts y complementos > "+" >
-#      elegir esta carpeta > Ejecutar.  Son unos 150 pasos: puede tardar unos minutos.
+#      elegir esta carpeta > Ejecutar.  Son unos 140 pasos: puede tardar unos minutos.
 # El lienzo queda con el tamano por defecto de Fusion; para dejarlo a escala:
 #      clic derecho > Calibrar > clic en las dos cruces rojas > 200 mm.
 import adsk.core, adsk.fusion, traceback, os, json
