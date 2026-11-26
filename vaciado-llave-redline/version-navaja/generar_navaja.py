@@ -562,24 +562,65 @@ placa17 = trimesh.util.concatenate(ms17); placa17.export(os.path.join(pr, "pasad
 print(f"pasadores para la bandeja anterior: cuerpo {EJE_ANTERIOR} mm, {len(placa17.split())} piezas, {' x '.join(f'{v:.1f}' for v in placa17.extents)} mm | estancos {all(p_.is_watertight for p_ in placa17.split())}")
 
 # 18) FILETES ESTETICOS: un marco fino impreso que sigue el canto de cada cara de acrilico.
-#     Seccion: pared que tapa el canto + labio por fuera + un cordon por dentro, solo en los lados cerrados, que lo traba.
+#     Seccion: pared que tapa el canto + labio por fuera.  Sin pestanas: se sostiene a presion contra el canto.
 FILETE = (1.2, 1.5, 0.8)       # mm: pared sobre el canto, ancho del labio exterior, espesor del labio
-FILETE_JUEGO = 0.1             # mm entre el filete y el canto del acrilico
-FILETE_CORDON = 0.5            # mm que entra el cordon de traba por la cara interior
+FILETE_JUEGO = 0.0             # mm entre el filete y el canto del acrilico (0 = entra a presion)
+FILETE_CORDON = 0.0            # mm de cordon de traba por la cara interior (0 = sin pestanas, solo a presion)
 c_ext = Polygon(cara.exterior)
 anillo = c_ext.buffer(FILETE_JUEGO + FILETE[0], resolution=32).difference(c_ext.buffer(FILETE_JUEGO, resolution=32))
 labio_f = c_ext.buffer(FILETE_JUEGO + FILETE[0], resolution=32).difference(c_ext.buffer(-FILETE[1], resolution=32))
 lados_cerrados = unary_union([box(u_lomo + 12, -300, 600, y_lomo - t - 0.3), box(x_ext + t + 0.3, y_lomo + 6, 600, v_plano - 2)])
-cordon = c_ext.buffer(FILETE_JUEGO + 0.01, resolution=32).difference(c_ext.buffer(-FILETE_CORDON, resolution=32)).intersection(lados_cerrados)
-def exm(p, a, b): return [extruir(x_, a, b) for x_ in getattr(p, "geoms", [p]) if x_.area > 0.3]
-def filete(arriba):
+cordon = c_ext.buffer(FILETE_JUEGO + 0.01, resolution=32).difference(c_ext.buffer(-max(FILETE_CORDON, 0.01), resolution=32)).intersection(lados_cerrados)
+def exm(p, a, b): return [m_ for m_ in (extruir(x_.buffer(0), a, b) for x_ in getattr(p, "geoms", [p]) if x_.area > 0.3) if m_.is_volume]
+def filete(arriba, an=None, lb=None):
+    an, lb = an or anillo, lb or labio_f
     za, zb = (zi1, zi1 + t) if arriba else (zi0 - t, zi0)          # la cara de acrilico
-    baja = anillo.intersection(lados_cerrados)                     # solo en los lados cerrados baja al hueco entre caras
-    cord = cordon.union(anillo.intersection(lados_cerrados))
-    if arriba: partes = exm(anillo, za, zb + FILETE[2]) + exm(labio_f, zb, zb + FILETE[2]) + exm(baja, za - 0.6, za + 0.1) + exm(cord, za - 0.6, za)
-    else:      partes = exm(anillo, za - FILETE[2], zb) + exm(labio_f, za - FILETE[2], za) + exm(baja, zb - 0.1, zb + 0.6) + exm(cord, zb, zb + 0.6)
+    partes = exm(an, za, zb + FILETE[2]) + exm(lb, zb, zb + FILETE[2]) if arriba else exm(an, za - FILETE[2], zb) + exm(lb, za - FILETE[2], za)
+    if FILETE_CORDON > 0 and an is anillo:                         # opcional: cordon de traba en los lados cerrados
+        baja, cord = anillo.intersection(lados_cerrados), cordon.union(anillo.intersection(lados_cerrados))
+        partes += exm(baja, za - 0.6, za + 0.1) + exm(cord, za - 0.6, za) if arriba else exm(baja, zb - 0.1, zb + 0.6) + exm(cord, zb, zb + 0.6)
     return max(U(*partes).split(), key=lambda m_: m_.volume)
 filete_sup, filete_inf = filete(True), filete(False)
 girar(filete_sup, 180, [1, 0, 0]).export(os.path.join(aqui, "filete_cara_superior.stl"))     # labio sobre la cama
 girar(filete_inf, 0, [0, 0, 1]).export(os.path.join(aqui, "filete_cara_inferior.stl"))
 print(f"filetes: {' x '.join(f'{v:.1f}' for v in filete_sup.extents)} mm | estancos {filete_sup.is_watertight} {filete_inf.is_watertight} | {filete_sup.volume / 1000:.1f} cm3 cada uno")
+
+# prueba rapida del calce a presion: un filete para la "esquina del pasador" que ya esta cortada, con tres ajustes
+mini_ext = Polygon(mini.exterior).buffer(0.3).buffer(-0.3).simplify(0.02); pf = []
+for i, jf in enumerate((-0.1, 0.0, 0.1)):
+    an_ = mini_ext.buffer(jf + FILETE[0], resolution=32).difference(mini_ext.buffer(jf, resolution=32))
+    lb_ = mini_ext.buffer(jf + FILETE[0], resolution=32).difference(mini_ext.buffer(-FILETE[1], resolution=32))
+    for k in range(i + 1):                                         # 1, 2 o 3 muescas en el labio = -0,1 / 0 / +0,1
+        lb_ = lb_.difference(Point(mini_ext.bounds[2] - 8 - 4 * k, mini_ext.bounds[3] + FILETE[0]).buffer(1.0)).buffer(0)
+    f_ = girar(filete(True, an_, lb_), 180, [1, 0, 0]); f_.apply_translation([0, i * (f_.extents[1] + 4), 0]); pf.append(f_)
+trimesh.util.concatenate(pf).export(os.path.join(pr, "prueba_filete.stl"))
+print(f"prueba de filete: {len(pf)} marcos de {' x '.join(f'{v:.1f}' for v in pf[0].extents)} mm | estancos {all(p_.is_watertight for p_ in pf)}")
+
+# 19) MARCO CON SEGUROS INTEGRADOS: el filete del canto y las dos tapas que traban los pasadores en una sola pieza por cara.
+#     Sin pestanas contra el acrilico: se sostiene a presion en el canto y enganchado a las cabezas de los pasadores.
+MARCO_ALTO = ALA[2] + 0.2      # mm que sobresale sobre la cara: lo mismo que la cabeza del pasador, para imprimirlo plano
+MARCO_PATA = 4.2               # mm, ancho de las patas que entran en las orejas del agujero (4,4 cortadas)
+def marco(arriba=True):
+    za, zb = zi1, zi1 + t; zt = zb + MARCO_ALTO                    # se construye el de arriba y el de abajo es su espejo
+    borde_ext = c_ext.buffer(FILETE_JUEGO + FILETE[0], resolution=32)
+    partes = exm(anillo, za, zt) + exm(labio_f, zb, zt)
+    huecos = []
+    for c, alas_en_u, zona_tapa in [(P, False, Point(P).buffer(rho + 4.5, resolution=32)),
+                                    (C2, True, box(C2[0] - 7.5, -300, 600, C2[1] + 7.5))]:
+        tapa = Point(c).buffer(7.5, resolution=32).union(zona_tapa.intersection(borde_ext)).intersection(borde_ext)
+        partes += exm(tapa, zb, zt)
+        rot = (lambda m_: m_) if alas_en_u else (lambda m_: m_.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [0, 0, 1])))
+        al, aa = ALA[0], ALA[1]; p0, p1 = CERRADURA_CORTE[0] / 2 + 0.15, CERRADURA_CORTE[1] / 2 - 0.1
+        for m_ in [B(-al / 2 - 0.25, al / 2 + 0.25, -aa / 2 - 0.25, aa / 2 + 0.25, zb - 0.01, zt + 1), cil(0, 0, CUELLO_D / 2 + 0.25, zb - 0.01, zt + 1)]:
+            m_ = rot(m_); m_.apply_translation([c[0], c[1], 0]); huecos.append(m_)
+        for sg in (1, -1):
+            m_ = rot(B(-MARCO_PATA / 2, MARCO_PATA / 2, *sorted([sg * p0, sg * p1]), zb - t, zb + 0.3)); m_.apply_translation([c[0], c[1], 0]); partes.append(m_)
+    m = D(U(*partes), *huecos)
+    m = max(m.split(), key=lambda m_: m_.volume)
+    if not arriba:
+        m.apply_transform(np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, -1, zi0 + zi1], [0, 0, 0, 1.0]])); m.fix_normals()
+    return m
+marco_sup, marco_inf = marco(True), marco(False)
+girar(marco_sup, 180, [1, 0, 0]).export(os.path.join(aqui, "marco_con_seguros_superior.stl"))   # cara exterior sobre la cama
+girar(marco_inf, 0, [0, 0, 1]).export(os.path.join(aqui, "marco_con_seguros_inferior.stl"))
+print(f"marcos con seguros: {' x '.join(f'{v:.1f}' for v in marco_sup.extents)} mm | estancos {marco_sup.is_watertight} {marco_inf.is_watertight} | cuerpos {len(marco_sup.split())} {len(marco_inf.split())} | {marco_sup.volume / 1000:.1f} cm3 cada uno")
