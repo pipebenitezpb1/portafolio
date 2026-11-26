@@ -28,6 +28,7 @@ from shapely import affinity
 LARGO_MEDIDO = None        # mm, largo total real de la llave (None = usar LARGO_ESTIMADO)
 ANCHO_MEDIDO = None        # mm, ancho maximo real, en la mordaza (None = usar ANCHO_ESTIMADO)
 CON_VACIADO = True         # False = bandeja maciza (el vaciado se hace despues, con la llave bien medida); True = con vaciado
+EXTRA_CABEZA = (0.1, 0.66) # mm de holgura adicional en la cabeza de la llave, y desde que fraccion del largo se aplica
 HOLGURA = 1.0              # mm de juego alrededor de la llave (ajuste fino, solo afecta a la bandeja impresa)
 ALTURA_HERRAMIENTA = 20.0  # mm, grosor maximo de la llave (ajuste fino: fija la profundidad del vaciado)
 # ---- caja de corte: estas medidas NO deben cambiar despues de cortar ----
@@ -36,6 +37,11 @@ ANCHO_ESTIMADO = 53.0      # mm: el calcado (49,9) quedo unos 3 mm angosto
 MARGEN_CAJA = 4.0          # mm de margen alrededor del calcado de la foto con que se dimensiona la caja
 ALTURA_MAX = 24.0          # mm, grosor maximo de llave que admite la caja (fija el alto de lomo y extremo)
 BASE = 2.0                 # mm de piso minimo bajo la llave
+# ---- forro flexible (TPU) entre la bandeja y la llave ----
+CON_TPU = True             # True = el vaciado de la bandeja se agranda para alojar un forro de TPU que sujeta la llave
+TPU_ESPESOR = 2.0          # mm, pared del forro
+TPU_PISO = 0.8             # mm, piso del forro
+TPU_JUEGO = 0.15           # mm de juego entre el forro y la bandeja
 PARED = 4.0                # mm de pared alrededor del vaciado
 PARED_LOMO = 5.5           # mm de pared hacia el lomo (deja sitio a la hoja de la bisagra)
 PARED_PUNTA = 6.0          # mm de pared en la punta (aloja el fiador)
@@ -57,17 +63,22 @@ RANURA_EXTRA = (0.1, 0.0)  # mm que se agregan al ancho y al largo de las ranura
 CERRADURA_EXTRA = 0.0      # mm por lado que se agregan a los agujeros de los pasadores
 # ---- remaches / eje ----
 EJE_D = 10.0               # mm, diametro del cuerpo del remache (eje de giro)
-CUELLO_D = 6.0             # mm, cuello que atraviesa el MDF
+CUELLO_D = 6.25            # mm, cuello que atraviesa el MDF
 CERRADURA_CORTE = (6.4, 11.6, 4.4)   # mm, agujero YA CORTADO en el acrilico: diametro, largo y ancho de las orejas. NO CAMBIAR
 ALA = (10.2, 3.4, 3.0)     # mm, largo x ancho x alto de la cabeza impresa (debe pasar holgada por las orejas)
 # ---- bisagra ----
+JUEGO_EJE = 0.12           # mm de juego radial entre el agujero de la bandeja y el pasador
+JUEGO_NUDILLO = 0.1        # mm de juego vertical de la bandeja contra cada cara, en la zona del pasador
+ARANDELAS = (0.2, 0.3, 0.4)   # mm, arandelas de ajuste por si el hueco real entre caras es mayor
 CON_BISAGRA_FIJA = False   # True = agrega la hoja fija impresa con dos nudillos; False = la bandeja gira solo sobre el pasador
 NUDILLO_R = 8.0            # mm, radio exterior de los nudillos
 HOJA = (40.0, 2.2)         # mm, largo y espesor de la hoja fija
 NUDILLO_FRAC = (0.26, 0.74) # el nudillo de la bandeja ocupa esta fraccion de la altura
 # ---- fiador ----
-FIADOR_LARGO = 18.0        # mm, largo de la lamina flexible
-FIADOR_SALIENTE = 1.3      # mm que sobresale el resalte
+FIADOR_LARGO = 24.0        # mm, largo de la lamina flexible
+FIADOR_ESPESOR = 1.4       # mm, espesor de la lamina
+FIADOR_RANURA = 2.4        # mm, hueco detras de la lamina (lo maximo que puede ceder)
+FIADOR_SALIENTE = 3.0      # mm que sobresale el diente en cuna (el hueco teorico hasta el extremo es 0,6 mm; cubre hasta ~2,8)
 
 aqui = os.path.dirname(os.path.abspath(__file__))
 herr_foto = Polygon(np.array(json.load(open(os.path.join(aqui, "contorno_mm.json"))))).buffer(0)   # calcado de la foto
@@ -76,11 +87,18 @@ def a_medida(largo, ancho):                        # el calcado estirado a un la
     return affinity.scale(herr_foto, largo / hb[2], ancho / hb[3], origin=(hb[2] / 2, hb[3] / 2))
 herr = a_medida(LARGO_MEDIDO or LARGO_ESTIMADO, ANCHO_MEDIDO or ANCHO_ESTIMADO)     # la llave (ajuste fino)
 suave = lambda p: p.buffer(0.8).buffer(-0.8).simplify(0.05)
-vaciado = suave(herr).buffer(HOLGURA, resolution=16)             # vaciado real de la bandeja (ajuste fino)
+vaciado = suave(herr).buffer(HOLGURA, resolution=16)             # hueco donde entra la llave (ajuste fino)
+if EXTRA_CABEZA[0]:
+    hb2 = herr.bounds
+    cabeza = suave(herr).intersection(box(hb2[0] + EXTRA_CABEZA[1] * (hb2[2] - hb2[0]), -100, 500, 300))
+    vaciado = vaciado.union(cabeza.buffer(HOLGURA + EXTRA_CABEZA[0], resolution=16)).buffer(0.3).buffer(-0.3)
+forro_ext = vaciado.buffer(TPU_ESPESOR, resolution=16)           # contorno exterior del forro de TPU
+alojamiento = forro_ext.buffer(TPU_JUEGO, resolution=16) if CON_TPU else vaciado   # lo que se vacia en la bandeja
 caja_ref = suave(a_medida(LARGO_ESTIMADO, ANCHO_ESTIMADO)).buffer(MARGEN_CAJA, resolution=16)   # contorno con margen que dimensiona la caja (fijo)
 alto = BASE + ALTURA_MAX                          # espesor de la bandeja = hueco entre las dos caras
-PISO = alto - ALTURA_HERRAMIENTA                  # altura del piso del vaciado (la llave queda a ras por arriba)
-assert PISO >= BASE - 1e-9, "La llave es mas gruesa que ALTURA_MAX: no cabe en la caja."
+PISO = alto - ALTURA_HERRAMIENTA                  # altura a la que apoya la llave (queda a ras por arriba)
+PISO_BANDEJA = PISO - (TPU_PISO if CON_TPU else 0)   # piso del vaciado de la bandeja
+assert PISO_BANDEJA >= BASE - 1e-9, "La llave es mas gruesa que ALTURA_MAX: no cabe en la caja."
 NUDILLO_Z = (round(alto * NUDILLO_FRAC[0], 2), round(alto * NUDILLO_FRAC[1], 2))
 t = ESPESOR_MDF
 vx0, vy0, vx1, vy1 = caja_ref.bounds
@@ -126,17 +144,17 @@ muesca = unary_union([Point(C2).buffer(rn, resolution=32), box(C2[0] - rn, yb - 
                       box(C2[0], yb - 2, ur + 2, C2[1] + rn)])
 vs0 = C2[1] + rn - 0.5                             # lamina del fiador: libre abajo, empotrada arriba
 vs1 = vs0 + FIADOR_LARGO
-ranura_fiador = box(ur - 2.8, vs0, ur - 1.6, vs1)
+ranura_fiador = box(ur - FIADOR_ESPESOR - FIADOR_RANURA, vs0, ur - FIADOR_ESPESOR, vs1)
 v_res = vs0 + 3.0                                  # altura (en v) del resalte del fiador
 assert v_plano > vs1 + 3 and caja_ref.distance(muesca) > 2 and caja_ref.distance(ranura_fiador) > 1.5
-bandeja2d = silueta.difference(unary_union([Point(P).buffer(EJE_D / 2 + 0.25, resolution=32), muesca, ranura_fiador]))
+bandeja2d = silueta.difference(unary_union([Point(P).buffer(EJE_D / 2 + JUEGO_EJE, resolution=32), muesca, ranura_fiador]))
 
 ud = vx0 + DEDO_POS * (vx1 - vx0); r = DEDO_ANCHO / 2
-loc = vaciado.intersection(box(ud - r, -100, ud + r, 200)).bounds
+loc = alojamiento.intersection(box(ud - r, -100, ud + r, 200)).bounds
 dedo = unary_union([box(ud - r, loc[1] - 4, ud + r, 200), Point(ud, loc[1] - 4).buffer(r, resolution=16)])
 dedo = dedo.intersection(box(-100, yb + 3, 500, 200)).intersection(silueta_cara.buffer(-3.5))   # no rompe la pared exterior
-corte = vaciado.union(dedo)
-sobra = vaciado.difference(silueta.buffer(-2.0)).area
+corte = alojamiento.union(dedo)
+sobra = alojamiento.difference(silueta.buffer(-2.0)).area
 assert sobra < 0.01 or not CON_VACIADO, "La llave medida no cabe en la caja ya cortada con 2 mm de pared: revisa las medidas o aumenta MARGEN_CAJA."
 
 def extruir(poly, z0, z1):
@@ -149,8 +167,11 @@ def D(a, *ms): return trimesh.boolean.difference([a, U(*ms) if len(ms) > 1 else 
 def cil(x, y, r_, za, zb):
     m = trimesh.creation.cylinder(radius=r_, height=zb - za, sections=48); m.apply_translation([x, y, (za + zb) / 2]); return m
 
-resalte = cil(ur, v_res, FIADOR_SALIENTE, 0, 16)
-bandeja = D(extruir(bandeja2d, 0, alto), *([extruir(corte, PISO, alto + 1)] if CON_VACIADO else []), extruir(unero2d, -1, UNERO[1]), extruir(unero2d, alto - UNERO[1], alto + 1))
+def diente(sal):                                   # diente del fiador en cuna de 45 grados: entra y sale resbalando,
+    pts = [(ur - 0.4, max(v_res - sal - 0.4, vs0)), (ur - 0.4, v_res + sal + 0.4), (ur + sal - 0.3, v_res + 0.3), (ur + sal - 0.3, v_res - 0.3)]
+    return trimesh.Trimesh(vertices=[[x_, y_, z_] for x_, y_ in pts for z_ in (0.0, 16.0)]).convex_hull   # y se asienta solo en la muesca
+dz = JUEGO_Z - JUEGO_NUDILLO                       # la base de la bandeja baja 'dz' para apoyar casi sin juego en la cara inferior
+bandeja = D(extruir(bandeja2d, -dz, alto), *([extruir(corte, PISO_BANDEJA, alto + 1)] if CON_VACIADO else []), extruir(unero2d, -1, UNERO[1]), extruir(unero2d, alto - UNERO[1], alto + 1))
 
 # ---------------- MDF: caras, lomo y extremo ----------------
 zi0, zi1 = -JUEGO_Z, alto + JUEGO_Z               # caras interiores de las dos tapas
@@ -188,7 +209,14 @@ zc0, zc1 = NUDILLO_Z
 if CON_BISAGRA_FIJA:
     bandeja = D(bandeja, D(extruir(silueta.buffer(1), -1, alto + 1), U(extruir(b_centro, zc0 + 0.15, zc1 - 0.15),
                 extruir(b_extremos, -2, zc0 + 0.15), extruir(b_extremos, zc1 - 0.15, alto + 2))))
-bandeja = U(bandeja, D(resalte, B(ur - 5, ur - 0.5, v_res - 3, v_res + 3, -1, 17)))   # resalte del fiador
+bandeja = U(bandeja, diente(FIADOR_SALIENTE))      # diente del fiador
+# realce arriba, junto al pasador, para que el nudillo quede casi sin juego tambien contra la cara superior
+apoyo = bandeja2d.intersection(Point(P).buffer(14, resolution=32)).buffer(-0.2)
+bandeja = U(bandeja, extruir(apoyo, alto - 0.2, alto + dz))
+assert len(bandeja.split()) == 1
+# forro de TPU: pared de TPU_ESPESOR alrededor de la llave y piso fino; abierto en los rebajes para los dedos
+forro = D(extruir(forro_ext, PISO_BANDEJA + 0.05, alto), extruir(vaciado, PISO, alto + 1), *[extruir(x_, PISO, alto + 1) for x_ in getattr(dedo.difference(vaciado).buffer(0.01), 'geoms', [dedo.difference(vaciado).buffer(0.01)]) if x_.area > 0.05])
+forro = max(forro.split(), key=lambda m_: m_.volume)
 assert len(bandeja.split()) == 1
 agujero = cil(P[0], P[1], EJE_D / 2 + 0.15, zi0 - 1, zi1 + 1)
 tab_h = (u_lomo + 3, u_lomo + 13)                  # pestanas de la hoja hacia las caras
@@ -233,7 +261,11 @@ def remache(c, alas_en_u, extra=0.2, marcas=0):   # extra = holgura del cuello s
     ln = t + extra
     partes = [cil(0, 0, EJE_D / 2, zi0, zi1), cil(0, 0, CUELLO_D / 2, zi0 - ln - ALA[2], zi1 + ln + ALA[2])]
     for za in (zi0 - ln - ALA[2], zi1 + ln):
-        partes.append(B(-ALA[0] / 2, ALA[0] / 2, -ALA[1] / 2, ALA[1] / 2, za, za + ALA[2]))
+        cara_z = za + ALA[2] if za < zi0 else za                      # cara de la cabeza que aprieta el acrilico
+        fuera = za if za < zi0 else za + ALA[2]
+        ancha = B(-ALA[0] / 2, ALA[0] / 2, -ALA[1] / 2, ALA[1] / 2, *sorted([fuera, cara_z + (fuera - cara_z) * 0.2]))
+        fina = B(-ALA[0] / 2, ALA[0] / 2, -ALA[1] / 2 + 0.6, ALA[1] / 2 - 0.6, *sorted([cara_z, cara_z + (fuera - cara_z) * 0.2]))
+        partes.append(trimesh.Trimesh(vertices=np.vstack([ancha.vertices, fina.vertices])).convex_hull)   # bordes en cuna para entrar apretando
     cortes = [B(-20, 20, -20, -ALA[1] / 2, zi0 - 20, zi1 + 20)]              # cara plana para imprimir acostado
     for i in range(marcas):                                                  # anillos que identifican la variante
         z = alto / 2 - 3 + 2.4 * i
@@ -386,14 +418,14 @@ print(f"placa de pruebas: {' x '.join(f'{v:.1f}' for v in placa.extents)} mm, {l
 
 # 7) pasadores (remaches) y broches (seguros y fiador) con varias holguras, en una placa.
 #    El numero de marcas identifica cada variante; las marcadas con * son las del diseno actual.
-VAR_REMACHE = (0.0, 0.2, 0.4)        # holgura del cuello sobre los 3 mm del MDF  -> 1, 2*, 3 anillos
+VAR_REMACHE = (0.0, 0.1, 0.2)        # holgura del cuello sobre los 3 mm del MDF  -> 1, 2*, 3 anillos
 VAR_SEGURO = (4.2, 4.4, 4.6, 4.8)    # ancho de las patas del seguro              -> 1, 2*, 3, 4 muescas
-VAR_FIADOR = (1.0, 1.3, 1.6)         # saliente del resalte del clic              -> 1, 2*, 3 muescas
+VAR_FIADOR = (2.5, 3.0, 3.5)         # saliente del resalte del clic              -> 1, 2*, 3 muescas
 ms7 = [girar(remache((0, 0), True, e_, i + 1), 90, [1, 0, 0]) for i, e_ in enumerate(VAR_REMACHE)]
 ms7 += [girar(seguro((0, 0), True, p_, i + 1), 180, [1, 0, 0]) for i, p_ in enumerate(VAR_SEGURO)]
 sin_resalte = D(bandeja, B(ur + 0.001, ur + 4, v_res - 4, v_res + 4, -1, 18))
 for i, sal in enumerate(VAR_FIADOR):
-    b_ = U(sin_resalte, D(cil(ur, v_res, sal, 0, 16), B(ur - 5, ur - 0.5, v_res - 4, v_res + 4, -1, 17)))
+    b_ = U(sin_resalte, diente(sal))
     b_ = D(b_, *[B(ur - 12.5 + 2.6 * k, ur - 11.3 + 2.6 * k, vs1 + 3, vs1 + 8, alto - 1, alto + 1) for k in range(i + 1)])
     ms7.append(recorte(b_, box(ur - 14, yb - 1, ur + 3, vs1 + 7)))
 x = y = fila = 0.0
@@ -406,7 +438,7 @@ print(f"placa de pasadores y broches: {' x '.join(f'{v:.1f}' for v in placa7.ext
 
 # 8) bandeja (vaciado de la llave) + bisagra completa en una sola placa: todas las piezas impresas definitivas
 x = y = fila = 0.0; ms8 = []
-for f in ["bandeja_navaja.stl"] + (["bisagra_fija.stl"] if CON_BISAGRA_FIJA else []) + ["remache_x2.stl", "remache_x2.stl", "seguro_x2.stl", "seguro_x2.stl"]:
+for f in ["bandeja_navaja.stl"] + (["bisagra_fija.stl"] if CON_BISAGRA_FIJA else []) + ["remache_x2.stl", "remache_x2.stl", "seguro_x2.stl", "seguro_x2.stl"] + (["herramienta_armado.stl"] if os.path.exists(os.path.join(aqui, "herramienta_armado.stl")) else []):
     m = trimesh.load(os.path.join(aqui, f)); m.apply_translation(-m.bounds[0]); ex = m.extents
     if x > 0 and x + ex[0] > 224.5: x, y, fila = 0.0, y + fila + 6, 0.0
     m.apply_translation([x, y, 0]); ms8.append(m); x += ex[0] + 6; fila = max(fila, ex[1])
@@ -489,3 +521,32 @@ for m in ms15:
     m.apply_translation([x, 0, 0]); x += m.extents[0] + 5
 placa15 = trimesh.util.concatenate(ms15); placa15.export(os.path.join(pr, "pasadores_y_seguros.stl"))
 print(f"pasadores y seguros: {' x '.join(f'{v:.1f}' for v in placa15.extents)} mm, {len(placa15.split())} piezas | cabeza {ALA[0]:g} x {ALA[1]:g} mm en orejas de {CERRADURA_CORTE[1]:g} x {CERRADURA_CORTE[2]:g} mm, cuello {CUELLO_D:g} en agujero de {CERRADURA_CORTE[0]:g}")
+
+# 16) forro de TPU, arandelas de ajuste y PRUEBA DE BISAGRA Y PESTANA (esqueleto de la bandeja)
+f_ = forro.copy(); f_.apply_translation(-f_.bounds[0]); f_.export(os.path.join(aqui, "forro_tpu.stl"))
+aran = []
+for i, e_ in enumerate(ARANDELAS):
+    a_ = D(cil(0, 0, 9.0, 0, e_), cil(0, 0, EJE_D / 2 + 0.25, -1, e_ + 1)); a_.apply_translation([20 * i, 0, 0]); aran.append(a_)
+zona16 = U(extruir(Point(P).buffer(rho + 7, resolution=32), -5, alto + 5), extruir(box(ur - 17, yb - 1, ur + 4, vs1 + 8), -5, alto + 5),
+           extruir(box(P[0], yb - 1, ur, yb + 8), -5, min(5.0, PISO_BANDEJA - 0.2)))
+esqueleto = trimesh.boolean.intersection([bandeja, zona16], engine="manifold")
+assert len(esqueleto.split()) == 1, "el esqueleto de prueba quedo en varios trozos"
+# herramienta de armado: llave en T para girar los pasadores un cuarto de vuelta.  Se imprime con el mango en la cama.
+mango = U(B(-22, 22, -5, 5, 0, 6), cil(0, 0, 9.5, 0, 12))
+llave_t = D(mango, B(-ALA[0] / 2 - 0.35, ALA[0] / 2 + 0.35, -ALA[1] / 2 - 0.3, ALA[1] / 2 + 0.3, 12 - ALA[2] - 0.3, 13),
+            cil(0, 0, CUELLO_D / 2 + 0.4, 12 - ALA[2] - 0.3, 13))
+llave_t.export(os.path.join(aqui, "herramienta_armado.stl"))
+ms16 = [esqueleto, llave_t.copy()] + [girar(remache((0, 0), True, e_, i + 1), 90, [1, 0, 0]) for i, e_ in enumerate(VAR_REMACHE)] + \
+       [girar(seguro((0, 0), True, p_, i + 1), 180, [1, 0, 0]) for i, p_ in enumerate(VAR_SEGURO[1:3])] + [a_.copy() for a_ in aran]
+x = y = fila = 0.0
+for k, m in enumerate(ms16):
+    m.apply_translation(-m.bounds[0]); ex = m.extents
+    if k == 1: x, y, fila = 0.0, y + fila + 5, 0.0
+    m.apply_translation([x, y, 0]); x += ex[0] + 5; fila = max(fila, ex[1])
+placa16 = trimesh.util.concatenate(ms16); placa16.export(os.path.join(pr, "prueba_bisagra_y_pestana.stl"))
+print(f"forro TPU: {' x '.join(f'{v:.1f}' for v in forro.extents)} mm | estanco {forro.is_watertight} | {forro.volume / 1000:.1f} cm3")
+print(f"prueba bisagra y pestana: {' x '.join(f'{v:.1f}' for v in placa16.extents)} mm, {len(placa16.split())} piezas, {sum(m.volume for m in ms16) / 1000:.0f} cm3 | esqueleto {esqueleto.volume / 1000:.0f} cm3")
+print(f"pared minima de la bandeja: {alojamiento.exterior.distance(silueta_cara.exterior):.1f} mm | piso de la bandeja {PISO_BANDEJA:g} mm | nudillo: {alto + 2 * dz:.2f} mm en hueco de {zi1 - zi0:g}")
+
+for n_ in ["bandeja_navaja.stl", "forro_tpu.stl", "herramienta_armado.stl", "pruebas/prueba_bisagra_y_pestana.stl", "piezas_impresas.stl", "remache_x2.stl", "seguro_x2.stl"]:
+    m_ = trimesh.load(os.path.join(aqui, n_)); print(f"{n_}: estanca {all(p_.is_watertight for p_ in m_.split(only_watertight=False))} | cuerpos {len(m_.split(only_watertight=False))}")
