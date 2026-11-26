@@ -673,3 +673,17 @@ print(f"marcos con seguros: {' x '.join(f'{v:.1f}' for v in marco_sup.extents)} 
 
 print("ancho respecto de la bandeja ya impresa: " + ", ".join(f"{k_} x{v_:.3f}" if v_ < 3 else f"{k_}={v_:.1f}" for k_, v_ in FACTORES.items()))
 print(f"llave: {herr.bounds[2] - herr.bounds[0]:.1f} x {herr.bounds[3] - herr.bounds[1]:.1f} mm | pared minima de la bandeja alrededor del vaciado: {PARED_MIN_REAL:.1f} mm")
+
+# 20) SEGMENTO QUE COMPLETA EL CILINDRO DEL PASADOR: el pasador se imprime acostado y por eso su cuerpo lleva una cara plana.
+#     Esta pieza es el trozo que falta; se apoya en esa cara, dentro del agujero de la bandeja, y deja el eje redondo completo.
+def segmento_pasador(eje_d, marca=False):
+    r_ = eje_d / 2; plano = -ALA[1] / 2 - 0.05                    # la cara plana del pasador, con 0,05 mm de juego
+    largo = (zi1 - zi0) - 0.2                                     # un poco mas corto que el hueco entre las caras
+    m = trimesh.boolean.intersection([cil(0, 0, r_, 0, largo), B(-r_ - 1, r_ + 1, -r_ - 1, plano, -1, largo + 1)], engine="manifold")
+    if marca: m = D(m, B(-0.6, 0.6, -r_ - 1, -r_ + 0.6, -1, 3))  # una muesca en la punta distingue los del pasador de 10,3 mm
+    m.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))   # cara plana hacia abajo, sobre la cama
+    m.apply_translation(-m.bounds[0]); return m
+segs = [segmento_pasador(EJE_D), segmento_pasador(EJE_D), segmento_pasador(EJE_ANTERIOR, True), segmento_pasador(EJE_ANTERIOR, True)]
+for i, m in enumerate(segs): m.apply_translation([i * 14.0, 0, 0])
+trimesh.util.concatenate(segs).export(os.path.join(aqui, "segmento_cilindro_pasador.stl"))
+print(f"segmentos de pasador: {' x '.join(f'{v:.1f}' for v in segs[0].extents)} mm (para {EJE_D:g}) y {' x '.join(f'{v:.1f}' for v in segs[2].extents)} mm (para {EJE_ANTERIOR:g}) | estancos {all(m.is_watertight for m in segs)}")
