@@ -25,7 +25,6 @@ guantazo/                  U3 · Módulo MediaPipe (¡Guantazo!)
 mediapipe-sonoro/          U3 · Módulo MediaPipe: Cuerpo Sonoro, DJ y Dibujo Sonoro (app/ = experiencias)
 ar-avion/                  U3 · Módulo realidad aumentada: B-24D (app/ = experiencia)
 sala-de-guerra/            U3 · Módulo WebXR
-chivilingo/                U3 · Prototipo Chile Re-Descubre
 fosa-atacama/              U3 · Experiencia VR (proyecto final)
 fosa-atacama-proyecto/     U3 · Ficha del proyecto final
 pulsar-mejora/             Propuesta de mejora PULSAR 2.0
@@ -49,7 +48,6 @@ universidad/               Redirecciones desde las rutas antiguas (también en _
 | Cuerpo, manos y sonido | https://github.com/pipebenitezpb1/mediapipe-sonoro |
 | Avión en AR · B-24D | https://github.com/pipebenitezpb1/ar-avion |
 | Sala de Guerra | https://github.com/pipebenitezpb1/sala-de-guerra |
-| Chivilingo | https://github.com/pipebenitezpb1/chivilingo |
 | Fosa de Atacama | https://github.com/pipebenitezpb1/fosa-atacama |
 
 ## Tecnología

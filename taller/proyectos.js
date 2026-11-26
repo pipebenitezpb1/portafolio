@@ -22,7 +22,6 @@ window.PROYECTOS = {
   'mediapipe-sonoro':    { repo: GITHUB + 'mediapipe-sonoro', repoListo: true, demo: 'https://portafolio.insta3d.cl/mediapipe-sonoro/app/', video: '' },
   'ar-avion':            { repo: GITHUB + 'ar-avion', repoListo: true, demo: 'https://portafolio.insta3d.cl/ar-avion/app/', video: '' },
   'sala-de-guerra':      { repo: GITHUB + 'sala-de-guerra', repoListo: true, demo: PAGES + 'sala-de-guerra/', video: '' },
-  'chivilingo':          { repo: GITHUB + 'chivilingo', repoListo: false, demo: '', video: '' },
   'fosa-atacama':        { repo: GITHUB + 'fosa-atacama', repoListo: true, demo: 'https://portafolio.insta3d.cl/fosa-atacama/', video: '' },
 };
 
