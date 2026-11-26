@@ -1,8 +1,8 @@
 // Lógica principal: avance del relato, descenso, luz y color según la profundidad,
 // modo VR (Meta Quest, con controles o con las manos) y modo en pantalla.
 
-import { FASES, ZONAS, PROFUNDIDAD_FINAL, VISTAS } from './narrativa.js';
-import { crearSonido } from './sonido.js';
+import { FASES, ZONAS, PROFUNDIDAD_FINAL, VISTAS } from './narrativa.js?v=2';
+import { crearSonido } from './sonido.js?v=2';
 
 const { THREE, U, estado, ALTURA_FONDO, limitar } = window.FOSA_BASE;
 const $ = (id) => document.getElementById(id);
