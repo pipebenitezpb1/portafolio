@@ -449,3 +449,13 @@ open(os.path.join(aqui, "hoja_pruebas_600x600.svg"), "w").write(
     f'<svg xmlns="http://www.w3.org/2000/svg" width="{HOJA:g}mm" height="{HOJA:g}mm" viewBox="0 0 {HOJA:g} {HOJA:g}" '
     f'fill="none" stroke-width="0.1" font-family="sans-serif">' + "".join(h10) + "</svg>")
 print(f"hoja de pruebas 600 x 600: ocupa hasta x = {10 + w9:.0f} mm, y = {y2 + hm:.0f} mm")
+
+# 12) hoja de 600 x 600 mm solo con la caja (sin pruebas)
+h10 = []; yy = 10.0
+wc, hc = poner(cara, 10, yy, grabado=DISENO); yy += hc + 6
+poner(cara, 10, yy); yy += hc + 6
+wl, hl = poner(p_lomo, 10, yy); poner(p_ext, 10 + wl + 8, yy); yy += hl
+open(os.path.join(aqui, "hoja_caja_600x600.svg"), "w").write(
+    f'<svg xmlns="http://www.w3.org/2000/svg" width="{HOJA:g}mm" height="{HOJA:g}mm" viewBox="0 0 {HOJA:g} {HOJA:g}" '
+    f'fill="none" stroke-width="0.1" font-family="sans-serif">' + "".join(h10) + "</svg>")
+print(f"hoja de la caja 600 x 600: ocupa hasta x = {10 + wl + 8 + p_ext.bounds[2] - p_ext.bounds[0]:.0f} mm, y = {yy:.0f} mm")
