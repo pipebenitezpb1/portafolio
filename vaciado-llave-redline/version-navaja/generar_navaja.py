@@ -24,6 +24,9 @@ from shapely.geometry import Polygon, Point, LineString, box
 from shapely.ops import unary_union
 from shapely import affinity
 
+# ---- sentido de apertura ----
+ESPEJO = True              # True = todas las piezas impresas salen en espejo: la bandeja abre hacia el otro lado (mano derecha).
+                           # El acrilico no cambia: las mismas piezas cortadas se arman dadas vuelta.
 # ---- llave / vaciado ----
 LARGO_MEDIDO = None        # mm, largo total real de la llave (None = usar LARGO_ESTIMADO)
 ANCHO_MEDIDO = None        # mm, ancho maximo real, en la mordaza (None = usar ANCHO_ESTIMADO)
@@ -696,3 +699,20 @@ libre_x = max(m.bounds[1][0] for m in ms16[1:]) + 5               # a continuaci
 ms21[-1].apply_translation([libre_x - ms21[-1].bounds[0][0], 0, 0])
 placa21 = trimesh.util.concatenate(ms21); placa21.export(os.path.join(pr, "prueba_bisagra_con_bloqueo.stl"))
 print(f"prueba de bisagra con bloqueo: {' x '.join(f'{v:.1f}' for v in placa21.extents)} mm, {len(placa21.split())} piezas, {sum(m.volume for m in ms21) / 1000:.0f} cm3 | estancas {all(p_.is_watertight for p_ in placa21.split())}")
+
+# 22) LIMPIEZA Y ESPEJO: al final se revisan todos los STL (caras degeneradas, piezas vueltas del reves) y,
+#     si ESPEJO esta activo, se reflejan para que la bandeja abra hacia el otro lado.
+#     Las placas con varias piezas quedan con su distribucion reflejada, lo que no afecta a la impresion.
+import glob
+n_stl = 0
+for ruta_stl in sorted(glob.glob(os.path.join(aqui, "*.stl")) + glob.glob(os.path.join(pr, "*.stl"))):
+    m_ = trimesh.load(ruta_stl)
+    if ESPEJO: m_.apply_transform(np.diag([1.0, -1.0, 1.0, 1.0]))
+    cuerpos_ = []
+    for c_ in m_.split(only_watertight=False, repair=False):
+        if len(c_.faces) < 4 or abs(c_.volume) < 1e-3: continue      # restos sin volumen (caras sueltas)
+        if c_.volume < 0: c_.invert()
+        cuerpos_.append(c_)
+    m_ = trimesh.util.concatenate(cuerpos_); m_.apply_translation(-m_.bounds[0]); m_.export(ruta_stl); n_stl += 1
+b_ = trimesh.load(os.path.join(aqui, "bandeja_navaja.stl"))
+print(f"{'ESPEJO: ' if ESPEJO else ''}{n_stl} archivos STL revisados{' y reflejados' if ESPEJO else ''} | bandeja estanca {b_.is_watertight}, volumen {b_.volume / 1000:.1f} cm3")
