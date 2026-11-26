@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuerpo, manos y sonido — Taller de Interfaces</title>
+<link rel="icon" type="image/jpeg" href="icono.jpg">
+<meta name="description" content="Tres instrumentos que se tocan con el cuerpo, las manos y los dedos frente a la cámara, con MediaPipe y Web Audio.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../taller/ficha.css">
+<script src="../taller/proyectos.js"></script>
+</head>
+<body class="u3">
+<div class="wrap">
+
+  <div class="nav">
+    <a class="name" href="../index.html">LF<span style="color:var(--accent)">·</span>Benitez</a>
+    <a class="back" href="../index.html#taller">← Volver al taller</a>
+  </div>
+
+  <header class="head">
+    <div class="eye">// UNIDAD 3 · INTERFACES GRÁFICAS · MÓDULO · INTERACCIÓN NATURAL (MEDIAPIPE)</div>
+    <h1>Cuerpo, manos y sonido</h1>
+    <p class="lead">Tres instrumentos que se tocan <b>sin tocar nada</b>: la cámara reconoce el cuerpo, las manos y los dedos, y cada gesto se convierte en música en tiempo real.</p>
+    <div class="tags"><span>MediaPipe Pose</span><span>MediaPipe Hands</span><span>Web Audio</span><span>Cámara web</span></div>
+    <div class="meta" style="margin-top:12px;">Taller de Diseño de Interfaces · Prof. Jorge Forero · Ingeniería en Diseño UAI · 2026</div>
+  </header>
+
+  <div class="galeria" style="grid-template-columns:1fr;margin-bottom:16px;"><figure><img src="portada.jpg" alt="Cuerpo, manos y sonido" style="height:auto;max-height:420px;"></figure></div>
+
+  <div class="enlaces" data-enlaces="mediapipe-sonoro"></div>
+
+  <section data-video="mediapipe-sonoro">
+    <div class="band"><h2>Video demostrativo</h2><div class="ln"></div></div>
+    <div class="yt"></div>
+  </section>
+
+  <div class="band"><h2>Las tres experiencias</h2><div class="ln"></div></div>
+  <div class="dos"><div class="box"><h3>🚶 Cuerpo Sonoro</h3><p>Caminar a izquierda o derecha elige el acorde; las manos sobre los hombros tocan un arpa invisible; las rodillas son bombo y caja; los aplausos suenan; agacharse hunde el sonido bajo el agua; saltar dispara un platillo.</p><p><a href="app/cuerpo.html">Abrir Cuerpo Sonoro →</a></p></div><div class="box"><h3>🎧 DJ Re-descubre</h3><p>Una mesa de DJ en el aire: se pellizcan los discos para prender pistas, una mano abre el filtro, la otra agrega eco y el puño hace stutter.</p><p><a href="app/dj.html">Abrir DJ Re-descubre →</a></p></div><div class="box"><h3>✍️ Dibujo Sonoro</h3><p>Se dibuja en el aire con el índice; cada combinación de dedos es un instrumento (sintetizador, theremin, campanitas, viento) y la línea queda sonando en loop.</p><p><a href="app/dibujo.html">Abrir Dibujo Sonoro →</a></p></div></div>
+
+  <div class="band"><h2>Concepto</h2><div class="ln"></div></div>
+  <div class="box"><p><b>Problema de interacción:</b> cómo convertir movimientos naturales, sin controles ni instrucciones, en música que se entienda y se pueda repetir.</p><p><b>Experiencia:</b> tres escalas de movimiento, del cuerpo entero a la punta de un dedo, cada una con su propio instrumento.</p><p><b>Público y contexto:</b> público general en exhibiciones y salas, de pie frente a una pantalla con cámara y parlantes.</p></div>
+
+  <div class="band"><h2>Objetivos</h2><div class="ln"></div></div>
+  <div class="box"><ul><li>Usar el cuerpo, las manos y los dedos como interfaz de entrada.</li><li>Traducir cada gesto a un parámetro sonoro claro y predecible.</li><li>Que se entienda jugando, sin explicación previa.</li></ul></div>
+
+  <div class="band"><h2>Tecnologías</h2><div class="ln"></div></div>
+  <div class="tablewrap"><table class="tabla"><tr><th>Tecnología</th><th>Uso en el proyecto</th></tr><tr><td><b>MediaPipe Pose Landmarker</b></td><td>Cuerpo Sonoro: posición en el piso, rodillas, brazos, saltos y aplausos.</td></tr><tr><td><b>MediaPipe Hand Landmarker</b></td><td>DJ y Dibujo Sonoro: pellizcos, puño y combinaciones de dedos.</td></tr><tr><td><b>Web Audio API</b></td><td>Todos los sonidos se sintetizan en el navegador, sin archivos.</td></tr><tr><td><b>Privacidad</b></td><td>Nada se graba ni se envía: todo se procesa en el navegador.</td></tr></table></div>
+
+  <div class="band"><h2>Cómo probarlo</h2><div class="ln"></div></div>
+  <div class="box"><p>Abre cualquiera de las tres experiencias en Chrome o Safari con cámara web y acepta el permiso. Para Cuerpo Sonoro, aléjate 2 a 3 metros para que la cámara vea tu cuerpo entero.</p></div>
+
+  <nav class="vecinos" aria-label="Proyectos vecinos"><a href="../guantazo/">← ¡Guantazo!</a><a href="../ar-avion/">Avión en AR →</a></nav>
+  <div class="foot">© 2026 · Luis-Felipe Benitez · Taller de Diseño de Interfaces · UAI</div>
+</div>
+</body>
+</html>

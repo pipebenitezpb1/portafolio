@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avión en AR · B-24D — Taller de Interfaces</title>
+<link rel="icon" type="image/jpeg" href="icono.jpg">
+<meta name="description" content="Realidad aumentada en el navegador: un bombardero B-24D aparece sobre una lámina impresa y se manipula con las manos.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../taller/ficha.css">
+<script src="../taller/proyectos.js"></script>
+</head>
+<body class="u3">
+<div class="wrap">
+
+  <div class="nav">
+    <a class="name" href="../index.html">LF<span style="color:var(--accent)">·</span>Benitez</a>
+    <a class="back" href="../index.html#taller">← Volver al taller</a>
+  </div>
+
+  <header class="head">
+    <div class="eye">// UNIDAD 3 · INTERFACES GRÁFICAS · MÓDULO · REALIDAD AUMENTADA</div>
+    <h1>Avión en AR · B-24D</h1>
+    <p class="lead">Una lámina impresa se convierte en pista de despegue: al apuntar la cámara aparece un <b>B-24D volando</b> encima, y se puede tocar, agarrar y hacer que siga tu palma <b>con las manos desnudas</b>.</p>
+    <div class="tags"><span>A-Frame</span><span>MindAR</span><span>MediaPipe Hands</span><span>Web Audio</span><span>Realidad aumentada</span></div>
+    <div class="meta" style="margin-top:12px;">Taller de Diseño de Interfaces · Prof. Jorge Forero · Ingeniería en Diseño UAI · 2026</div>
+  </header>
+
+  <div class="galeria" style="grid-template-columns:1fr;margin-bottom:16px;"><figure><img src="portada.jpg" alt="Avión en AR · B-24D" style="height:auto;max-height:420px;"></figure></div>
+
+  <div class="enlaces" data-enlaces="ar-avion"></div>
+
+  <section data-video="ar-avion">
+    <div class="band"><h2>Video demostrativo</h2><div class="ln"></div></div>
+    <div class="yt"></div>
+  </section>
+
+  <div class="band"><h2>Concepto</h2><div class="ln"></div></div>
+  <div class="box"><p><b>Problema de interacción:</b> en la realidad aumentada del celular el objeto se mira, pero no se toca. Aquí la mano entra en la escena: el avión reacciona cuando el dedo llega a su profundidad, y la mano lo tapa cuando está delante.</p><p><b>Público y contexto:</b> exhibiciones y salas de clase; cualquiera con un celular o un computador con cámara y la lámina impresa.</p></div>
+
+  <div class="band"><h2>Gestos</h2><div class="ln"></div></div>
+  <div class="box"><div class="tablewrap"><table class="tabla"><tr><th>Gesto</th><th>Acción</th></tr><tr><td>☝️ Tocar el avión con el índice</td><td>Tonel y confeti</td></tr><tr><td>🤏 Pellizcar y mover</td><td>Se arrastra en 3D; al soltarlo vuelve</td></tr><tr><td>✋ Palma abierta 0,7 s</td><td>El avión vuela frente a la palma y la sigue</td></tr><tr><td>🤏🤏 Pinza con dos manos</td><td>Escalar</td></tr></table></div></div>
+
+  <div class="band"><h2>Tecnologías</h2><div class="ln"></div></div>
+  <div class="tablewrap"><table class="tabla"><tr><th>Tecnología</th><th>Uso en el proyecto</th></tr><tr><td><b>A-Frame 1.5</b></td><td>Escena 3D y componentes propios: seguimiento suavizado, piloto, manipulador y partículas.</td></tr><tr><td><b>MindAR 1.2.5</b></td><td>Seguimiento del marcador impreso (image tracking).</td></tr><tr><td><b>MediaPipe Hand Landmarker</b></td><td>Gestos, profundidad de la mano con una sola webcam y oclusión.</td></tr><tr><td><b>Web Audio</b></td><td>Motor del avión y efectos sintetizados.</td></tr></table></div>
+
+  <div class="band"><h2>Proceso e iteraciones</h2><div class="ln"></div></div>
+  <div class="box"><ol class="linea"><li><b>Marcador de imagen (NFT)</b><br>Primera prueba con descriptores de imagen en el formato de AR.js.</li><li><b>MindAR con un marcador de pato</b><br>Seguimiento más estable en el navegador.</li><li><b>Marcador propio</b><br>Más detalle gráfico para que no se pierda al inclinarlo.</li><li><b>Gestos</b><br>De botones en pantalla a tocar, pellizcar y seguir la palma.</li><li><b>Profundidad y oclusión</b><br>Calibración con la palma sobre el marcador y una mano 3D invisible que tapa el avión.</li></ol></div>
+
+  <div class="band"><h2>Cómo probarlo</h2><div class="ln"></div></div>
+  <div class="box"><p>Imprime o muestra en otra pantalla el <a href="app/markers/marcador.png" target="_blank" rel="noopener">marcador</a>, abre la experiencia y apunta la cámara. Botón 📏 para calibrar la mano: déjala plana sobre el marcador 1,5 s.</p></div>
+
+  <nav class="vecinos" aria-label="Proyectos vecinos"><a href="../mediapipe-sonoro/">← Cuerpo, manos y sonido</a><a href="../sala-de-guerra/">Sala de Guerra →</a></nav>
+  <div class="foot">© 2026 · Luis-Felipe Benitez · Taller de Diseño de Interfaces · UAI</div>
+</div>
+</body>
+</html>

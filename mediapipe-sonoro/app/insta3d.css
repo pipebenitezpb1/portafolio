@@ -1,0 +1,57 @@
+/* Estética Insta3D (tomada de la página de RobotFace): negro cálido, verdes, puntos y Barlow Condensed */
+:root {
+  --negro: #16150f; --negro-2: #211f17; --negro-3: #2c2a21;
+  --verde: #1a7a2e; --verde-claro: #2fae4a; --papel: #f6f5f0;
+  --gris: #a9a79b; --linea: #38362b; --naranjo: #f26b1d;
+  --cond: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --texto: "Inter", system-ui, -apple-system, sans-serif;
+  /* nombres que usan las páginas */
+  --bg: var(--negro); --panel: var(--negro-2); --text: var(--papel); --muted: var(--gris);
+  --accent: var(--verde-claro); --on: var(--verde-claro); --line: var(--linea);
+  --a: var(--verde); --b: var(--verde-claro);
+}
+html, body { background: var(--negro); color: var(--papel); font-family: var(--texto); }
+
+/* Pantalla de inicio */
+#intro {
+  background: var(--negro);
+  isolation: isolate;
+}
+#intro::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background-image: radial-gradient(rgba(47, 174, 74, .22) 1.6px, transparent 1.7px); background-size: 16px 16px;
+  -webkit-mask-image: linear-gradient(115deg, transparent 30%, #000 80%); mask-image: linear-gradient(115deg, transparent 30%, #000 80%);
+}
+#intro small {
+  font: 600 15px/1 var(--cond); letter-spacing: .22em; text-transform: uppercase; color: var(--verde-claro);
+  display: flex; align-items: center; gap: 12px; opacity: 1;
+}
+#intro small::before { content: ""; width: 34px; height: 3px; background: var(--verde-claro); }
+#intro h1 { font: 700 clamp(56px, 9vw, 112px)/.9 var(--cond); text-transform: uppercase; letter-spacing: .01em; }
+#intro h1 span { color: var(--verde-claro); }
+#intro p, #intro ul { color: #d9d7cc; }
+#intro b { color: #fff; }
+.marca-i3d { display: flex; align-items: center; gap: 10px; font: 700 22px/1 var(--cond); letter-spacing: .04em; text-transform: uppercase; color: #fff; }
+.marca-i3d b { color: var(--verde-claro); }
+.marca-i3d svg { width: 30px; height: 34px; }
+
+/* Botones */
+button, #startBtn {
+  background: var(--verde); color: #fff; border: 2px solid transparent; border-radius: 10px;
+  font: 700 18px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; padding: 14px 24px;
+}
+button:hover, #startBtn:hover { background: var(--verde-claro); }
+button.ghost { background: transparent; border-color: #4a483d; color: #fff; }
+button.ghost:hover { border-color: #fff; background: transparent; }
+
+/* Elementos de la página de caras */
+header h1 { font: 700 30px/1 var(--cond); text-transform: uppercase; letter-spacing: .03em; }
+aside { background: var(--negro-2); border-color: var(--linea); }
+aside h2 { font: 700 15px/1 var(--cond); letter-spacing: .22em; text-transform: uppercase; color: var(--verde-claro); }
+.g .name { font-family: var(--cond); font-size: 17px; letter-spacing: .04em; text-transform: uppercase; }
+.g .name small { font-family: var(--texto); text-transform: none; letter-spacing: 0; font-size: 12px; }
+.g.on { background: rgba(47, 174, 74, .16); }
+.stage { background: var(--negro-2); border: 1px solid var(--linea); }
+input[type=range] { accent-color: var(--verde-claro); }
+input[type=checkbox] { accent-color: var(--verde-claro); }
+#banner { font-family: var(--cond); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }

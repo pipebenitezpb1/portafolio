@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>AR B-24D</title>
+
+  <!-- A-Frame 1.5.0 + MindAR 1.2.5 (seguimiento de imagen) -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <script src="js/app.js?v=7"></script>
+  <script src="js/sonido.js?v=7"></script>
+  <script src="js/componentes.js?v=7"></script>
+  <!-- MediaPipe (manos) se carga como módulo, en paralelo -->
+  <script type="module" src="js/manos.js?v=7"></script>
+
+  <style>
+    :root { --fondo: rgba(12, 14, 20, .72); --texto: #fff; --acento: #4fd1ff; }
+    body { margin: 0; overflow: hidden; font-family: system-ui, sans-serif; background: #000; color: var(--texto); }
+
+    /* Efecto espejo: video, 3D y manos se voltean juntos para que todo calce */
+    body.espejo video, body.espejo .a-canvas, body.espejo #manos-canvas { transform: scaleX(-1); }
+
+    #manos-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 5; pointer-events: none; }
+
+    .pill {
+      background: var(--fondo); color: var(--texto); border: 0; border-radius: 999px;
+      padding: 9px 14px; font: 500 14px system-ui, sans-serif;
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* Barra superior */
+    .barra { position: fixed; z-index: 10; top: 12px; left: 12px; right: 12px;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; pointer-events: none; }
+    .barra > div { display: flex; flex-wrap: wrap; gap: 6px; pointer-events: auto; }
+    .barra .izq { flex-direction: column; align-items: flex-start; }
+    .barra .der { justify-content: flex-end; }
+    .barra button { cursor: pointer; min-width: 40px; }
+    .barra button:hover { background: rgba(40, 46, 60, .85); }
+    .barra button.apagado { opacity: .45; }
+    .barra button.activo { background: #ffcc33; color: #1a1400; }
+    @keyframes latido { 50% { box-shadow: 0 0 0 6px rgba(255,204,51,.35); } }
+    .barra button.pendiente { animation: latido 1.4s infinite; }
+
+    #chip-seguimiento::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+      margin-right: 7px; background: #888; vertical-align: 0; }
+    #chip-seguimiento[data-estado="estable"]::before { background: #3ddc84; box-shadow: 0 0 8px #3ddc84; }
+    #chip-seguimiento[data-estado="manteniendo"]::before { background: #ffc233; }
+    #chip-seguimiento[data-estado="buscando"]::before { background: #ff5c5c; }
+
+    #status {
+      position: fixed; z-index: 10; left: 50%; bottom: 24px; transform: translateX(-50%);
+      transition: opacity .3s; pointer-events: none; white-space: nowrap; font-size: 15px;
+    }
+    #status.hidden { opacity: 0; }
+
+    #toast {
+      position: fixed; z-index: 11; left: 50%; top: 40%; transform: translate(-50%, -50%) scale(.9);
+      font-size: 22px; font-weight: 700; padding: 12px 22px; opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s;
+    }
+    #toast.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+    #flash { position: fixed; inset: 0; z-index: 20; background: #fff; opacity: 0; pointer-events: none; transition: opacity .15s; }
+    #flash.on { opacity: .8; transition: none; }
+
+    /* Panel de ayuda */
+    #ayuda { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.55); padding: 16px; }
+    #ayuda.visible { display: flex; }
+    #ayuda .tarjeta { background: rgba(16, 18, 26, .95); border-radius: 18px; padding: 20px 22px; max-width: 440px; width: 100%;
+      max-height: 90vh; overflow: auto; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+    #ayuda h2 { margin: 0 0 4px; font-size: 20px; }
+    #ayuda p { margin: 0 0 14px; color: #aab; font-size: 14px; }
+    #ayuda ul { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+    #ayuda li { display: grid; grid-template-columns: 40px 1fr; align-items: center; font-size: 14px; }
+    #ayuda li b { font-size: 24px; text-align: center; }
+    #ayuda li small { color: #99a; }
+    #ayuda .teclas { color: #99a; font-size: 12px; margin-bottom: 14px; }
+    #cerrar-ayuda { width: 100%; background: var(--acento); color: #001018; font-weight: 700; cursor: pointer; padding: 12px; }
+  </style>
+</head>
+<body class="espejo">
+  <canvas id="manos-canvas"></canvas>
+
+  <div class="barra">
+    <div class="izq">
+      <span id="chip-seguimiento" class="pill" data-estado="buscando">Buscando marcador</span>
+      <span id="chip-manos" class="pill">🖐 Esperando cámara…</span>
+    </div>
+    <div class="der">
+      <button id="btn-modo" class="pill" title="Cambiar modo (M)">🌀 Giro</button>
+      <button id="btn-turbo" class="pill" title="Turbo (T)">🚀</button>
+      <button id="btn-estela" class="pill apagado" title="Estela de humo (E)">💨</button>
+      <button id="btn-reiniciar" class="pill" title="Reiniciar tamaño">↺</button>
+      <button id="btn-calibrar" class="pill" title="Calibrar profundidad: mano plana sobre el marcador">📏</button>
+      <button id="btn-manos" class="pill" title="Activar/desactivar manos">🖐</button>
+      <button id="btn-sonido" class="pill" title="Sonido">🔇</button>
+      <button id="btn-foto" class="pill" title="Tomar foto (F)">📷</button>
+      <button id="btn-voltear" class="pill" title="Modo espejo">⇆</button>
+      <button id="btn-ayuda" class="pill" title="Ayuda">?</button>
+    </div>
+  </div>
+
+  <div id="status" class="pill">Iniciando cámara…</div>
+  <div id="toast" class="pill"></div>
+  <div id="flash"></div>
+
+  <div id="ayuda" class="visible">
+    <div class="tarjeta">
+      <h2>✈️ Controla el avión con tus manos</h2>
+      <p>Apunta la cámara al marcador y usa estos gestos frente a la cámara:</p>
+      <ul>
+        <li><b>☝️</b><span>Toca el avión con la punta del índice<br><small>Hace un tonel con confeti</small></span></li>
+        <li><b>🤏</b><span>Pellízcalo y muévelo<br><small>Lo arrastras; al soltar vuelve volando a su lugar</small></span></li>
+        <li><b>✋</b><span>Muestra la palma abierta<br><small>El avión vuela a tu mano y la sigue. Ciérrala y vuelve</small></span></li>
+        <li><b>🤏🤏</b><span>Pellizca con las dos manos<br><small>Sepáralas o júntalas para cambiar el tamaño</small></span></li>
+      </ul>
+      <p><b>📏 Profundidad:</b> la primera vez, toca 📏 y pon la mano plana sobre el marcador 1,5 s. Así la app sabe qué tan lejos está tu mano: tocas y agarras el avión solo cuando tu dedo llega a su profundidad, y tu mano lo tapa cuando está delante. El color del dedo te guía: 🟢 a su altura · 🔵 detrás · 🟠 delante.</p>
+      <p>Botones: 🌀 modo · 🚀 turbo · 💨 estela · ↺ tamaño original</p>
+      <div class="teclas">Teclado: M modo · T turbo · E estela · R tonel · Espacio pausa · F foto · C calibrar · H ver mano 3D · O oclusión · Tip: pon las manos al lado del marcador, sin taparlo</div>
+      <button id="cerrar-ayuda" class="pill">¡A volar!</button>
+    </div>
+  </div>
+
+  <!--
+    Seguimiento:
+    - MindAR con filtro poco suavizado (responde rápido a la inclinación)
+    - el suavizado fino y la retención al perder el marcador los hace `seguir-marcador`
+  -->
+  <a-scene
+    mindar-image="imageTargetSrc: markers/marcador.mind?v=2; filterMinCF: 0.0005; filterBeta: 5; missTolerance: 8; warmupTolerance: 2; uiScanning: no"
+    color-space="sRGB"
+    renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets>
+      <a-asset-item id="avion" src="models/b24d.glb"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity light="type: ambient; intensity: 1.2"></a-entity>
+    <a-entity light="type: directional; intensity: 2" position="0.5 1 1"></a-entity>
+
+    <!-- Marcador detectado por MindAR (markers/marcador.png). No lleva contenido: lo sigue #ancla -->
+    <a-entity id="marcador" mindar-image-target="targetIndex: 0"></a-entity>
+
+    <!-- Ancla suavizada que sigue al marcador -->
+    <a-entity id="ancla" seguir-marcador="target: #marcador; suavidad: 10; mantener: 1500">
+      <!-- rotation 90 0 0: el eje Y apunta hacia afuera del marcador ("arriba") -->
+      <a-entity rotation="90 0 0">
+        <a-entity particulas></a-entity>
+
+        <a-entity id="aparecer" piloto>
+          <a-entity manipulador>
+            <a-entity id="orbita">
+              <a-circle id="sombra" radius="0.18" rotation="-90 0 0"
+                material="color: #000; opacity: 0.28; transparent: true; shader: flat"></a-circle>
+              <a-entity id="avion-pos">
+                <!-- rotation 0 -90 0: la nariz del avión apunta hacia donde avanza -->
+                <a-entity gltf-model="#avion" fit-model="size: 0.8" rotation="0 -90 0"></a-entity>
+              </a-entity>
+            </a-entity>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+    </a-entity>
+  </a-scene>
+  <script>AR.iniciarUI();</script>
+</body>
+</html>

@@ -21,7 +21,9 @@ voz-formas/                U1 · Ejercicio de visualización de voz
 cofre-sonoro/              U1 · Proyecto de la unidad (grupal)
 pulsar/                    U2 · E1 Controlador PULSAR
 robotface/                 U2 · RobotFace
-guantazo/                  U3 · Módulo MediaPipe
+guantazo/                  U3 · Módulo MediaPipe (¡Guantazo!)
+mediapipe-sonoro/          U3 · Módulo MediaPipe: Cuerpo Sonoro, DJ y Dibujo Sonoro (app/ = experiencias)
+ar-avion/                  U3 · Módulo realidad aumentada: B-24D (app/ = experiencia)
 sala-de-guerra/            U3 · Módulo WebXR
 chivilingo/                U3 · Prototipo Chile Re-Descubre
 fosa-atacama/              U3 · Experiencia VR (proyecto final)
@@ -44,6 +46,8 @@ universidad/               Redirecciones desde las rutas antiguas (también en _
 | PULSAR | https://github.com/pipebenitezpb1/PULSAR |
 | RobotFace | https://github.com/pipebenitezpb1/RobotFace |
 | ¡Guantazo! | https://github.com/pipebenitezpb1/guantazo-vr |
+| Cuerpo, manos y sonido | https://github.com/pipebenitezpb1/mediapipe-sonoro |
+| Avión en AR · B-24D | https://github.com/pipebenitezpb1/ar-avion |
 | Sala de Guerra | https://github.com/pipebenitezpb1/sala-de-guerra |
 | Chivilingo | https://github.com/pipebenitezpb1/chivilingo |
 | Fosa de Atacama | https://github.com/pipebenitezpb1/fosa-atacama |

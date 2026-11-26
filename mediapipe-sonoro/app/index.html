@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuerpo, manos y sonido — MediaPipe</title>
+<meta name="description" content="Tres instrumentos que se tocan con el cuerpo, las manos y los dedos frente a la cámara, con MediaPipe y Web Audio.">
+<style>
+:root{--paper:#e7dfce;--cream:#f1ebdc;--ink:#1b1a13;--muted:#6b6450;--accent:#1a7a2e;--u3:#2a4f9e;
+  --disp:'Barlow Condensed','Arial Narrow',Impact,sans-serif;--mono:'Space Mono',ui-monospace,monospace;--sans:'Barlow',system-ui,sans-serif;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 60px;}
+.head{border:2px solid var(--ink);background:var(--cream);padding:26px 24px;box-shadow:6px 6px 0 var(--ink);border-left:10px solid var(--u3);margin-bottom:22px;}
+.eye{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--u3);text-transform:uppercase;margin-bottom:8px;}
+h1{font-family:var(--disp);font-size:clamp(30px,6vw,50px);text-transform:uppercase;line-height:1;margin:0 0 10px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
+a.exp{display:flex;flex-direction:column;border:2px solid var(--ink);background:var(--cream);box-shadow:4px 4px 0 var(--ink);padding:20px;text-decoration:none;color:inherit;transition:transform .12s;}
+a.exp:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink);}
+a.exp:focus-visible{outline:3px solid #d4500f;outline-offset:2px;}
+.exp .emoji{font-size:38px;}
+.exp h2{font-family:var(--disp);text-transform:uppercase;font-size:24px;margin:6px 0;}
+.exp p{margin:0 0 12px;font-size:14.5px;flex:1;}
+.exp span{font-family:var(--mono);font-size:11px;text-transform:uppercase;color:var(--accent);}
+.nota{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:20px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div class="eye">// Taller de Diseño de Interfaces · Módulo interacción natural (MediaPipe)</div>
+    <h1>Cuerpo, manos y sonido</h1>
+    <p>Tres instrumentos que se tocan sin tocar nada: la cámara reconoce el cuerpo, las manos y los dedos, y cada gesto se convierte en música en tiempo real.</p>
+  </header>
+  <div class="grid">
+    <a class="exp" href="cuerpo.html"><div class="emoji">🚶</div><h2>Cuerpo Sonoro</h2><p>Todo el cuerpo es el instrumento: caminar elige el acorde, las rodillas marcan bombo y caja, los aplausos suenan, saltar dispara un platillo y agacharse hunde el sonido bajo el agua.</p><span>Pose Landmarker →</span></a>
+    <a class="exp" href="dj.html"><div class="emoji">🎧</div><h2>DJ Re-descubre</h2><p>Una mesa de DJ en el aire: se pellizcan los discos para prender pistas, una mano abre el filtro, la otra agrega eco y el puño hace stutter.</p><span>Hand Landmarker →</span></a>
+    <a class="exp" href="dibujo.html"><div class="emoji">✍️</div><h2>Dibujo Sonoro</h2><p>Dibujar en el aire con el índice: cada combinación de dedos es un instrumento (sintetizador, theremin, campanitas, viento) y la línea queda sonando en loop.</p><span>Hand Landmarker →</span></a>
+  </div>
+  <p class="nota">Necesita cámara web y Chrome o Safari. Nada se graba ni se envía: todo se procesa en el navegador.</p>
+</div>
+</body>
+</html>
