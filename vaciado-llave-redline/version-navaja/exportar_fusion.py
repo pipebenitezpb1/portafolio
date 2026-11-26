@@ -129,7 +129,8 @@ def remache(c, alas_en_u, extra=0.2, marcas=0):
 def seguro(c, alas_en_u, pata=4.4, marcas=0):
     z0, (al, aa, ah), rc = zi1 + t, g.ALA, g.CUELLO_D / 2
     s = resta(cil(0, 0, 7.5, z0 + 0.2, z0 + 0.2 + ah), caja(-al / 2 - 0.2, al / 2 + 0.2, -aa / 2 - 0.2, aa / 2 + 0.2, z0, z0 + 5), cil(0, 0, rc + 0.2, z0, z0 + 5))
-    s = suma(s, caja(-pata / 2, pata / 2, rc + 0.25, al / 2 + 0.2, z0 - t, z0 + 0.3), caja(-pata / 2, pata / 2, -al / 2 - 0.2, -rc - 0.25, z0 - t, z0 + 0.3))
+    p0, p1 = g.CERRADURA_CORTE[0] / 2 + 0.15, g.CERRADURA_CORTE[1] / 2 - 0.1      # las patas van en las orejas del agujero cortado
+    s = suma(s, caja(-pata / 2, pata / 2, p0, p1, z0 - t, z0 + 0.3), caja(-pata / 2, pata / 2, -p1, -p0, z0 - t, z0 + 0.3))
     for a_ in np.radians(25 + 22 * np.arange(marcas)):
         s = resta(s, cil(7.5 * np.cos(a_), 7.5 * np.sin(a_), 0.9, z0, z0 + 6))
     if not alas_en_u: s = s.rotate(Vector(0, 0, 0), Vector(0, 0, 1), 90)
@@ -278,8 +279,9 @@ def pasos_seguro(pz, c, alas_en_u, pata=4.4, d=(0, 0), marcas=0):
     dsc = disco((0, 0), 7.5).difference(box(-al / 2 - 0.2, -aa / 2 - 0.2, al / 2 + 0.2, aa / 2 + 0.2)).difference(disco((0, 0), rc + 0.2))
     for a_ in np.radians(25 + 22 * np.arange(marcas)): dsc = dsc.difference(disco((7.5 * np.cos(a_), 7.5 * np.sin(a_)), 0.9))
     paso(pz, "Disco con la ranura para la cabeza del pasador", "nuevo", T(dsc), z0 + 0.2, z0 + 0.2 + ah, d)
-    paso(pz, "Pata 1 (entra en la oreja del MDF)", "sumar", T(box(-pata / 2, rc + 0.25, pata / 2, al / 2 + 0.2)), z0 - t, z0 + 0.3, d)
-    paso(pz, "Pata 2", "sumar", T(box(-pata / 2, -al / 2 - 0.2, pata / 2, -rc - 0.25)), z0 - t, z0 + 0.3, d)
+    p0, p1 = g.CERRADURA_CORTE[0] / 2 + 0.15, g.CERRADURA_CORTE[1] / 2 - 0.1
+    paso(pz, "Pata 1 (entra en la oreja del agujero)", "sumar", T(box(-pata / 2, p0, pata / 2, p1)), z0 - t, z0 + 0.3, d)
+    paso(pz, "Pata 2", "sumar", T(box(-pata / 2, -p1, pata / 2, -p0)), z0 - t, z0 + 0.3, d)
 
 # --- estuche armado ---
 paso("01 Llave de referencia (calcado)", "Contorno calcado de la foto", "nuevo", g.herr, g.PISO, g.PISO + 13)

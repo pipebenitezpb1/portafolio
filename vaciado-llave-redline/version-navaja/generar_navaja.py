@@ -57,8 +57,9 @@ RANURA_EXTRA = (0.1, 0.0)  # mm que se agregan al ancho y al largo de las ranura
 CERRADURA_EXTRA = 0.0      # mm por lado que se agregan a los agujeros de los pasadores
 # ---- remaches / eje ----
 EJE_D = 10.0               # mm, diametro del cuerpo del remache (eje de giro)
-CUELLO_D = 6.2             # mm, cuello que atraviesa el MDF
-ALA = (11.0, 4.0, 3.0)     # mm, largo x ancho x alto de la cabeza
+CUELLO_D = 6.0             # mm, cuello que atraviesa el MDF
+CERRADURA_CORTE = (6.4, 11.6, 4.4)   # mm, agujero YA CORTADO en el acrilico: diametro, largo y ancho de las orejas. NO CAMBIAR
+ALA = (10.2, 3.4, 3.0)     # mm, largo x ancho x alto de la cabeza impresa (debe pasar holgada por las orejas)
 # ---- bisagra ----
 CON_BISAGRA_FIJA = False   # True = agrega la hoja fija impresa con dos nudillos; False = la bandeja gira solo sobre el pasador
 NUDILLO_R = 8.0            # mm, radio exterior de los nudillos
@@ -199,9 +200,9 @@ cara = unary_union([silueta_cara, Point(P).buffer(rho + 2.5, resolution=32),
                     box(ur - 3, y_lomo - t - MARGEN, x_ext + t + MARGEN, v_plano + MARGEN)])
 cara = cara.buffer(RADIO_ESTETICO, resolution=64).buffer(-RADIO_ESTETICO, resolution=64).buffer(-6).buffer(6, resolution=32).simplify(0.02)
 def cerradura(c, a_lo_largo_de_u):                 # agujero redondo con dos orejas para el remache
-    o = box(-ALA[0] / 2 - 0.3, -ALA[1] / 2 - 0.2, ALA[0] / 2 + 0.3, ALA[1] / 2 + 0.2)
+    o = box(-CERRADURA_CORTE[1] / 2, -CERRADURA_CORTE[2] / 2, CERRADURA_CORTE[1] / 2, CERRADURA_CORTE[2] / 2)
     if not a_lo_largo_de_u: o = affinity.rotate(o, 90, origin=(0, 0))
-    return affinity.translate(Point(0, 0).buffer(CUELLO_D / 2 + 0.1, resolution=32).union(o), *c)
+    return affinity.translate(Point(0, 0).buffer(CERRADURA_CORTE[0] / 2, resolution=32).union(o), *c)
 largo_l = C2[0] - 9 - u_lomo
 tabs_l = [(u_lomo + f * largo_l - PESTANA / 2, u_lomo + f * largo_l + PESTANA / 2) for f in (0.12, 0.5, 0.88)]
 vt = (v_res + 4 + v_plano) / 2
@@ -244,8 +245,7 @@ def seguro(c, alas_en_u, pata=4.4, marcas=0):                          # tapa co
     z0 = zi1 + t
     disco = D(cil(0, 0, 7.5, z0 + 0.2, z0 + 0.2 + ALA[2]),
               B(-ALA[0] / 2 - 0.2, ALA[0] / 2 + 0.2, -ALA[1] / 2 - 0.2, ALA[1] / 2 + 0.2, z0, z0 + 5), cil(0, 0, CUELLO_D / 2 + 0.2, z0, z0 + 5))
-    patas = [B(-2.2, 2.2, sg * (CUELLO_D / 2 + 0.25), sg * (ALA[0] / 2 + 0.2), z0 - t, z0 + 0.3) for sg in (1, -1)]
-    patas = [B(-pata / 2, pata / 2, *sorted([sg * (CUELLO_D / 2 + 0.25), sg * (ALA[0] / 2 + 0.2)]), z0 - t, z0 + 0.3) for sg in (1, -1)]
+    patas = [B(-pata / 2, pata / 2, *sorted([sg * (CERRADURA_CORTE[0] / 2 + 0.15), sg * (CERRADURA_CORTE[1] / 2 - 0.1)]), z0 - t, z0 + 0.3) for sg in (1, -1)]
     m = U(disco, *patas)
     if marcas:                                                               # muescas en el borde que identifican la variante
         m = D(m, *[cil(7.5 * np.cos(a_), 7.5 * np.sin(a_), 0.9, z0, z0 + 6) for a_ in np.radians(25 + 22 * np.arange(marcas))])
@@ -480,3 +480,12 @@ for m in ms14:
 placa14 = trimesh.util.concatenate(ms14); placa14.export(os.path.join(pr, "prueba_impresion.stl"))
 print(f"prueba de impresion: {' x '.join(f'{v:.1f}' for v in placa14.extents)} mm, {len(placa14.split())} piezas, {sum(m.volume for m in ms14) / 1000:.0f} cm3")
 for m in ms14: print("   ", " x ".join(f"{v:.1f}" for v in m.extents), "en", " ".join(f"{v:.0f}" for v in m.bounds[0][:2]), "| estanca", m.is_watertight)
+
+# 15) solo pasadores y seguros (para repetir la prueba rapido): 3 pasadores + 4 seguros
+ms15 = [girar(remache((0, 0), True, e_, i + 1), 90, [1, 0, 0]) for i, e_ in enumerate(VAR_REMACHE)] + \
+       [girar(seguro((0, 0), True, p_, i + 1), 180, [1, 0, 0]) for i, p_ in enumerate(VAR_SEGURO)]
+x = 0.0
+for m in ms15:
+    m.apply_translation([x, 0, 0]); x += m.extents[0] + 5
+placa15 = trimesh.util.concatenate(ms15); placa15.export(os.path.join(pr, "pasadores_y_seguros.stl"))
+print(f"pasadores y seguros: {' x '.join(f'{v:.1f}' for v in placa15.extents)} mm, {len(placa15.split())} piezas | cabeza {ALA[0]:g} x {ALA[1]:g} mm en orejas de {CERRADURA_CORTE[1]:g} x {CERRADURA_CORTE[2]:g} mm, cuello {CUELLO_D:g} en agujero de {CERRADURA_CORTE[0]:g}")
