@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fosa de Atacama — Taller de Interfaces</title>
 <link rel="icon" type="image/jpeg" href="icono.jpg?v=2">
-<meta name="description" content="Experiencia VR para Meta Quest: un descenso de 8.000 metros a la Fosa de Atacama a bordo de un lander que cae libre hasta el fondo.">
+<meta name="description" content="Experiencia VR para Meta Quest: un descenso de 8.000 metros a la Fosa de Atacama junto al lander chileno Audacia: muestras de agua, fauna real y regreso a la superficie.">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="../taller/ficha.css?v=20261126">
 <script src="../taller/proyectos.js?v=20261126"></script>
@@ -21,7 +21,7 @@
   <header class="head">
     <div class="eye">// UNIDAD 3 · INTERFACES GRÁFICAS · PROYECTO FINAL · CHILE RE-DESCUBRE</div>
     <h1>Fosa de Atacama</h1>
-    <p class="lead"><b>Un lugar al que ningún ser humano puede ir, vivido en primera persona.</b> Un descenso de 8.000 metros bajo el Pacífico a bordo de un <b>lander</b>, un vehículo sin tripulación que cae libre hasta el fondo. Con una palanca la persona lo suelta, enciende sus focos y libera la carnada.</p>
+    <p class="lead"><b>Un lugar al que ningún ser humano puede ir, vivido en primera persona.</b> Un descenso de 8.000 metros junto al <b>Audacia</b>, el lander que la expedición Atacamex llevó al fondo en 2018. Un lander cae libre y trabaja solo: aquí la persona acciona con una palanca lo que él hace en automático.</p>
     <div class="tags"><span>A-Frame 1.6</span><span>WebXR</span><span>Meta Quest</span><span>Web Audio</span><span>Divulgación científica</span></div>
     <div class="meta" style="margin-top:12px;">Taller de Diseño de Interfaces · UAI · 2026 · Concurso Chile Re-Descubre (Congreso Futuro · ACHIPEC · CRTIC)</div>
   </header>
@@ -34,16 +34,19 @@
   </section>
 
   <div class="band"><h2>Concepto</h2><div class="ln"></div></div>
-  <div class="box"><p>Frente a Chile está uno de los ambientes más extremos del planeta: la Fosa de Atacama, con cerca de 8.000 m de profundidad. La realidad virtual es la única forma de «estar» ahí.</p><p>Las tres condiciones extremas se traducen en sensaciones: <b>oscuridad</b> (solo se ve lo que ilumina la linterna), <b>presión</b> (el medidor sube a unas 800 atmósferas, el lander cruje y los controles vibran) y <b>escasez de alimento</b> (basta soltar carnada para que la vida aparezca).</p><p><b>Público y contexto:</b> visitantes de Congreso Futuro con un Meta Quest, de pie y sin desplazarse; unos 3 minutos por persona.</p></div>
+  <div class="box"><p>Frente a Chile está uno de los ambientes más extremos del planeta: la Fosa de Atacama, con cerca de 8.000 m de profundidad. La realidad virtual es la única forma de «estar» ahí.</p><p>Las tres condiciones extremas se traducen en sensaciones: <b>oscuridad</b> (solo se ve lo que ilumina la linterna), <b>presión</b> (el medidor sube a unas 800 atmósferas, el lander cruje y los controles vibran) y <b>escasez de alimento</b> (basta soltar carnada para que la vida aparezca).</p><p><b>Público y contexto:</b> visitantes de Congreso Futuro con un Meta Quest, de pie, sin caminar ni usar joystick; unos 3 minutos por persona.</p></div>
 
   <div class="band"><h2>Recorrido</h2><div class="ln"></div></div>
-  <div class="box"><ol class="linea"><li><b>Superficie</b><br>De noche, frente a Antofagasta, se baja la palanca para soltar el lander.</li><li><b>Descenso</b><br>El agua pasa de azul a negro; nieve marina, medusas y bioluminiscencia hasta la zona hadal.</li><li><b>El fondo</b><br>Golpe al tocar fondo; se encienden los focos.</li><li><b>La carnada</b><br>Llegan los anfípodos y un pez caracol.</li><li><b>Especies nuevas</b><br><i>Paraliparis selti</i> y <i>Dulcibella camanchaca</i>.</li><li><b>Atacamex 2018</b><br>El hito chileno: el primer lander en la parte más profunda de la fosa, a 8.081 m.</li></ol></div>
+  <div class="box"><ol class="linea"><li><b>Superficie</b><br>Al amanecer, frente a Antofagasta, se baja la palanca para soltar el Audacia.</li><li><b>Descenso (~100 s)</b><br>Hito por hito: fin de la luz a los 200 m, medusas, peces granadero, el sumergible Limiting Factor (2022) y los sensores IDOOS. Tres muestras de agua con la palanca; jibias, peces linterna y medusas reaccionan a la linterna.</li><li><b>El fondo</b><br>Golpe al tocar fondo y oscuridad total; se encienden los focos.</li><li><b>La carnada</b><br>Llegan anfípodos, peces caracol e isópodos de patas largas.</li><li><b>Especies nuevas</b><br><i>Eurythenes atacamensis</i>, <i>Paraliparis selti</i> y <i>Dulcibella camanchaca</i>.</li><li><b>Regreso</b><br>Se suelta el lastre y el lander sube solo; una ficha resume el descenso junto al hito de 2018: el Audacia a 8.081 m.</li></ol></div>
+
+  <div class="band"><h2>Cómo funciona</h2><div class="ln"></div></div>
+  <div class="box"><p><b>Entrada:</b> una palanca que se acciona de cuatro maneras (empujar, agarrar, apuntar y apretar, o juntar índice y pulgar) y una linterna en la mano.</p><p><b>Proceso:</b> una máquina de 7 etapas (superficie, descenso, fondo, carnada, especies, ascenso y final). En cada etapa la palanca hace su acción: soltar, tomar muestras, encender focos, bajar la carnada o soltar el lastre. Durante el descenso, el tiempo se traduce en profundidad, interpolada entre hitos.</p><p><b>Salida:</b> la profundidad controla el color y la luz del agua, la nieve marina, la presión del medidor, el sonido y los textos de cada hito.</p></div>
 
   <div class="band"><h2>Tecnologías</h2><div class="ln"></div></div>
-  <div class="tablewrap"><table class="tabla"><tr><th>Tecnología</th><th>Uso en el proyecto</th></tr><tr><td><b>A-Frame 1.6 + WebXR</b></td><td>Experiencia VR que corre en el navegador del Meta Quest.</td></tr><tr><td><b>Controles del Quest</b></td><td>Palanca que se agarra y tira con vibración háptica, y linterna en la mano.</td></tr><tr><td><b>Web Audio</b></td><td>Crujidos, sonar y ambiente generados en tiempo real.</td></tr><tr><td><b>Modo pantalla</b></td><td>Versión para computador o celular (arrastrar para mirar, Enter para operar).</td></tr></table></div>
+  <div class="tablewrap"><table class="tabla"><tr><th>Tecnología</th><th>Uso en el proyecto</th></tr><tr><td><b>A-Frame 1.6 + WebXR</b></td><td>Escena VR en el navegador del Meta Quest, con controles o con manos sin controles.</td></tr><tr><td><b>Three.js + GLSL</b></td><td>Shaders propios: océano, agua que cambia con la profundidad, rayos de sol, nieve marina, bioluminiscencia.</td></tr><tr><td><b>Materiales PBR</b></td><td>Texturas fotográficas (Poly Haven, CC0) con luz de un amanecer real.</td></tr><tr><td><b>Web Audio</b></td><td>Música y efectos generados en vivo, sin archivos de audio.</td></tr><tr><td><b>Modo pantalla</b></td><td>Versión para computador o celular (arrastrar para mirar, Enter para operar).</td></tr></table></div>
 
   <div class="band"><h2>Decisiones de diseño</h2><div class="ln"></div></div>
-  <div class="box"><ul><li>La persona <b>nunca se desplaza</b>: el lander es un marco fijo, lo que evita el mareo.</li><li>Una sola acción física (la palanca) para que cualquier visitante la entienda sin instrucciones.</li><li>Parámetros para ensayo y grabación: <code>?demo</code>, <code>?fase=N</code> y <code>?silencio</code>.</li></ul></div>
+  <div class="box"><ul><li>La persona <b>no camina ni usa joystick</b>: el descenso la lleva junto al lander, para evitar el mareo.</li><li>Una sola acción física (la palanca) para que cualquier visitante la entienda sin instrucciones; lo que el lander real hace solo, aquí lo acciona la persona.</li><li>Parámetros para ensayo y grabación: <code>?demo</code>, <code>?fase=N</code> y <code>?silencio</code>.</li></ul></div>
 
   <nav class="vecinos" aria-label="Proyectos vecinos"><a href="../sala-de-guerra/">← Sala de Guerra</a><a href="../pulsar-mejora/">Propuesta de mejora →</a></nav>
   <div class="foot">© 2026 · Luis-Felipe Benitez · Taller de Diseño de Interfaces · UAI</div>
