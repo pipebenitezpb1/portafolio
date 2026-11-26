@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aves de Chile — Taller de Interfaces</title>
+<meta name="description" content="App educativa para reconocer aves chilenas por su canto, su nombre y su apariencia.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../taller/ficha.css">
+<script src="../taller/proyectos.js"></script>
+</head>
+<body class="u1">
+<div class="wrap">
+
+  <div class="nav">
+    <a class="name" href="../index.html">LF<span style="color:var(--accent)">·</span>Benítez</a>
+    <a class="back" href="../index.html#taller">← Volver al taller</a>
+  </div>
+
+  <header class="head">
+    <div class="eye">// UNIDAD 1 · INTERFACES SONORAS · ENTREGA 2</div>
+    <h1>Aves de Chile</h1>
+    <p class="lead">Una app para aprender a reconocer aves chilenas <b>por su canto</b>. El sonido es el eje de la interacción: primero se escucha y después se mira.</p>
+    <div class="tags"><span>Web Audio</span><span>HTML · CSS · JS</span><span>Audio educativo</span><span>Gamificación</span><span>Responsive</span></div>
+    <div class="meta" style="margin-top:12px;">Taller de Diseño de Interfaces · UAI · 2026</div>
+  </header>
+
+  <div class="enlaces" data-enlaces="aves-de-chile"></div>
+
+  <section data-video="aves-de-chile">
+    <div class="band"><h2>Video demostrativo</h2><div class="ln"></div></div>
+    <div class="yt"></div>
+  </section>
+
+  <div class="band"><h2>Concepto</h2><div class="ln"></div></div>
+  <div class="box"><p><b>Problema:</b> la mayoría de las personas oye aves todos los días sin saber cuáles son. Las guías tradicionales parten por la imagen, pero en terreno el ave casi siempre <b>se oye antes de verse</b>.</p><p><b>Experiencia:</b> una galería para aprender (canto, ilustración y nombre de cada especie) y modos de juego que obligan a discriminar entre especies, con retroalimentación inmediata, que es lo que consolida el aprendizaje.</p><p><b>Público y contexto:</b> estudiantes, familias y personas que salen a caminar o a observar aves; se usa en el celular, en terreno o en la sala de clases.</p></div>
+
+  <div class="band"><h2>Objetivos</h2><div class="ln"></div></div>
+  <div class="box"><ul><li>Diseñar una interfaz donde el <b>audio</b> sea la entrada principal de información.</li><li>Enseñar a reconocer 10 aves chilenas por su canto real.</li><li>Convertir el aprendizaje en juego: modos auditivo, visual, por nombre y «Encuentra el ave».</li><li>Funcionar en el celular, sin instalar nada.</li></ul></div>
+
+  <div class="band"><h2>Tecnologías</h2><div class="ln"></div></div>
+  <div class="tablewrap"><table class="tabla"><tr><th>Tecnología</th><th>Uso en el proyecto</th></tr><tr><td><b>HTML, CSS y JavaScript</b></td><td>Sitio estático sin dependencias, publicado en GitHub Pages.</td></tr><tr><td><b>Web Audio / HTMLAudio</b></td><td>Reproducción de los cantos reales (comprimidos de WAV a AAC: de 12 MB a ~0,9 MB).</td></tr><tr><td><b>CSS responsive</b></td><td>Interfaz optimizada para celular; la portada abre las alas de las aves al tocarlas.</td></tr><tr><td><b>Panel de administración</b></td><td><code>admin.html</code> para cargar nuevas aves.</td></tr></table></div>
+
+  <div class="band"><h2>Proceso e iteraciones</h2><div class="ln"></div></div>
+  <div class="box"><ol class="linea"><li><b>Plataforma base</b><br>Estructura de aprendizaje por nombre, canto y apariencia.</li><li><b>Contenido real</b><br>Integración de 10 aves chilenas con ilustraciones y 9 cantos reales.</li><li><b>Portada ilustrada</b><br>Aves que se mueven y una transición al cielo; abren las alas al pasar el mouse o tocarlas.</li><li><b>Pruebas en celular</b><br>Ajuste responsive y compresión de audio para que cargue rápido con datos móviles.</li><li><b>Nuevo modo de juego</b><br>«Encuentra el ave»: un bosque animado propio donde hay que localizar al ave que canta.</li><li><b>Concepto pedagógico</b><br>Documentación del enfoque de aprendizaje para la entrega.</li></ol></div>
+
+  <div class="band"><h2>Cómo probarlo</h2><div class="ln"></div></div>
+  <div class="box"><p>Abre la versión en línea en el celular o en el computador y activa el sonido. Para correrlo localmente: clona el repositorio y sirve la carpeta con <code>python3 -m http.server</code>.</p></div>
+
+  <nav class="vecinos" aria-label="Proyectos vecinos"><a href="../analisis-interfaces/">← Análisis de interfaces</a><a href="../sintetizador/">Mi Primer Sintetizador →</a></nav>
+  <div class="foot">© 2026 · Luis-Felipe Benítez · Taller de Diseño de Interfaces · UAI</div>
+</div>
+</body>
+</html>

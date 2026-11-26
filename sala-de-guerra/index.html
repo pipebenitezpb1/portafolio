@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sala de Guerra — Taller de Interfaces</title>
+<meta name="description" content="Juego de estrategia en realidad virtual (WebXR) para Meta Quest, desde un búnker de mando.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../taller/ficha.css">
+<script src="../taller/proyectos.js"></script>
+</head>
+<body class="u3">
+<div class="wrap">
+
+  <div class="nav">
+    <a class="name" href="../index.html">LF<span style="color:var(--accent)">·</span>Benítez</a>
+    <a class="back" href="../index.html#taller">← Volver al taller</a>
+  </div>
+
+  <header class="head">
+    <div class="eye">// UNIDAD 3 · INTERFACES GRÁFICAS · MÓDULO · REALIDAD VIRTUAL (WEBXR)</div>
+    <h1>Sala de Guerra</h1>
+    <p class="lead">Un juego de estrategia en <b>realidad virtual</b> para Meta Quest. Estás sentado en un búnker de mando con el planeta flotando sobre la mesa. Nadie gana; alguien pierde menos.</p>
+    <div class="tags"><span>WebXR</span><span>three.js</span><span>Meta Quest</span><span>Audio espacial</span></div>
+    <div class="meta" style="margin-top:12px;">Taller de Diseño de Interfaces · UAI · 2026</div>
+  </header>
+
+  <div class="enlaces" data-enlaces="sala-de-guerra"></div>
+
+  <section data-video="sala-de-guerra">
+    <div class="band"><h2>Video demostrativo</h2><div class="ln"></div></div>
+    <div class="yt"></div>
+  </section>
+
+  <div class="band"><h2>Concepto</h2><div class="ln"></div></div>
+  <div class="box"><p><b>Experiencia:</b> una interfaz gráfica en el espacio. El globo terráqueo es el mapa y también el control: se gira, se agarra y se apunta con las manos.</p><p><b>Problema de interacción:</b> cómo diseñar una interfaz de estrategia legible en VR, donde no hay mouse ni pantalla plana, y cómo hacer sentir el peso de cada decisión.</p><p><b>Público y contexto:</b> jugadores con visor Meta Quest, sentados, con audífonos; partidas cortas.</p></div>
+
+  <div class="band"><h2>Controles</h2><div class="ln"></div></div>
+  <div class="box"><ul><li><b>Joystick:</b> girar el globo. <b>Grip:</b> agarrarlo y arrastrarlo.</li><li><b>Gatillo</b> sobre una ciudad o silo enemigo: fijar objetivo; otra vez: lanzar.</li><li><b>Gatillo</b> sobre un misil enemigo: interceptar.</li><li>En escritorio: arrastrar para girar el globo; clic = gatillo.</li></ul></div>
+
+  <div class="band"><h2>Tecnologías</h2><div class="ln"></div></div>
+  <div class="tablewrap"><table class="tabla"><tr><th>Tecnología</th><th>Uso en el proyecto</th></tr><tr><td><b>WebXR + three.js</b></td><td>Escena VR que corre en el navegador del Quest, sin instalar nada.</td></tr><tr><td><b>Texturas NASA (ejemplos de three.js)</b></td><td>Planeta Tierra.</td></tr><tr><td><b>Síntesis de voz y audio</b></td><td>Voz del operador, sirenas y multitudes que refuerzan la tensión.</td></tr></table></div>
+
+  <div class="band"><h2>Proceso e iteraciones</h2><div class="ln"></div></div>
+  <div class="box"><ol class="linea"><li><b>v1 · Prototipo</b><br>Búnker, globo y misiles; mapa en la pared izquierda, voces civiles y sirenas.</li><li><b>v2 · Decisiones</b><br>Tensión, acciones con autoridad, construcción, silos ocultos, invierno nuclear y finales distintos (se conserva en <code>v2.html</code>).</li><li><b>v3 · Consola física</b><br>Consola dentro del búnker, unidades, mundo vivo, llamadas y campaña; pasa a ser la versión principal.</li><li><b>Tutorial interactivo</b><br>Se agregó porque los controles no se descubrían solos.</li><li><b>Manos reales y salida</b><br>Manos visibles, la familia en el mapa y la salida del búnker como cierre.</li></ol></div>
+
+  <div class="band"><h2>Cómo probarlo</h2><div class="ln"></div></div>
+  <div class="box"><p>Abre la versión en línea en el navegador del Meta Quest y pulsa <b>ENTER VR</b>, con audífonos. Agrega <code>?fast</code> a la URL para una partida rápida de prueba.</p></div>
+
+  <nav class="vecinos" aria-label="Proyectos vecinos"><a href="../guantazo/">← ¡Guantazo!</a><a href="../chivilingo/">Chivilingo →</a></nav>
+  <div class="foot">© 2026 · Luis-Felipe Benítez · Taller de Diseño de Interfaces · UAI</div>
+</div>
+</body>
+</html>

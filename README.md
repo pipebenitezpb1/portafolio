@@ -6,44 +6,47 @@ Portafolio personal y académico. Sitio estático (HTML/CSS/JS, sin build), esti
 
 ## Estructura
 
+Cada encargo tiene su propia URL: `portafolio.insta3d.cl/<encargo>/`.
+
 ```
-index.html                          Página principal (Proyectos + Universidad)
-fonts/                              Fuentes auto-alojadas (Barlow Condensed, Barlow, Space Mono)
-universidad/
-  entrega-1.html                   Entrega 1 — lámina interactiva de interfaces
-  lamina-microondas.svg            Entrega 1 — versión imagen (vectorial)
-  entrega-4.html                   Entrega 4 — hub de sonificación
-  entrega4/imagen.html             Entrega 4.2 — sonificación de imagen
-  entrega4/datos.html              Entrega 4.1 — sonificación de datos
+index.html                 Portada: Taller de Interfaces (por unidad), otros proyectos, contacto
+taller/ficha.css           Estilos compartidos de las fichas
+taller/proyectos.js        Repositorio, demo y video de cada proyecto (aquí se pegan los IDs de YouTube)
+fonts/                     Fuentes auto-alojadas (Barlow, Barlow Condensed, Space Mono)
+analisis-interfaces/       U1 · E1 Lámina de interfaces del microondas
+aves-de-chile/             U1 · E2 App de aves por su canto
+sintetizador/              U1 · E3 Sintetizador en Max/MSP
+sonificacion/              U1 · E4 Sonificación (datos/ e imagen/)
+voz-formas/                U1 · Ejercicio de visualización de voz
+cofre-sonoro/              U1 · Proyecto de la unidad (grupal)
+pulsar/                    U2 · E1 Controlador PULSAR
+robotface/                 U2 · RobotFace
+guantazo/                  U3 · Módulo MediaPipe
+sala-de-guerra/            U3 · Módulo WebXR
+chivilingo/                U3 · Prototipo Chile Re-Descubre
+fosa-atacama/              U3 · Experiencia VR (proyecto final)
+fosa-atacama-proyecto/     U3 · Ficha del proyecto final
+pulsar-mejora/             Propuesta de mejora PULSAR 2.0
+universidad/               Redirecciones desde las rutas antiguas (también en _redirects)
 ```
 
-## Taller de Interfaces (UAI 2026 · Prof. Jorge Forero)
+## Repositorios del Taller de Diseño de Interfaces (UAI 2026)
 
-### Entrega 1 — Lámina de análisis de interfaces
-Análisis de las interfaces de entrada/salida de un horno de microondas, clasificadas en **física**, **visual** y **acústica**. Versión interactiva (`entrega-1.html`) + versión imagen vectorial (`lamina-microondas.svg`).
-
-### Entrega 2 — Aves de Chile (app educativa de audio)
-App para aprender a reconocer aves chilenas por su canto; el sonido es el eje de la interacción. Publicada aparte: https://bigkokoz.github.io/Aves-de-Chile/
-
-### Entrega 4 — Sonificación de datos e imágenes
-Dos módulos interactivos:
-
-**4.1 · Sonificación de datos** (`entrega4/datos.html`): un dataset se convierte en melodía.
-
-| Variable | Tipo | Parámetro sonoro |
-|---|---|---|
-| Orden de filas | secuencia | Tiempo (avance de la melodía) |
-| Variable numérica | numérica | Altura de la nota (cuantizada a escala) |
-| Variable categórica | categórica | Timbre / instrumento |
-
-**4.2 · Sonificación de imagen** (`entrega4/imagen.html`): barrido de píxeles.
-
-| Dimensión de la imagen | Parámetro sonoro |
+| Proyecto | Repositorio |
 |---|---|
-| Posición X | Tiempo |
-| Posición Y | Voces (polifonía) |
-| Color (luminancia/matiz/RGB) | Altura de la nota |
-| Brillo | Volumen (oscuro = silencio) |
+| Análisis de interfaces | https://github.com/pipebenitezpb1/lamina-interfaces-microondas |
+| Aves de Chile | https://github.com/pipebenitezpb1/Aves-de-Chile |
+| Mi Primer Sintetizador | https://github.com/pipebenitezpb1/mi-primer-sintetizador |
+| Sonificación de datos | https://github.com/pipebenitezpb1/sonificacion-datos |
+| Sonificación de imagen | https://github.com/pipebenitezpb1/sonificador-imagenes |
+| Voz + Forma | https://github.com/pipebenitezpb1/voz-formas |
+| Cofre Sonoro Minecraft | https://github.com/pipebenitezpb1/Cofre-Sonoro-Minecraft |
+| PULSAR | https://github.com/pipebenitezpb1/PULSAR |
+| RobotFace | https://github.com/pipebenitezpb1/RobotFace |
+| ¡Guantazo! | https://github.com/pipebenitezpb1/guantazo-vr |
+| Sala de Guerra | https://github.com/pipebenitezpb1/sala-de-guerra |
+| Chivilingo | https://github.com/pipebenitezpb1/chivilingo |
+| Fosa de Atacama | https://github.com/pipebenitezpb1/fosa-atacama |
 
 ## Tecnología
 
@@ -51,4 +54,4 @@ HTML + CSS + JavaScript puro. Audio con la **Web Audio API** (sin librerías par
 
 ## Despliegue
 
-Servido desde un servidor propio detrás de Cloudflare Tunnel. La copia local se sincroniza al servidor con un script de despliegue no incluido en el repositorio.
+Sitio principal en https://portafolio.insta3d.cl, servido desde un servidor propio detrás de Cloudflare Tunnel. Copia espejo en GitHub Pages: https://pipebenitezpb1.github.io/portafolio/ (todas las rutas son relativas, así que funciona en ambos).

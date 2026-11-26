@@ -8,3 +8,6 @@ HANDOFF.md
 
 # Script de despliegue (tiene IP interna del NUC)
 deploy.sh
+
+# Configuración local de Claude Code
+.claude/

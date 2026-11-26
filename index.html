@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Luis Felipe Benítez — Portafolio</title>
-<meta name="description" content="Portafolio: software, automatización, sistemas de gestión e impresión 3D.">
-<link rel="stylesheet" href="/fonts/fonts.css">
+<meta name="description" content="Portafolio de Luis-Felipe Benítez: Taller de Diseño de Interfaces UAI 2026 (interfaces sonoras, físicas y gráficas), software e impresión 3D.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<script src="taller/proyectos.js"></script>
 <style>
 :root{
   --paper:#e7dfce;--paper-2:#ded4bf;--cream:#f1ebdc;--ink:#1b1a13;--muted:#6b6450;
@@ -79,6 +80,32 @@ a{color:inherit;}
 
 .foot{margin-top:40px;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.06em;}
 .edit{background:rgba(212,80,15,.12);border:1px dashed var(--alert);color:var(--alert);font-family:var(--mono);font-size:11px;padding:2px 6px;border-radius:2px;}
+
+/* taller */
+.intro-taller{border:2px solid var(--ink);background:var(--cream);padding:20px 22px;box-shadow:4px 4px 0 var(--ink);font-size:15px;margin-bottom:8px;}
+.intro-taller p{margin:0 0 10px;} .intro-taller p:last-child{margin:0;}
+.saltos{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.saltos a{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;border:2px solid var(--ink);padding:6px 10px;background:var(--paper-2);}
+.saltos a:hover{background:var(--ink);color:var(--paper);}
+.unidad{margin:26px 0 12px;padding:12px 16px;border:2px solid var(--ink);background:var(--ink);color:var(--cream);display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;box-shadow:4px 4px 0 var(--u);}
+.unidad h3{font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;margin:0;}
+.unidad span{font-family:var(--mono);font-size:11px;color:#c9c1aa;}
+.u1{--u:#b4531a;} .u2{--u:#1a7a2e;} .u3{--u:#2a4f9e;}
+.card.destacado{outline:3px solid var(--u);outline-offset:-8px;}
+.card .acciones{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;align-items:center;}
+.card .acciones .live{margin-top:0;}
+.card .acciones span[data-enlaces]{display:flex;flex-wrap:wrap;gap:8px 14px;}
+.card .acciones a:not(.live){font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--muted);}
+.card .acciones a:not(.live):hover{color:var(--ink);}
+.num .estrella{color:var(--alert);}
+.mejora{border:2px solid var(--ink);background:var(--ink);color:var(--cream);padding:24px 24px;box-shadow:6px 6px 0 var(--alert);display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;}
+.mejora h3{font-family:var(--disp);font-weight:700;font-size:28px;text-transform:uppercase;margin:0 0 6px;}
+.mejora p{margin:0;color:#d8d0bb;font-size:15px;}
+.mejora a{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink);background:var(--cream);text-decoration:none;padding:12px 16px;border:2px solid var(--cream);white-space:nowrap;}
+.mejora a:hover{background:var(--alert);border-color:var(--alert);color:#fff;}
+@media(max-width:620px){.mejora{grid-template-columns:1fr;}}
+a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
+.edit{display:none;}
 </style>
 </head>
 <body>
@@ -88,8 +115,8 @@ a{color:inherit;}
     <div class="name">LF<span style="color:var(--accent)">·</span>Benítez</div>
     <div class="links">
       <a href="#sobre">Sobre mí</a>
+      <a href="#taller">Taller</a>
       <a href="#proyectos">Proyectos</a>
-      <a href="#universidad">Universidad</a>
       <a href="#skills">Skills</a>
       <a href="#contacto">Contacto</a>
     </div>
@@ -101,19 +128,153 @@ a{color:inherit;}
     <span class="cross" style="bottom:14px;left:14px;"></span>
     <div class="eye">// PORTAFOLIO · 2026</div>
     <h1>Luis Felipe<br>Benítez</h1>
-    <div class="role"><b>Constructor de software y sistemas</b> · Automatización · Impresión 3D</div>
-    <p class="lead">Diseño y construyo sistemas de punta a punta: desde plataformas de gestión empresarial e integraciones, hasta una fábrica de impresión 3D automatizada. Me gusta convertir procesos manuales en cosas que funcionan solas. <span class="edit">← edita esta bio</span></p>
+    <div class="role"><b>Diseño de interfaces</b> · Software y sistemas · Impresión 3D</div>
+    <p class="lead">Diseño y construyo sistemas de punta a punta: desde plataformas de gestión empresarial e integraciones, hasta una fábrica de impresión 3D automatizada. Me gusta convertir procesos manuales en cosas que funcionan solas.</p>
   </div>
 
   <!-- SOBRE MI -->
   <div class="band" id="sobre"><h2>Sobre mí</h2><div class="ln"></div><span class="tag">FIG. 01</span></div>
   <div class="about">
     <p>Trabajo en la intersección entre <b>software y mundo físico</b>: aplicaciones web, integraciones con ERP, emisión electrónica, y hardware conectado (impresoras 3D, sensores). No me quedo en el prototipo — llevo las cosas a producción, corriendo de verdad.</p>
-    <p>Lo que más disfruto es la <b>automatización</b>: detectar un proceso que alguien hace a mano todos los días y reemplazarlo por un sistema que lo hace solo, bien y sin errores. <span class="edit">← cuéntame si quieres cambiar el enfoque de esta descripción</span></p>
+    <p>Lo que más disfruto es la <b>automatización</b>: detectar un proceso que alguien hace a mano todos los días y reemplazarlo por un sistema que lo hace solo, bien y sin errores.</p>
+  </div>
+
+  <!-- TALLER DE DISEÑO DE INTERFACES -->
+  <div class="band" id="taller"><h2>Taller de Interfaces</h2><div class="ln"></div><span class="tag">UAI · 2026</span></div>
+  <div class="intro-taller">
+    <p>Trabajos del <b>Taller de Diseño de Interfaces</b> (Universidad Adolfo Ibáñez, 2026), ordenados por unidad: del sonido como interfaz, al objeto físico, a la imagen y el espacio virtual.</p>
+    <p>Cada proyecto tiene su <b>ficha</b> (concepto, tecnologías, proceso y video) y su <b>repositorio en GitHub</b> con el código, las instrucciones para ejecutarlo y la documentación del proceso. ★ marca el proyecto seleccionado de cada unidad.</p>
+    <div class="saltos"><a href="#unidad-1">Unidad 1 · Sonoras</a><a href="#unidad-2">Unidad 2 · Físicas</a><a href="#unidad-3">Unidad 3 · Gráficas</a><a href="#mejora">Propuesta de mejora</a></div>
+  </div>
+
+  <div class="unidad u1" id="unidad-1"><h3>Unidad 1 · Interfaces Sonoras</h3><span>El sonido como entrada y salida de información</span></div>
+  <div class="grid">
+    <div class="card u1">
+      <div class="num">// E1</div>
+      <h3>Análisis de Interfaces</h3>
+      <div class="st">Entrega 1 · Lámina</div>
+      <p>Lámina que identifica y clasifica las interfaces de entrada y salida de un horno de microondas según su tipología: física, visual y acústica.</p>
+      <div class="tech"><span>Interfaces</span><span>SVG</span><span>Diagramación</span></div>
+      <div class="acciones"><a class="live" href="analisis-interfaces/">Ver ficha →</a><span data-enlaces="lamina-microondas" data-clase="repo"></span></div>
+    </div>
+
+    <div class="card u1">
+      <div class="num">// E2</div>
+      <h3>Aves de Chile</h3>
+      <div class="st">Entrega 2 · App educativa de audio</div>
+      <p>App para aprender a reconocer aves chilenas por su canto. El sonido es el eje de la interacción: galería para aprender y modos de juego auditivo, visual y por nombre.</p>
+      <div class="tech"><span>Web Audio</span><span>JavaScript</span><span>Gamificación</span></div>
+      <div class="acciones"><a class="live" href="aves-de-chile/">Ver ficha →</a><span data-enlaces="aves-de-chile" data-clase="repo"></span></div>
+    </div>
+
+    <div class="card u1">
+      <div class="num">// E3</div>
+      <h3>Mi Primer Sintetizador</h3>
+      <div class="st">Entrega 3 · Max/MSP</div>
+      <p>Sintetizador sustractivo con oscilador, ruido, filtro y envolvente, y un reproductor de samples, operado desde una interfaz en Presentation Mode. Con Martín Donoso.</p>
+      <div class="tech"><span>Max/MSP</span><span>Síntesis</span><span>DSP</span></div>
+      <div class="acciones"><a class="live" href="sintetizador/">Ver ficha →</a><span data-enlaces="sintetizador" data-clase="repo"></span></div>
+    </div>
+
+    <div class="card u1">
+      <div class="num">// E4</div>
+      <h3>Sonificación</h3>
+      <div class="st">Entrega 4 · Datos e imagen</div>
+      <p>Dos módulos que traducen información a sonido: un dataset de CO₂ y temperatura convertido en melodía, y una imagen recorrida píxel a píxel (color → nota, brillo → volumen).</p>
+      <div class="tech"><span>Web Audio</span><span>TwoTone</span><span>Canvas</span></div>
+      <div class="acciones"><a class="live" href="sonificacion/">Ver ficha →</a><span data-enlaces="sonificacion" data-clase="repo"></span></div>
+    </div>
+
+    <div class="card u1">
+      <div class="num">// EJ</div>
+      <h3>Voz + Forma</h3>
+      <div class="st">Ejercicio · Visualización de sonido</div>
+      <p>Transcribe la voz en tiempo real y convierte cada sonido en una explosión de partículas: la altura es el tono, el tamaño el volumen y el color la nota.</p>
+      <div class="tech"><span>p5.js</span><span>Web Speech API</span><span>Micrófono</span></div>
+      <div class="acciones"><a class="live" href="voz-formas/">Ver ficha →</a><span data-enlaces="voz-formas" data-clase="repo"></span></div>
+    </div>
+
+    <div class="card u1 destacado">
+      <div class="num">// PF <span class="estrella">★ seleccionado para el examen</span></div>
+      <h3>Cofre Sonoro Minecraft</h3>
+      <div class="st">Proyecto de la unidad · grupal</div>
+      <p>Cofre impreso en 3D con un hack de teclado y un tilt-switch: al abrir o cerrar la tapa suenan en tiempo real los sonidos del cofre. Con M. Donoso y Z. Corvalán.</p>
+      <div class="tech"><span>Interfaz física</span><span>Web Audio</span><span>Impresión 3D</span></div>
+      <div class="acciones"><a class="live" href="cofre-sonoro/">Ver ficha →</a><span data-enlaces="cofre-sonoro" data-clase="repo"></span></div>
+    </div>
+  </div>
+
+  <div class="unidad u2" id="unidad-2"><h3>Unidad 2 · Interfaces Físicas</h3><span>Objetos que se tocan, se mueven y responden</span></div>
+  <div class="grid">
+    <div class="card u2 destacado">
+      <div class="num">// E1 <span class="estrella">★ seleccionado para el examen</span></div>
+      <h3>PULSAR · CTRL-04L</h3>
+      <div class="st">Entrega 1 · Controlador físico</div>
+      <p>Controlador con XIAO ESP32-C3, dos faders, cuatro botones, OLED y luces NeoPixel. Suena, se ilumina y juega: sintetizador web, MIDI, 15 animaciones y 3 juegos arcade.</p>
+      <div class="tech"><span>ESP32-C3</span><span>Web Serial</span><span>Web Audio</span><span>Impresión 3D + láser</span></div>
+      <div class="acciones"><a class="live" href="pulsar/">Ver ficha →</a><span data-enlaces="pulsar" data-clase="repo"></span></div>
+    </div>
+
+    <div class="card u2">
+      <div class="num">// PF</div>
+      <h3>RobotFace</h3>
+      <div class="st">Proyecto · Animatrónica</div>
+      <p>Ojos animatrónicos sobre un notebook que miran a quien habla, conversan por voz con Claude y expresan 16 emociones. Montura paramétrica en acrílico, MDF e impresión 3D.</p>
+      <div class="tech"><span>Arduino + servos</span><span>OpenCV + MediaPipe</span><span>API de Claude</span></div>
+      <div class="acciones"><a class="live" href="robotface/">Ver ficha →</a><span data-enlaces="robotface" data-clase="repo"></span></div>
+    </div>
+  </div>
+
+  <div class="unidad u3" id="unidad-3"><h3>Unidad 3 · Interfaces Gráficas</h3><span>Gestos, realidad virtual y espacio 3D en el navegador</span></div>
+  <div class="grid">
+    <div class="card u3">
+      <div class="num">// M1</div>
+      <h3>¡Guantazo!</h3>
+      <div class="st">Módulo · Interacción natural</div>
+      <p>Boxeo controlado con las manos: MediaPipe sigue los puños desde la cámara y se pelea en un estadio 360°, en pantalla, en cartón VR o en Meta Quest.</p>
+      <div class="tech"><span>MediaPipe</span><span>three.js</span><span>WebXR</span></div>
+      <div class="acciones"><a class="live" href="guantazo/">Ver ficha →</a><span data-enlaces="guantazo" data-clase="repo"></span></div>
+    </div>
+
+    <div class="card u3">
+      <div class="num">// M3</div>
+      <h3>Sala de Guerra</h3>
+      <div class="st">Módulo · Realidad virtual</div>
+      <p>Juego de estrategia en VR para Meta Quest: un búnker de mando con el planeta sobre la mesa. Tres versiones iteradas y tutorial interactivo.</p>
+      <div class="tech"><span>WebXR</span><span>three.js</span><span>Meta Quest</span></div>
+      <div class="acciones"><a class="live" href="sala-de-guerra/">Ver ficha →</a><span data-enlaces="sala-de-guerra" data-clase="repo"></span></div>
+    </div>
+
+    <div class="card u3">
+      <div class="num">// P1</div>
+      <h3>Chivilingo · Genera tu luz</h3>
+      <div class="st">Prototipo · Chile Re-Descubre</div>
+      <p>La primera central hidroeléctrica de Chile contada con una manivela real: la energía que gira el público hace avanzar el relato e ilumina la mina.</p>
+      <div class="tech"><span>A-Frame</span><span>MediaPipe</span><span>ESP32</span></div>
+      <div class="acciones"><a class="live" href="chivilingo/">Ver ficha →</a><span data-enlaces="chivilingo" data-clase="repo"></span></div>
+    </div>
+
+    <div class="card u3 destacado">
+      <div class="num">// PF <span class="estrella">★ seleccionado para el examen</span></div>
+      <h3>Fosa de Atacama</h3>
+      <div class="st">Proyecto final · Chile Re-Descubre</div>
+      <p>Experiencia VR para Meta Quest: un descenso de 8.000 m bajo el Pacífico operando un lander con las manos, hasta las especies descubiertas por científicos chilenos.</p>
+      <div class="tech"><span>A-Frame</span><span>WebXR</span><span>Meta Quest</span></div>
+      <div class="acciones"><a class="live" href="fosa-atacama-proyecto/">Ver ficha →</a><span data-enlaces="fosa-atacama" data-clase="repo"></span></div>
+    </div>
+  </div>
+
+  <div class="band" id="mejora"><h2>Propuesta de mejora</h2><div class="ln"></div><span class="tag">PRODUCCIÓN</span></div>
+  <div class="mejora">
+    <div>
+      <h3>PULSAR 2.0 · CTRL-05</h3>
+      <p>Diagnóstico crítico del controlador de la Unidad 2 (usabilidad, estabilidad, escalabilidad y materialidad), rediseño con PCB propia y MIDI USB nativo, y plan de trabajo de 10 semanas con entregables, recursos y presupuesto.</p>
+    </div>
+    <a href="pulsar-mejora/">Ver propuesta →</a>
   </div>
 
   <!-- PROYECTOS -->
-  <div class="band" id="proyectos"><h2>Proyectos</h2><div class="ln"></div><span class="tag">SELECCIÓN</span></div>
+  <div class="band" id="proyectos"><h2>Otros proyectos</h2><div class="ln"></div><span class="tag">PROFESIONAL</span></div>
   <div class="grid">
 
     <div class="card">
@@ -161,79 +322,6 @@ a{color:inherit;}
 
   </div>
 
-  <!-- UNIVERSIDAD -->
-  <div class="band" id="universidad"><h2>Universidad</h2><div class="ln"></div><span class="tag">ACADÉMICO</span></div>
-  <p style="max-width:640px;margin:0 0 16px;color:var(--muted);font-size:14px;font-family:var(--mono);">
-    Trabajos, proyectos y entregas realizados durante mi formación universitaria.
-    <span class="edit">← esta sección se irá llenando con tus trabajos de la U</span>
-  </p>
-  <div class="grid">
-
-    <div class="card">
-      <div class="num">// U-01</div>
-      <h3>Análisis de Interfaces</h3>
-      <div class="st">Taller de Interfaces · UAI · 2026</div>
-      <p>Entrega N°1: lámina gráfica que identifica y clasifica las interfaces de entrada y salida de un horno de microondas según su tipología (física, visual y acústica). Diagrama vectorial propio.</p>
-      <div class="tech"><span>Interfaces</span><span>SVG</span><span>Diagramación</span><span>HCI</span></div>
-      <a class="live" href="/universidad/entrega-1.html">Ver entrega →</a>
-    </div>
-
-    <div class="card">
-      <div class="num">// U-02</div>
-      <h3>Aves de Chile</h3>
-      <div class="st">Taller de Interfaces · UAI · 2026</div>
-      <p>Entrega N°2: app educativa para aprender a reconocer aves chilenas por su canto. El sonido es el eje de la interacción: galería para aprender y modos de juego (auditivo, visual y por nombre).</p>
-      <div class="tech"><span>Web Audio</span><span>JavaScript</span><span>Audio educativo</span><span>Gamificación</span></div>
-      <a class="live" href="https://pipebenitezpb1.github.io/Aves-de-Chile/" target="_blank" rel="noopener">Ver entrega →</a>
-    </div>
-
-    <div class="card">
-      <div class="num">// U-03</div>
-      <h3>Mi Primer Sintetizador</h3>
-      <div class="st">Taller de Interfaces · UAI · 2026</div>
-      <p>Entrega N°3: sintetizador sustractivo en Max/MSP con control en tiempo real (oscilador, ruido, filtro, envolvente) y reproductor de samples, operado desde una interfaz en Presentation Mode.</p>
-      <div class="tech"><span>Max/MSP</span><span>Síntesis</span><span>DSP</span><span>Presentation</span></div>
-      <a class="live" href="/universidad/entrega-3.html">Ver entrega →</a>
-    </div>
-
-    <div class="card">
-      <div class="num">// U-04</div>
-      <h3>Sonificación</h3>
-      <div class="st">Taller de Interfaces · UAI · 2026</div>
-      <p>Entrega N°4: traducción de datos e imágenes a sonido. Dos ejercicios — sonificación de un dataset (TwoTone) y de una imagen (barrido de píxeles, RGB → notas). Módulos interactivos.</p>
-      <div class="tech"><span>Web Audio</span><span>Sonificación</span><span>TwoTone</span><span>Canvas</span></div>
-      <a class="live" href="/universidad/entrega-4.html">Ver entrega →</a>
-    </div>
-
-    <div class="card">
-      <div class="num">// U-05</div>
-      <h3>Cofre Sonoro Minecraft</h3>
-      <div class="st">Interfaz sónica · UAI · 2026</div>
-      <p>Objeto físico interactivo: un cofre impreso en 3D con un "hack" de teclado y un tilt-switch que, al abrir o cerrar la tapa, dispara en tiempo real los sonidos de cofre de Minecraft vía Web Audio. Trabajo grupal (M. Donoso, L. Benítez, Z. Corvalán).</p>
-      <div class="tech"><span>Interfaz física</span><span>Web Audio</span><span>Impresión 3D</span><span>Hardware hack</span></div>
-      <a class="live" href="/universidad/cofre-sonoro.html">Ver proyecto →</a>
-    </div>
-
-    <div class="card">
-      <div class="num">// U-06</div>
-      <h3>PULSAR · CTRL-04L</h3>
-      <div class="st">Controlador físico · UAI · 2026</div>
-      <p>Unidad 2, Entrega 1: controlador con XIAO ESP32-C3, dos faders, cuatro botones, OLED y luces NeoPixel. Suena, se ilumina y juega: sintetizador web en tiempo real, MIDI, 15 animaciones espaciales y juegos de arcade. Inspirado en Buzz Lightyear y el arcade clásico.</p>
-      <div class="tech"><span>ESP32-C3</span><span>Web Serial</span><span>Web Audio</span><span>Impresión 3D + láser</span></div>
-      <a class="live" href="/universidad/pulsar.html">Ver proyecto →</a>
-    </div>
-
-    <div class="card">
-      <div class="num">// U-07</div>
-      <h3>RobotFace</h3>
-      <div class="st">Claude físico y expresivo · UAI · 2026</div>
-      <p>Ojos animatrónicos sobre la pantalla de un notebook que miran a quien habla, conversan por voz con Claude y expresan 16 emociones con los párpados. Duerme si no hay nadie, despierta al verte y te saluda. Reconocimiento facial con consentimiento y montura paramétrica en acrílico, MDF e impresión 3D.</p>
-      <div class="tech"><span>Arduino + servos</span><span>Visión (OpenCV)</span><span>API de Claude</span><span>CadQuery + láser</span></div>
-      <a class="live" href="/universidad/robotface.html">Ver proyecto →</a>
-    </div>
-
-  </div>
-
   <!-- SKILLS -->
   <div class="band" id="skills"><h2>Skills</h2><div class="ln"></div><span class="tag">STACK</span></div>
   <div class="skills">
@@ -241,19 +329,18 @@ a{color:inherit;}
     <span>SQLite</span><span>MQTT</span><span>WebSockets</span><span>Linux / systemd</span>
     <span>Cloudflare Tunnel</span><span>Impresión 3D</span><span>Integraciones ERP</span>
     <span>SII / DTE</span><span>Automatización</span><span>Three.js / CesiumJS</span>
-    <span class="edit" style="border:none;box-shadow:none;">← agrega o quita lo que quieras</span>
+    <span>p5.js</span><span>A-Frame / WebXR</span><span>MediaPipe</span><span>Web Audio</span><span>ESP32 / Arduino</span><span>CAD paramétrico (build123d)</span><span>Corte láser</span>
   </div>
 
   <!-- CONTACTO -->
   <div class="band" id="contacto"><h2 style="visibility:hidden;">.</h2></div>
   <div class="contact">
     <h2>Hablemos</h2>
-    <p>¿Un proyecto, una idea, una colaboración? Escríbeme. <span style="color:var(--alert);">[edita tus datos de contacto reales]</span></p>
+    <p>¿Un proyecto, una idea, una colaboración? Escríbeme.</p>
     <div class="rows">
       <a href="mailto:lfbenitez@rti.cl">✉ lfbenitez@rti.cl</a>
       <a href="https://insta3d.cl" target="_blank">🖨 insta3d.cl</a>
-      <a href="#" style="opacity:.5;">in LinkedIn [pendiente]</a>
-      <a href="#" style="opacity:.5;">⌥ GitHub [pendiente]</a>
+      <a href="https://github.com/pipebenitezpb1" target="_blank" rel="noopener">⌥ github.com/pipebenitezpb1</a>
     </div>
   </div>
 

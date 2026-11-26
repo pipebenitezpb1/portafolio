@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voz + Forma — Taller de Interfaces</title>
+<meta name="description" content="Visualizador que transcribe la voz y convierte cada sonido en explosiones de partículas.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../taller/ficha.css">
+<script src="../taller/proyectos.js"></script>
+</head>
+<body class="u1">
+<div class="wrap">
+
+  <div class="nav">
+    <a class="name" href="../index.html">LF<span style="color:var(--accent)">·</span>Benítez</a>
+    <a class="back" href="../index.html#taller">← Volver al taller</a>
+  </div>
+
+  <header class="head">
+    <div class="eye">// UNIDAD 1 · INTERFACES SONORAS · EJERCICIO · VISUALIZACIÓN DE SONIDO</div>
+    <h1>Voz + Forma</h1>
+    <p class="lead">Hablas y la pantalla responde: la voz se <b>transcribe</b> en tiempo real y cada sonido se convierte en una <b>explosión de partículas</b> cuyas formas representan propiedades reales del audio.</p>
+    <div class="tags"><span>p5.js</span><span>Web Speech API</span><span>Micrófono</span><span>Análisis de audio</span></div>
+    <div class="meta" style="margin-top:12px;">Taller de Diseño de Interfaces · UAI · 2026</div>
+  </header>
+
+  <div class="enlaces" data-enlaces="voz-formas"></div>
+
+  <section data-video="voz-formas">
+    <div class="band"><h2>Video demostrativo</h2><div class="ln"></div></div>
+    <div class="yt"></div>
+  </section>
+
+  <div class="band"><h2>Concepto</h2><div class="ln"></div></div>
+  <div class="box"><p><b>Problema:</b> el sonido es invisible y efímero. ¿Cómo se ve una sílaba, un grito o un susurro?</p><p><b>Experiencia:</b> la pantalla funciona como un espejo sonoro. Lo que se dice aparece como texto, y cómo se dice (tono, volumen, ataque) aparece como forma y color.</p><p><b>Público y contexto:</b> instalación o demostración en sala para mostrar la relación entre sonido e imagen; también sirve como apoyo visual para personas que necesitan ver lo que se dice.</p></div>
+
+  <div class="band"><h2>Cómo se lee</h2><div class="ln"></div></div>
+  <div class="box"><div class="tablewrap"><table class="tabla"><tr><th>Rasgo visual</th><th>Propiedad del sonido</th></tr><tr><td>Cada explosión</td><td>Un ataque o golpe de sonido distinto (sílaba, nota)</td></tr><tr><td>Altura donde nace</td><td>Tono: agudo arriba, grave abajo</td></tr><tr><td>Cantidad y tamaño de partículas</td><td>Volumen del golpe</td></tr><tr><td>Color y onda de choque</td><td>Nota en ese instante</td></tr></table></div></div>
+
+  <div class="band"><h2>Objetivos</h2><div class="ln"></div></div>
+  <div class="box"><ul><li>Traducir propiedades medibles del sonido a variables visuales coherentes.</li><li>Combinar dos lecturas simultáneas de la voz: semántica (texto) y acústica (forma).</li><li>Crear una interfaz sin botones: la única entrada es la voz.</li></ul></div>
+
+  <div class="band"><h2>Tecnologías</h2><div class="ln"></div></div>
+  <div class="tablewrap"><table class="tabla"><tr><th>Tecnología</th><th>Uso en el proyecto</th></tr><tr><td><b>p5.js</b></td><td>Dibujo y animación de las partículas.</td></tr><tr><td><b>Web Audio (AnalyserNode) + getUserMedia</b></td><td>Captura del micrófono y análisis de volumen y frecuencia para detectar cada ataque.</td></tr><tr><td><b>Web Speech API</b></td><td>Transcripción de la voz en español, en tiempo real.</td></tr><tr><td><b>GitHub Pages</b></td><td>Publicación; requiere permiso de micrófono y Chrome para la transcripción.</td></tr></table></div>
+
+  <div class="band"><h2>Proceso</h2><div class="ln"></div></div>
+  <div class="box"><p>El ejercicio partió definiendo la tabla de correspondencias (rasgo visual ↔ propiedad sonora) y después se implementó la detección de ataques para separar cada golpe de sonido en una explosión independiente, en lugar de una visualización continua.</p></div>
+
+  <div class="band"><h2>Cómo probarlo</h2><div class="ln"></div></div>
+  <div class="box"><p>Abre la versión en línea en Chrome, acepta el permiso del micrófono y habla. Localmente: <code>python3 -m http.server 8000</code> en la carpeta del repositorio y abre <code>localhost:8000</code>.</p></div>
+
+  <nav class="vecinos" aria-label="Proyectos vecinos"><a href="../sonificacion/">← Sonificación</a><a href="../cofre-sonoro/">Cofre Sonoro →</a></nav>
+  <div class="foot">© 2026 · Luis-Felipe Benítez · Taller de Diseño de Interfaces · UAI</div>
+</div>
+</body>
+</html>

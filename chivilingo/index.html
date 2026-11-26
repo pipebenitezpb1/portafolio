@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chivilingo · Genera tu luz — Taller de Interfaces</title>
+<meta name="description" content="Experiencia sobre la central hidroeléctrica de Chivilingo: el público genera la energía con una manivela real.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../taller/ficha.css">
+<script src="../taller/proyectos.js"></script>
+</head>
+<body class="u3">
+<div class="wrap">
+
+  <div class="nav">
+    <a class="name" href="../index.html">LF<span style="color:var(--accent)">·</span>Benítez</a>
+    <a class="back" href="../index.html#taller">← Volver al taller</a>
+  </div>
+
+  <header class="head">
+    <div class="eye">// UNIDAD 3 · INTERFACES GRÁFICAS · PROTOTIPO · CHILE RE-DESCUBRE</div>
+    <h1>Chivilingo · Genera tu luz</h1>
+    <p class="lead"><b>En esta experiencia tú eres la central.</b> La energía que mueve el relato de la primera central hidroeléctrica de Chile la genera el público girando una manivela que es un generador eléctrico real.</p>
+    <div class="tags"><span>A-Frame 1.6</span><span>MediaPipe</span><span>ESP32 + Web Serial</span><span>Web Audio</span><span>VR / 360°</span></div>
+    <div class="meta" style="margin-top:12px;">Taller de Diseño de Interfaces · UAI · 2026 · Concurso Chile Re-Descubre (Congreso Futuro · ACHIPEC · CRTIC)</div>
+  </header>
+
+  <div class="enlaces" data-enlaces="chivilingo"></div>
+
+  <section data-video="chivilingo">
+    <div class="band"><h2>Video demostrativo</h2><div class="ln"></div></div>
+    <div class="yt"></div>
+  </section>
+
+  <div class="band"><h2>Concepto</h2><div class="ln"></div></div>
+  <div class="box"><p>A fines del siglo XIX, Isidora Goyenechea impulsó la central de Chivilingo para llevar electricidad a las minas de carbón de Lota. Se inauguró en 1897: fue la primera central hidroeléctrica de Chile y la segunda de Sudamérica.</p><p>El gesto de girar resume esa historia: convertir un movimiento en electricidad, y la electricidad en luz. <b>La escena no avanza con un clic, sino con trabajo físico</b>; si el público deja de girar, la mina vuelve a oscurecer.</p><p><b>Público y contexto:</b> visitantes de una muestra de divulgación científica (Congreso Futuro), de todas las edades.</p></div>
+
+  <div class="band"><h2>Recorrido</h2><div class="ln"></div></div>
+  <div class="box"><ol class="linea"><li><b>Oscuridad</b><br>Las minas de Lota, bajo el mar, iluminadas por lámparas.</li><li><b>El río</b><br>El agua mueve la turbina: mientras más rápido gira el público, más fuerte zumba el generador.</li><li><b>1897</b><br>La energía viaja por la línea eléctrica hacia Lota.</li><li><b>La mina iluminada</b><br>Se encienden las ampolletas y un tren eléctrico saca el carbón.</li><li><b>Final</b><br>«Esta vez, esa luz la generaste tú.»</li></ol></div>
+
+  <div class="band"><h2>Tecnologías</h2><div class="ln"></div></div>
+  <div class="tablewrap"><table class="tabla"><tr><th>Tecnología</th><th>Uso en el proyecto</th></tr><tr><td><b>A-Frame 1.6 + three.js</b></td><td>Escena 3D con turbina, agua con partículas, línea eléctrica, túnel, tren y ampolletas; compatible con visor VR.</td></tr><tr><td><b>MediaPipe Hand Landmarker</b></td><td>Manivela por gestos: dibujar círculos en el aire con el índice.</td></tr><tr><td><b>ESP32 + Web Serial</b></td><td>Mide el voltaje del motorreductor usado como generador y controla una tira LED.</td></tr><tr><td><b>Web Audio</b></td><td>Paisaje sonoro generado en tiempo real, sin archivos de audio.</td></tr></table></div>
+
+  <div class="band"><h2>Proceso</h2><div class="ln"></div></div>
+  <div class="box"><p>Chivilingo fue el primer prototipo de la Unidad 3. Validó el modelo de interacción «energía = avance del relato» con tres entradas alternativas (manivela física, gestos y teclado) para que la experiencia nunca dependa de un solo dispositivo. Ese aprendizaje pasó al proyecto final, <a href="../fosa-atacama-proyecto/">Fosa de Atacama</a>.</p></div>
+
+  <nav class="vecinos" aria-label="Proyectos vecinos"><a href="../sala-de-guerra/">← Sala de Guerra</a><a href="../fosa-atacama-proyecto/">Fosa de Atacama →</a></nav>
+  <div class="foot">© 2026 · Luis-Felipe Benítez · Taller de Diseño de Interfaces · UAI</div>
+</div>
+</body>
+</html>

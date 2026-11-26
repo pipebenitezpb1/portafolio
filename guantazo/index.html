@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¡Guantazo! — Taller de Interfaces</title>
+<meta name="description" content="Juego de boxeo controlado con las manos mediante MediaPipe, en un estadio 360° y en VR.">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../taller/ficha.css">
+<script src="../taller/proyectos.js"></script>
+</head>
+<body class="u3">
+<div class="wrap">
+
+  <div class="nav">
+    <a class="name" href="../index.html">LF<span style="color:var(--accent)">·</span>Benítez</a>
+    <a class="back" href="../index.html#taller">← Volver al taller</a>
+  </div>
+
+  <header class="head">
+    <div class="eye">// UNIDAD 3 · INTERFACES GRÁFICAS · MÓDULO · INTERACCIÓN NATURAL (MEDIAPIPE)</div>
+    <h1>¡Guantazo!</h1>
+    <p class="lead">Un juego de boxeo que se controla <b>con las manos</b>: la cámara sigue tus puños con MediaPipe y peleas en un estadio 360°, en pantalla, en un visor de cartón o en Meta Quest.</p>
+    <div class="tags"><span>MediaPipe Hands</span><span>three.js</span><span>WebXR</span><span>Web Audio</span><span>Imagen 360°</span></div>
+    <div class="meta" style="margin-top:12px;">Taller de Diseño de Interfaces · UAI · 2026 · Personajes, estadio y sonidos originales</div>
+  </header>
+
+  <div class="enlaces" data-enlaces="guantazo"></div>
+
+  <section data-video="guantazo">
+    <div class="band"><h2>Video demostrativo</h2><div class="ln"></div></div>
+    <div class="yt"></div>
+  </section>
+
+  <div class="band"><h2>Concepto</h2><div class="ln"></div></div>
+  <div class="box"><p><b>Experiencia:</b> el cuerpo es el control. Lanzar un golpe en el aire es lanzar un golpe en el juego, sin mandos ni teclado.</p><p><b>Problema de interacción:</b> cómo convertir la posición de la mano detectada por una cámara común en una acción de juego confiable (golpe, guardia) con poca latencia.</p><p><b>Público y contexto:</b> público general, en un computador con cámara web o con un visor VR; pensado para jugar de pie en una sala o en casa.</p></div>
+
+  <div class="band"><h2>Objetivos</h2><div class="ln"></div></div>
+  <div class="box"><ul><li>Aplicar el módulo de <b>interacción natural</b>: seguimiento de manos con MediaPipe.</li><li>Llevar la misma mecánica a tres formatos de visualización: pantalla, cartón VR (pantalla dividida) y WebXR.</li><li>Diseñar una identidad visual propia: estilo limpio y luminoso, formas redondas y un creador de avatares.</li></ul></div>
+
+  <div class="band"><h2>Tecnologías</h2><div class="ln"></div></div>
+  <div class="tablewrap"><table class="tabla"><tr><th>Tecnología</th><th>Uso en el proyecto</th></tr><tr><td><b>MediaPipe Hand Landmarker 0.10.14</b></td><td>Detección de las manos en la imagen de la cámara.</td></tr><tr><td><b>three.js 0.160</b></td><td>Escena 3D, avatares y <code>StereoEffect</code> para el visor de cartón.</td></tr><tr><td><b>WebXR</b></td><td>Modo VR para Meta Quest y visores compatibles.</td></tr><tr><td><b>Imagen equirectangular</b></td><td>Estadio 360° alrededor del jugador.</td></tr><tr><td><b>Web Audio</b></td><td>Todos los sonidos se sintetizan en tiempo real, sin archivos.</td></tr></table></div>
+
+  <div class="band"><h2>Proceso e iteraciones</h2><div class="ln"></div></div>
+  <div class="box"><ol class="linea"><li><b>Prototipo jugable</b><br>Boxeo con las manos en un estadio 360° y en VR.</li><li><b>Prueba en Meta Quest</b><br>El audio no sonaba en el visor: se resolvió activándolo dentro del clic de «Entrar en VR».</li><li><b>Avatares propios</b><br>Creador «Mi boxeador» y rivales humanos con brazos, para que todo sea diseño original.</li></ol></div>
+
+  <div class="band"><h2>Cómo probarlo</h2><div class="ln"></div></div>
+  <div class="box"><p>Abre la versión en línea en Chrome o Safari con cámara web, o en el navegador del Meta Quest y pulsa «Entrar en VR». Localmente: sirve la carpeta y abre <code>localhost:8790</code>; necesita internet para cargar three.js y MediaPipe.</p></div>
+
+  <nav class="vecinos" aria-label="Proyectos vecinos"><a href="../robotface/">← RobotFace</a><a href="../sala-de-guerra/">Sala de Guerra →</a></nav>
+  <div class="foot">© 2026 · Luis-Felipe Benítez · Taller de Diseño de Interfaces · UAI</div>
+</div>
+</body>
+</html>
