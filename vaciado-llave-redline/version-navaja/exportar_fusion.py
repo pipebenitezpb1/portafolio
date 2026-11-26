@@ -104,7 +104,7 @@ P, C2, ur, yb, y_lomo, x_ext = g.P, g.C2, g.ur, g.yb, g.y_lomo, g.x_ext
 def bandeja(saliente=g.FIADOR_SALIENTE):
     A, Bc = g.bandeja2d.intersection(g.b_extremos), g.bandeja2d.intersection(g.b_centro)
     cuerpo = suma(ext(A, 0, zc0 + 0.15), ext(Bc, zc0 + 0.15, zc1 - 0.15), ext(A, zc1 - 0.15, alto))   # 1. cuerpo con el nudillo
-    cuerpo = resta(cuerpo, ext(g.corte, g.BASE, alto + 1))                                            # 2. vaciado de la llave
+    cuerpo = resta(cuerpo, ext(g.corte, g.PISO, alto + 1))                                            # 2. vaciado de la llave
     return suma(cuerpo, cil(ur, g.v_res, saliente, 0, 16))                                            # 3. resalte del fiador
 def tira(p, extremo):
     s = ext(p, 0, t).rotate(Vector(0, 0, 0), Vector(1, 0, 0), 90)
@@ -137,10 +137,10 @@ MDF, ROJO, NEGRO, AZUL, AMAR = cq.Color(0.78, 0.63, 0.44), cq.Color(0.84, 0.23, 
 band = bandeja()
 piezas = [("MDF_cara_inferior", ext(g.cara, zi0 - t, zi0), MDF), ("MDF_cara_superior", ext(g.cara, zi1, zi1 + t), MDF),
           ("MDF_lomo", tira(g.p_lomo, False), MDF), ("MDF_extremo", tira(g.p_ext, True), MDF),
-          ("bandeja", band, ROJO), ("bisagra_fija", bisagra(), AZUL),
+          ("bandeja", band, ROJO)] + ([("bisagra_fija", bisagra(), AZUL)] if g.CON_BISAGRA_FIJA else []) + [
           ("pasador_eje", remache(P, False), NEGRO), ("pasador_esquina", remache(C2, True), NEGRO),
           ("broche_seguro_eje", seguro(P, False), AMAR), ("broche_seguro_esquina", seguro(C2, True), AMAR)]
-piezas.append(("llave_referencia_calcado", ext(g.herr, g.BASE, g.BASE + 13), cq.Color(0.75, 0.77, 0.8)))   # el calcado de la foto, como solido
+piezas.append(("llave_referencia_calcado", ext(g.herr, g.PISO, g.PISO + 13), cq.Color(0.75, 0.77, 0.8)))   # el calcado de la foto, como solido
 def guardar(solidos, archivo):                     # un solo conjunto de cuerpos, sin componentes ni ensamblaje
     from OCP.STEPControl import STEPControl_Writer, STEPControl_AsIs
     from OCP.Interface import Interface_Static
@@ -160,7 +160,7 @@ def acostar(s, eje=None, ang=0):
 pr = [("1_calce_llave", acostar(resta(ext(g.vaciado.buffer(2.5), 0, 3.0), ext(g.vaciado, 0.6, 4.0)))),
       ("2_bisagra_trozo_bandeja", acostar(band.intersect(cil(P[0], P[1], 26, -1, alto + 1)))),
       ("5_calibre_remache", acostar(ext(g.cal5.difference(unary_union([box(8.5 + 33 * i - 0.2, 5.8, 8.5 + 33 * i + g.PESTANA + 0.2, 6.2 + t) for i in range(3)])), 0, t))),
-      ("bisagra_fija", acostar(bisagra(), (1, 0, 0), 90))]
+      ] + ([("bisagra_fija", acostar(bisagra(), (1, 0, 0), 90))] if g.CON_BISAGRA_FIJA else [])
 pr += [(f"pasador_{i + 1}_marcas_cuello_+{e_:.1f}", acostar(remache((0, 0), True, e_, i + 1), (1, 0, 0), 90)) for i, e_ in enumerate(g.VAR_REMACHE)]
 pr += [(f"broche_seguro_{i + 1}_marcas_pata_{p_:.1f}", acostar(seguro((0, 0), True, p_, i + 1), (1, 0, 0), 180)) for i, p_ in enumerate(g.VAR_SEGURO)]
 zona = caja(ur - 30, ur + 3, yb - 1, g.vs1 + 7, -1, alto + 1)
@@ -218,7 +218,7 @@ json.dump({"nombres": [n for n, s_ in todo], "llave": tramos(g.herr), "vaciado":
 shutil.copy(os.path.join(g.aqui, "todo_navaja.step"), fz)
 shutil.copy(os.path.join(g.aqui, "..", "calcado", "foto_para_lienzo.png"), fz)
 shutil.make_archive(os.path.join(g.aqui, "fusion", "EstucheNavaja"), "zip", os.path.join(g.aqui, "fusion"), "EstucheNavaja")
-print("comparacion con las mallas: bandeja", round(g.bandeja.volume / 1000, 2), "bisagra", round(g.bisagra.volume / 1000, 2),
+print("comparacion con las mallas: bandeja", round(g.bandeja.volume / 1000, 2), 
       "remache", round(g.rem[0].volume / 1000, 2), "seguro", round(g.seg[0].volume / 1000, 2), "cara", round(g.m_caras[0].volume / 1000, 2))
 
 
@@ -240,7 +240,7 @@ TODO2D = box(-1000, -1000, 1000, 1000)
 
 def pasos_bandeja(pz, rec=TODO2D, sal=g.FIADOR_SALIENTE, d=(0, 0), marcas=0):
     paso(pz, "Cuerpo: contorno que sigue a la llave", "nuevo", g.silueta.intersection(rec), 0, alto, d)
-    paso(pz, "Vaciado de la llave", "restar", g.corte.intersection(rec), g.BASE, alto + 0.5, d)
+    paso(pz, "Vaciado de la llave", "restar", g.corte.intersection(rec), g.PISO, alto + 0.5, d)
     paso(pz, "Agujero del pasador", "restar", disco(P, g.EJE_D / 2 + 0.25).intersection(rec), -0.5, alto + 0.5, d)
     paso(pz, "Muesca del pasador de la esquina", "restar", g.muesca.intersection(box(C2[0] - g.rn - 1, yb - 0.6, ur + 0.6, C2[1] + g.rn + 1)).intersection(rec), -0.5, alto + 0.5, d)
     paso(pz, "Ranura de la lamina del fiador", "restar", g.ranura_fiador.intersection(rec), -0.5, alto + 0.5, d)
@@ -278,7 +278,7 @@ def pasos_seguro(pz, c, alas_en_u, pata=4.4, d=(0, 0), marcas=0):
     paso(pz, "Pata 2", "sumar", T(box(-pata / 2, -al / 2 - 0.2, pata / 2, -rc - 0.25)), z0 - t, z0 + 0.3, d)
 
 # --- estuche armado ---
-paso("01 Llave de referencia (calcado)", "Contorno calcado de la foto", "nuevo", g.herr, g.BASE, g.BASE + 13)
+paso("01 Llave de referencia (calcado)", "Contorno calcado de la foto", "nuevo", g.herr, g.PISO, g.PISO + 13)
 pasos_bandeja("02 Bandeja")
 for pz, z0_ in [("03 MDF cara inferior", zi0 - t), ("04 MDF cara superior", zi1)]:
     paso(pz, "Silueta de la cara", "nuevo", _Pol(g.cara.exterior), z0_, z0_ + t)
@@ -293,13 +293,14 @@ for a_, b_ in g.tabs_e:
     paso("06 MDF extremo", "Pestana inferior", "sumar", box(x_ext, a_, x_ext + t, b_), zi0 - t, zi0 + 0.01)
     paso("06 MDF extremo", "Pestana superior", "sumar", box(x_ext, a_, x_ext + t, b_), zi1 - 0.01, zi1 + t)
 paso("06 MDF extremo", "Muesca del fiador", "restar", box(x_ext - 0.5, g.v_res - 1.4, x_ext + t + 0.5, g.v_res + 1.4), zi0 - 0.5, 17.0)
-paso("07 Bisagra fija", "Hoja contra el lomo", "nuevo", g.hoja2d, zi0, zi1)
-paso("07 Bisagra fija", "Nudillo inferior con refuerzo", "sumar", g.ref2d, zi0, zc0 - 0.15)
-paso("07 Bisagra fija", "Nudillo superior con refuerzo", "sumar", g.ref2d, zc1 + 0.15, zi1)
-tabh = box(g.tab_h[0], y_lomo, g.tab_h[1], y_lomo + g.HOJA[1])
-paso("07 Bisagra fija", "Pestana inferior", "sumar", tabh, zi0 - t, zi0 + 0.01)
-paso("07 Bisagra fija", "Pestana superior", "sumar", tabh, zi1 - 0.01, zi1 + t)
-paso("07 Bisagra fija", "Agujero del pasador", "restar", disco(P, g.EJE_D / 2 + 0.15), zi0 - t - 1, zi1 + t + 1)
+if g.CON_BISAGRA_FIJA:
+    paso("07 Bisagra fija", "Hoja contra el lomo", "nuevo", g.hoja2d, zi0, zi1)
+    paso("07 Bisagra fija", "Nudillo inferior con refuerzo", "sumar", g.ref2d, zi0, zc0 - 0.15)
+    paso("07 Bisagra fija", "Nudillo superior con refuerzo", "sumar", g.ref2d, zc1 + 0.15, zi1)
+    tabh = box(g.tab_h[0], y_lomo, g.tab_h[1], y_lomo + g.HOJA[1])
+    paso("07 Bisagra fija", "Pestana inferior", "sumar", tabh, zi0 - t, zi0 + 0.01)
+    paso("07 Bisagra fija", "Pestana superior", "sumar", tabh, zi1 - 0.01, zi1 + t)
+    paso("07 Bisagra fija", "Agujero del pasador", "restar", disco(P, g.EJE_D / 2 + 0.15), zi0 - t - 1, zi1 + t + 1)
 pasos_remache("08 Pasador del eje", P, False); pasos_remache("09 Pasador de la esquina", C2, True)
 pasos_seguro("10 Broche (seguro) del eje", P, False); pasos_seguro("11 Broche (seguro) de la esquina", C2, True)
 N_ARMADO = len(PASOS)
@@ -337,7 +338,7 @@ malos = [(q["pieza"], q["nombre"]) for q in PASOS if abs(ext(q["_poly"], 0, 1).V
 print("pasos cuyo perfil no reproduce su area:", malos or "ninguno")
 res = ejecutar(PASOS[:N_ARMADO]); ref = {n: s_ for n, s_, col in piezas}
 print("--- pasos para la linea de tiempo:", len(PASOS), "pasos,", len({q['pieza'] for q in PASOS}), "piezas ---")
-for a_, b_ in [("02 Bandeja", "bandeja"), ("03 MDF cara inferior", "MDF_cara_inferior"), ("05 MDF lomo", "MDF_lomo"), ("06 MDF extremo", "MDF_extremo"), ("07 Bisagra fija", "bisagra_fija"),
+for a_, b_ in [("02 Bandeja", "bandeja"), ("03 MDF cara inferior", "MDF_cara_inferior"), ("05 MDF lomo", "MDF_lomo"), ("06 MDF extremo", "MDF_extremo")] + ([("07 Bisagra fija", "bisagra_fija")] if g.CON_BISAGRA_FIJA else []) + [
                ("08 Pasador del eje", "pasador_eje"), ("10 Broche (seguro) del eje", "broche_seguro_eje"), ("01 Llave de referencia (calcado)", "llave_referencia_calcado")]:
     va, vb = res[a_].Volume(), ref[b_].Volume(); dif = res[a_].cut(ref[b_]).Volume() + ref[b_].cut(res[a_]).Volume()
     print(f"{a_:36s} por pasos {va / 1000:7.3f} cm3 | STEP {vb / 1000:7.3f} cm3 | diferencia de forma {dif:.2f} mm3")

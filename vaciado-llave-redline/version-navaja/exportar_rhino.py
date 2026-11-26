@@ -44,7 +44,7 @@ c_txt = capa("Rotulos", (90, 90, 90))
 for nombre, color, piezas in [("Armado - MDF", MDF, [("Cara inferior", g.m_caras[0]), ("Cara superior", g.m_caras[1]),
                                                     ("Lomo", g.m_lomo), ("Extremo", g.m_ext)]),
                               ("Armado - bandeja", ROJO, [("Bandeja", g.bandeja)]),
-                              ("Armado - bisagra fija", AZUL, [("Bisagra fija", g.bisagra)]),
+                              ] + ([("Armado - bisagra fija", AZUL, [("Bisagra fija", g.bisagra)])] if g.CON_BISAGRA_FIJA else []) + [
                               ("Armado - pasadores (remaches)", NEGRO, [("Pasador eje", g.rem[0]), ("Pasador esquina", g.rem[1])]),
                               ("Armado - broches (seguros)", AMARILLO, [("Seguro eje", g.seg[0]), ("Seguro esquina", g.seg[1])])]:
     idx = capa(nombre, color)
@@ -55,12 +55,12 @@ rotulo("MODELO ARMADO", 100, 75, c_txt)
 idx = capa("Calcado de la llave (de la foto)", (0, 0, 230))
 for n, p in [("Contorno de la llave (calcado)", g.herr), ("Vaciado (calcado + holgura)", g.vaciado)]:
     pl = r3.Polyline(0)
-    for x_, y_ in p.exterior.coords: pl.Add(float(x_), float(y_), float(g.BASE))
+    for x_, y_ in p.exterior.coords: pl.Add(float(x_), float(y_), float(g.PISO))
     modelo.Objects.AddPolyline(pl, atr(idx, n))
 
 # ---- 2. piezas definitivas, orientadas para imprimir ----
 idx = capa("Imprimir - piezas definitivas", ROJO); x, y0 = 0.0, -150.0
-for n, f, cant in [("Bandeja", "bandeja_navaja.stl", 1), ("Bisagra fija", "bisagra_fija.stl", 1),
+for n, f, cant in [("Bandeja", "bandeja_navaja.stl", 1)] + ([("Bisagra fija", "bisagra_fija.stl", 1)] if g.CON_BISAGRA_FIJA else []) + [
                    ("Pasador (remache)", "remache_x2.stl", 2), ("Broche (seguro)", "seguro_x2.stl", 2)]:
     m = trimesh.load(os.path.join(g.aqui, f))
     for k in range(cant):
