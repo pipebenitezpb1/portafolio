@@ -53,7 +53,7 @@ JUEGO_LOMO = 0.5           # mm entre bandeja y lomo
 JUEGO_PUNTA = 0.6          # mm entre bandeja y extremo
 MARGEN = 3.0               # mm de MDF por fuera de las ranuras
 PESTANA = 16.0             # mm, largo de las pestanas
-RANURA_EXTRA = (0.0, 0.0)  # mm que se agregan al ancho y al largo de las ranuras (segun la prueba de ranuras)
+RANURA_EXTRA = (0.1, 0.0)  # mm que se agregan al ancho y al largo de las ranuras (segun la prueba de ranuras)
 CERRADURA_EXTRA = 0.0      # mm por lado que se agregan a los agujeros de los pasadores
 # ---- remaches / eje ----
 EJE_D = 10.0               # mm, diametro del cuerpo del remache (eje de giro)
