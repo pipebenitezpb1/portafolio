@@ -114,7 +114,7 @@ def llave_medida():
         c_ = np.interp(u, us, cen); pts.append((np.interp(u, ku, kU), cy + ky * (c_ - cy) + np.interp(u, fu, fs) * (v - c_)))
     p_ = Polygon(pts).buffer(0)
     cabeza = p_.intersection(box(ub(146.0), -100, 600, 300)).buffer(CABEZA_REAL, resolution=16)
-    p_ = p_.union(cabeza).buffer(1.0).buffer(-1.0)                                      # une la cabeza ensanchada sin escalon
+    p_ = p_.union(cabeza).buffer(2.5).buffer(-2.5)                                      # une la cabeza ensanchada sin escalon
     return p_, dict(corona=sD / ky, mango=sC / ky, cuello=sE / ky, A=A, F=F, G=G)
 if any(v_ is not None for v_ in MEDIDAS.values()):
     herr, FACTORES = llave_medida()
