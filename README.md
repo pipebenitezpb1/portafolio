@@ -1,4 +1,4 @@
-# Portafolio — Luis-Felipe Benítez
+# Portafolio — Luis-Felipe Benitez
 
 Portafolio personal y académico. Sitio estático (HTML/CSS/JS, sin build), estilo retro-industrial, tema claro fijo.
 
