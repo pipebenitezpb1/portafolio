@@ -687,3 +687,12 @@ segs = [segmento_pasador(EJE_D), segmento_pasador(EJE_D), segmento_pasador(EJE_A
 for i, m in enumerate(segs): m.apply_translation([i * 14.0, 0, 0])
 trimesh.util.concatenate(segs).export(os.path.join(aqui, "segmento_cilindro_pasador.stl"))
 print(f"segmentos de pasador: {' x '.join(f'{v:.1f}' for v in segs[0].extents)} mm (para {EJE_D:g}) y {' x '.join(f'{v:.1f}' for v in segs[2].extents)} mm (para {EJE_ANTERIOR:g}) | estancos {all(m.is_watertight for m in segs)}")
+
+# 21) PRUEBA DE LA BISAGRA CON EL BLOQUEO, completa en una placa: lo de la prueba 16 mas el segmento que completa el pasador
+ms21 = [m.copy() for m in ms16] + [segmento_pasador(EJE_D)]
+ms21[-1].apply_translation([placa16.bounds[1][0] - ms21[-1].extents[0], placa16.bounds[0][1] + ms16[0].extents[1] + 5, 0])
+ms21[-1].apply_translation([0, 0, 0])
+libre_x = max(m.bounds[1][0] for m in ms16[1:]) + 5               # a continuacion de la fila de piezas chicas
+ms21[-1].apply_translation([libre_x - ms21[-1].bounds[0][0], 0, 0])
+placa21 = trimesh.util.concatenate(ms21); placa21.export(os.path.join(pr, "prueba_bisagra_con_bloqueo.stl"))
+print(f"prueba de bisagra con bloqueo: {' x '.join(f'{v:.1f}' for v in placa21.extents)} mm, {len(placa21.split())} piezas, {sum(m.volume for m in ms21) / 1000:.0f} cm3 | estancas {all(p_.is_watertight for p_ in placa21.split())}")
