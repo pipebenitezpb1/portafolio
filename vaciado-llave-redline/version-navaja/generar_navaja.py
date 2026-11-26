@@ -27,7 +27,7 @@ from shapely import affinity
 # ---- llave / vaciado ----
 LARGO_MEDIDO = None        # mm, largo total real de la llave (None = usar LARGO_ESTIMADO)
 ANCHO_MEDIDO = None        # mm, ancho maximo real, en la mordaza (None = usar ANCHO_ESTIMADO)
-CON_VACIADO = False        # False = bandeja maciza (el vaciado se hace despues, con la llave bien medida); True = con vaciado
+CON_VACIADO = True         # False = bandeja maciza (el vaciado se hace despues, con la llave bien medida); True = con vaciado
 HOLGURA = 1.0              # mm de juego alrededor de la llave (ajuste fino, solo afecta a la bandeja impresa)
 ALTURA_HERRAMIENTA = 20.0  # mm, grosor maximo de la llave (ajuste fino: fija la profundidad del vaciado)
 # ---- caja de corte: estas medidas NO deben cambiar despues de cortar ----
