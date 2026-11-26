@@ -412,3 +412,29 @@ for f in ["bandeja_navaja.stl"] + (["bisagra_fija.stl"] if CON_BISAGRA_FIJA else
     m.apply_translation([x, y, 0]); ms8.append(m); x += ex[0] + 6; fila = max(fila, ex[1])
 placa8 = trimesh.util.concatenate(ms8); placa8.export(os.path.join(aqui, "piezas_impresas.stl"))
 print(f"piezas impresas: {' x '.join(f'{v:.1f}' for v in placa8.extents)} mm, {len(placa8.split())} piezas")
+
+# 10) hoja de corte de 600 x 600 mm: caja completa + pruebas de ranuras + pruebas de la esquina del pasador.
+#     Negro = corte, rojo = score.  La pagina mide 600 x 600; no lleva marco para que el laser no lo corte.
+HOJA = 600.0
+h10 = []
+def poner(poly, x_, y_, grabado=(), textos=(), nombre=None):
+    b_ = poly.bounds; ox, oy = x_ - b_[0], y_ + b_[3]
+    h10.append(f'<path d="{ruta(poly, ox, oy, -1)}" stroke="black"/>')
+    h10.extend(f'<path d="{ruta(q_, ox, oy, -1)}" stroke="red"/>' for q_ in grabado)
+    for tx, ty, txt in list(textos) + ([((b_[0] + b_[2]) / 2, (b_[1] + b_[3]) / 2, nombre)] if nombre else []):
+        h10.append(f'<text x="{ox + tx:.1f}" y="{oy - ty + 1:.1f}" font-size="3" fill="none" stroke="red" stroke-width="0.12" text-anchor="middle">{txt}</text>')
+    assert x_ + b_[2] - b_[0] <= HOJA - 5 and y_ + b_[3] - b_[1] <= HOJA - 5, "no cabe en la hoja"
+    return b_[2] - b_[0], b_[3] - b_[1]
+yy = 10.0
+wc, hc = poner(cara, 10, yy, grabado=DISENO); yy += hc + 6
+poner(cara, 10, yy); yy += hc + 6
+wl, hl = poner(p_lomo, 10, yy); poner(p_ext, 10 + wl + 8, yy); yy += hl + 6
+x2 = 10 + wc + 12                                  # columna derecha: pruebas
+w9, h9 = poner(placa9, x2, 10, textos=rot9)
+wt, ht = poner(tira9, x2, 10 + h9 + 6, nombre="tira de prueba"); poner(tira9, x2 + wt + 6, 10 + h9 + 6)
+y2 = 10 + h9 + 6 + ht + 8
+wm, hm = poner(mini, x2, y2, nombre="esquina del pasador"); poner(mini, x2 + wm + 6, y2); poner(mini_lomo, x2 + 2 * (wm + 6), y2)
+open(os.path.join(aqui, "hoja_corte_600x600.svg"), "w").write(
+    f'<svg xmlns="http://www.w3.org/2000/svg" width="{HOJA:g}mm" height="{HOJA:g}mm" viewBox="0 0 {HOJA:g} {HOJA:g}" '
+    f'fill="none" stroke-width="0.1" font-family="sans-serif">' + "".join(h10) + "</svg>")
+print(f"hoja de corte 600 x 600: ocupa hasta x = {max(10 + wc, x2 + w9):.0f} mm, y = {max(yy, y2 + hm):.0f} mm")
