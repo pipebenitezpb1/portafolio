@@ -28,8 +28,13 @@ from shapely import affinity
 LARGO_MEDIDO = None        # mm, largo total real de la llave (None = usar LARGO_ESTIMADO)
 ANCHO_MEDIDO = None        # mm, ancho maximo real, en la mordaza (None = usar ANCHO_ESTIMADO)
 CON_VACIADO = True         # False = bandeja maciza (el vaciado se hace despues, con la llave bien medida); True = con vaciado
-EXTRA_CABEZA = (0.1, 0.66) # mm de holgura adicional en la cabeza de la llave, y desde que fraccion del largo se aplica
-HOLGURA = 1.0              # mm de juego alrededor de la llave (ajuste fino, solo afecta a la bandeja impresa)
+# Medidas reales de la llave (mm), segun calcado/medidas_a_tomar.png.  None = todavia sin medir (se estima).
+# B (58) no se usa: la cabeza no se toca, porque ya calza casi perfecta en la bandeja impresa.
+MEDIDAS = dict(A=None, B=None, C=33.0, D=26.4, E=22.0, F=30.0, G=None, H=None)
+CABEZA_REAL = 0.95         # mm por lado que la cabeza real supera al calcado: sale de que el vaciado anterior (calcado + 1,0) quedo justo,
+                           # mas los 0,15 mm hacia afuera pedidos.  Asi el vaciado de la cabeza es el de hoy + 0,15.
+EXTRA_CABEZA = (0.0, 0.66) # mm de holgura adicional en la cabeza de la llave, y desde que fraccion del largo se aplica
+HOLGURA = 0.2              # mm de juego alrededor de la llave (ajuste fino, solo afecta a la bandeja impresa)
 ALTURA_HERRAMIENTA = 20.0  # mm, grosor maximo de la llave (ajuste fino: fija la profundidad del vaciado)
 # ---- caja de corte: estas medidas NO deben cambiar despues de cortar ----
 LARGO_ESTIMADO = 207.0     # mm: el calcado de la foto (200,0) quedo unos 5 mm corto, mas holgura
@@ -86,15 +91,36 @@ herr_foto = Polygon(np.array(json.load(open(os.path.join(aqui, "contorno_mm.json
 hb = herr_foto.bounds
 def a_medida(largo, ancho):                        # el calcado estirado a un largo y ancho dados, desde su centro
     return affinity.scale(herr_foto, largo / hb[2], ancho / hb[3], origin=(hb[2] / 2, hb[3] / 2))
-herr = a_medida(LARGO_MEDIDO or LARGO_ESTIMADO, ANCHO_MEDIDO or ANCHO_ESTIMADO)     # la llave (ajuste fino)
+def llave_medida():
+    """El calcado corregido por zonas.  La cabeza se deja como en el modelo que ya calzo (207 x 53) y se ensancha CABEZA_REAL;
+    la corona, el mango y el cuello se llevan a las medidas reales.  Todo se ancla en la punta de la mordaza."""
+    from shapely.geometry import LineString as _L
+    def ext_v(p, u):
+        g_ = p.intersection(_L([(u, -100), (u, 300)])); return g_.bounds[1], g_.bounds[3]
+    M = MEDIDAS; Lf = hb[2]
+    kx, ky, cx, cy = LARGO_ESTIMADO / hb[2], ANCHO_ESTIMADO / hb[3], hb[2] / 2, hb[3] / 2
+    ub = lambda u: cx + kx * (u - cx)                                                   # posicion a lo largo en el modelo que ya calzo
+    A = M["A"] or LARGO_ESTIMADO; punta = ub(Lf) - A                                    # punta de la corona
+    F = M["F"] or (ub(23.0) - ub(0)); G = M["G"] or (ub(109.0) - ub(0))
+    ku, kU = [0.0, 23.0, 109.0, 140.0, Lf], [punta, punta + F, punta + G, ub(140.0), ub(Lf)]   # corona | mango | cuello | cabeza
+    assert all(b_ > a_ for a_, b_ in zip(kU, kU[1:])), "medidas a lo largo incoherentes"
+    us = np.arange(0.5, Lf, 0.5); cen = np.array([sum(ext_v(herr_foto, u)) / 2 for u in us])
+    cen = np.convolve(np.pad(cen, 10, mode="edge"), np.ones(21) / 21, mode="valid")     # eje medio de la llave, suavizado
+    w = lambda u: ext_v(herr_foto, u)[1] - ext_v(herr_foto, u)[0]
+    sD = (M["D"] / w(13.0)) if M["D"] else ky; sC = (M["C"] / w(70.0)) if M["C"] else ky; sE = (M["E"] / w(126.0)) if M["E"] else ky
+    fu, fs = [0, 19, 31, 100, 116, 132, 146, Lf], [sD, sD, sC, sC, sE, sE, ky, ky]
+    pts = []
+    for u, v in Polygon(herr_foto.exterior).segmentize(0.4).exterior.coords:
+        c_ = np.interp(u, us, cen); pts.append((np.interp(u, ku, kU), cy + ky * (c_ - cy) + np.interp(u, fu, fs) * (v - c_)))
+    p_ = Polygon(pts).buffer(0)
+    cabeza = p_.intersection(box(ub(146.0), -100, 600, 300)).buffer(CABEZA_REAL, resolution=16)
+    p_ = p_.union(cabeza).buffer(1.0).buffer(-1.0)                                      # une la cabeza ensanchada sin escalon
+    return p_, dict(corona=sD / ky, mango=sC / ky, cuello=sE / ky, A=A, F=F, G=G)
+if any(v_ is not None for v_ in MEDIDAS.values()):
+    herr, FACTORES = llave_medida()
+else:
+    herr, FACTORES = a_medida(LARGO_MEDIDO or LARGO_ESTIMADO, ANCHO_MEDIDO or ANCHO_ESTIMADO), {}
 suave = lambda p: p.buffer(0.8).buffer(-0.8).simplify(0.05)
-vaciado = suave(herr).buffer(HOLGURA, resolution=16)             # hueco donde entra la llave (ajuste fino)
-if EXTRA_CABEZA[0]:
-    hb2 = herr.bounds
-    cabeza = suave(herr).intersection(box(hb2[0] + EXTRA_CABEZA[1] * (hb2[2] - hb2[0]), -100, 500, 300))
-    vaciado = vaciado.union(cabeza.buffer(HOLGURA + EXTRA_CABEZA[0], resolution=16)).buffer(0.3).buffer(-0.3)
-forro_ext = vaciado.buffer(TPU_ESPESOR, resolution=16)           # contorno exterior del forro de TPU
-alojamiento = forro_ext.buffer(TPU_JUEGO, resolution=16) if CON_TPU else vaciado   # lo que se vacia en la bandeja
 caja_ref = suave(a_medida(LARGO_ESTIMADO, ANCHO_ESTIMADO)).buffer(MARGEN_CAJA, resolution=16)   # contorno con margen que dimensiona la caja (fijo)
 alto = BASE + ALTURA_MAX                          # espesor de la bandeja = hueco entre las dos caras
 PISO = alto - ALTURA_HERRAMIENTA                  # altura a la que apoya la llave (queda a ras por arriba)
@@ -150,13 +176,31 @@ v_res = vs0 + 3.0                                  # altura (en v) del resalte d
 assert v_plano > vs1 + 3 and caja_ref.distance(muesca) > 2 and caja_ref.distance(ranura_fiador) > 1.5
 bandeja2d = silueta.difference(unary_union([Point(P).buffer(EJE_D / 2 + JUEGO_EJE, resolution=32), muesca, ranura_fiador]))
 
+def huecos_de(llave):
+    v_ = suave(llave).buffer(HOLGURA, resolution=16)
+    if EXTRA_CABEZA[0]:
+        b2 = llave.bounds
+        cab = suave(llave).intersection(box(b2[0] + EXTRA_CABEZA[1] * (b2[2] - b2[0]), -100, 500, 300))
+        v_ = v_.union(cab.buffer(HOLGURA + EXTRA_CABEZA[0], resolution=16)).buffer(0.3).buffer(-0.3)
+    f_ = v_.buffer(TPU_ESPESOR, resolution=16)
+    return v_, f_, (f_.buffer(TPU_JUEGO, resolution=16) if CON_TPU else v_)
+# la caja ya esta cortada: se busca la posicion de la llave que deja mas pared alrededor del vaciado
+prohibido = unary_union([Point(P).buffer(EJE_D / 2 + 2.0), muesca.buffer(1.5), ranura_fiador.buffer(1.2)])
+interior = silueta_cara.difference(prohibido)
+base_aloj = huecos_de(herr)[2]
+def holgura_pared(du, dv):
+    a_ = affinity.translate(base_aloj, du, dv)
+    return interior.exterior.distance(a_) if interior.contains(a_) else -a_.difference(interior).area
+cb, hb3 = caja_ref.bounds, herr.bounds
+du0, dv0 = (cb[0] + cb[2]) / 2 - (hb3[0] + hb3[2]) / 2, (cb[1] + cb[3]) / 2 - (hb3[1] + hb3[3]) / 2
+PARED_MIN_REAL = holgura_pared(0, 0)                # no se mueve: la cabeza queda donde ya calzo en la bandeja impresa
+vaciado, forro_ext, alojamiento = huecos_de(herr)
 ud = vx0 + DEDO_POS * (vx1 - vx0); r = DEDO_ANCHO / 2
 loc = alojamiento.intersection(box(ud - r, -100, ud + r, 200)).bounds
 dedo = unary_union([box(ud - r, loc[1] - 4, ud + r, 200), Point(ud, loc[1] - 4).buffer(r, resolution=16)])
 dedo = dedo.intersection(box(-100, yb + 3, 500, 200)).intersection(silueta_cara.buffer(-3.5))   # no rompe la pared exterior
 corte = alojamiento.union(dedo)
-sobra = alojamiento.difference(silueta.buffer(-2.0)).area
-assert sobra < 0.01 or not CON_VACIADO, "La llave medida no cabe en la caja ya cortada con 2 mm de pared: revisa las medidas o aumenta MARGEN_CAJA."
+assert PARED_MIN_REAL >= 1.6 or not CON_VACIADO, f"La llave medida no cabe en la caja ya cortada: la pared de la bandeja quedaria en {PARED_MIN_REAL:.1f} mm."
 
 def extruir(poly, z0, z1):
     m = trimesh.creation.extrude_polygon(poly, z1 - z0); m.apply_translation([0, 0, z0]); return m
@@ -599,16 +643,17 @@ print(f"prueba de filete: {len(pf)} marcos de {' x '.join(f'{v:.1f}' for v in pf
 # 19) MARCO CON SEGUROS INTEGRADOS: el filete del canto y las dos tapas que traban los pasadores en una sola pieza por cara.
 #     Sin pestanas contra el acrilico: se sostiene a presion en el canto y enganchado a las cabezas de los pasadores.
 MARCO_ALTO = ALA[2] + 0.2      # mm que sobresale sobre la cara: lo mismo que la cabeza del pasador, para imprimirlo plano
+MARCO_RADIO = 7.0              # mm, radio de las curvas con que las tapas se funden con el marco
 MARCO_PATA = 4.2               # mm, ancho de las patas que entran en las orejas del agujero (4,4 cortadas)
 def marco(arriba=True):
     za, zb = zi1, zi1 + t; zt = zb + MARCO_ALTO                    # se construye el de arriba y el de abajo es su espejo
     borde_ext = c_ext.buffer(FILETE_JUEGO + FILETE[0], resolution=32)
-    partes = exm(anillo, za, zt) + exm(labio_f, zb, zt)
+    # las tapas de los pasadores son discos que se funden con el marco mediante curvas amplias (sin escalones ni bloques)
+    arriba2d = unary_union([labio_f, anillo, Point(P).buffer(8.5, resolution=48), Point(C2).buffer(8.5, resolution=48)])
+    arriba2d = arriba2d.buffer(MARCO_RADIO, resolution=32).buffer(-MARCO_RADIO, resolution=32).intersection(borde_ext).buffer(0)
+    partes = exm(anillo, za, zt) + exm(arriba2d, zb, zt)
     huecos = []
-    for c, alas_en_u, zona_tapa in [(P, False, Point(P).buffer(rho + 4.5, resolution=32)),
-                                    (C2, True, box(C2[0] - 7.5, -300, 600, C2[1] + 7.5))]:
-        tapa = Point(c).buffer(7.5, resolution=32).union(zona_tapa.intersection(borde_ext)).intersection(borde_ext)
-        partes += exm(tapa, zb, zt)
+    for c, alas_en_u in [(P, False), (C2, True)]:
         rot = (lambda m_: m_) if alas_en_u else (lambda m_: m_.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [0, 0, 1])))
         al, aa = ALA[0], ALA[1]; p0, p1 = CERRADURA_CORTE[0] / 2 + 0.15, CERRADURA_CORTE[1] / 2 - 0.1
         for m_ in [B(-al / 2 - 0.25, al / 2 + 0.25, -aa / 2 - 0.25, aa / 2 + 0.25, zb - 0.01, zt + 1), cil(0, 0, CUELLO_D / 2 + 0.25, zb - 0.01, zt + 1)]:
@@ -624,3 +669,6 @@ marco_sup, marco_inf = marco(True), marco(False)
 girar(marco_sup, 180, [1, 0, 0]).export(os.path.join(aqui, "marco_con_seguros_superior.stl"))   # cara exterior sobre la cama
 girar(marco_inf, 0, [0, 0, 1]).export(os.path.join(aqui, "marco_con_seguros_inferior.stl"))
 print(f"marcos con seguros: {' x '.join(f'{v:.1f}' for v in marco_sup.extents)} mm | estancos {marco_sup.is_watertight} {marco_inf.is_watertight} | cuerpos {len(marco_sup.split())} {len(marco_inf.split())} | {marco_sup.volume / 1000:.1f} cm3 cada uno")
+
+print("ancho respecto de la bandeja ya impresa: " + ", ".join(f"{k_} x{v_:.3f}" if v_ < 3 else f"{k_}={v_:.1f}" for k_, v_ in FACTORES.items()))
+print(f"llave: {herr.bounds[2] - herr.bounds[0]:.1f} x {herr.bounds[3] - herr.bounds[1]:.1f} mm | pared minima de la bandeja alrededor del vaciado: {PARED_MIN_REAL:.1f} mm")
