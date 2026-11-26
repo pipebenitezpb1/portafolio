@@ -68,6 +68,7 @@ CERRADURA_CORTE = (6.4, 11.6, 4.4)   # mm, agujero YA CORTADO en el acrilico: di
 ALA = (10.2, 3.4, 3.0)     # mm, largo x ancho x alto de la cabeza impresa (debe pasar holgada por las orejas)
 # ---- bisagra ----
 JUEGO_EJE = 0.12           # mm de juego radial entre el agujero de la bandeja y el pasador
+REALCE_NUDILLO = False     # True = realce de 0,15 mm sobre la bandeja junto al pasador; False = cara lisa (el juego se quita con una golilla)
 JUEGO_NUDILLO = 0.1        # mm de juego vertical de la bandeja contra cada cara, en la zona del pasador
 ARANDELAS = (0.2, 0.3, 0.4)   # mm, arandelas de ajuste por si el hueco real entre caras es mayor
 CON_BISAGRA_FIJA = False   # True = agrega la hoja fija impresa con dos nudillos; False = la bandeja gira solo sobre el pasador
@@ -212,7 +213,7 @@ if CON_BISAGRA_FIJA:
 bandeja = U(bandeja, diente(FIADOR_SALIENTE))      # diente del fiador
 # realce arriba, junto al pasador, para que el nudillo quede casi sin juego tambien contra la cara superior
 apoyo = bandeja2d.intersection(Point(P).buffer(14, resolution=32)).buffer(-0.2)
-bandeja = U(bandeja, extruir(apoyo, alto - 0.2, alto + dz))
+if REALCE_NUDILLO: bandeja = U(bandeja, extruir(apoyo, alto - 0.2, alto + dz))
 assert len(bandeja.split()) == 1
 # forro de TPU: pared de TPU_ESPESOR alrededor de la llave y piso fino; abierto en los rebajes para los dedos
 forro = D(extruir(forro_ext, PISO_BANDEJA + 0.05, alto), extruir(vaciado, PISO, alto + 1), *[extruir(x_, PISO, alto + 1) for x_ in getattr(dedo.difference(vaciado).buffer(0.01), 'geoms', [dedo.difference(vaciado).buffer(0.01)]) if x_.area > 0.05])
@@ -257,9 +258,9 @@ m_ext = a3d(p_ext, [[0, 0, 1, x_ext], [1, 0, 0, y_lomo], [0, 1, 0, 0], [0, 0, 0,
 m_caras = [extruir(cara, zi0 - t, zi0), extruir(cara, zi1, zi1 + t)]
 
 # ---------------- remache de 1/4 de vuelta y seguro ----------------
-def remache(c, alas_en_u, extra=0.2, marcas=0):   # extra = holgura del cuello sobre el espesor del MDF
+def remache(c, alas_en_u, extra=0.2, marcas=0, eje_d=None):   # extra = holgura del cuello sobre el espesor del MDF
     ln = t + extra
-    partes = [cil(0, 0, EJE_D / 2, zi0, zi1), cil(0, 0, CUELLO_D / 2, zi0 - ln - ALA[2], zi1 + ln + ALA[2])]
+    partes = [cil(0, 0, (eje_d or EJE_D) / 2, zi0, zi1), cil(0, 0, CUELLO_D / 2, zi0 - ln - ALA[2], zi1 + ln + ALA[2])]
     for za in (zi0 - ln - ALA[2], zi1 + ln):
         cara_z = za + ALA[2] if za < zi0 else za                      # cara de la cabeza que aprieta el acrilico
         fuera = za if za < zi0 else za + ALA[2]
@@ -546,7 +547,16 @@ for k, m in enumerate(ms16):
 placa16 = trimesh.util.concatenate(ms16); placa16.export(os.path.join(pr, "prueba_bisagra_y_pestana.stl"))
 print(f"forro TPU: {' x '.join(f'{v:.1f}' for v in forro.extents)} mm | estanco {forro.is_watertight} | {forro.volume / 1000:.1f} cm3")
 print(f"prueba bisagra y pestana: {' x '.join(f'{v:.1f}' for v in placa16.extents)} mm, {len(placa16.split())} piezas, {sum(m.volume for m in ms16) / 1000:.0f} cm3 | esqueleto {esqueleto.volume / 1000:.0f} cm3")
-print(f"pared minima de la bandeja: {alojamiento.exterior.distance(silueta_cara.exterior):.1f} mm | piso de la bandeja {PISO_BANDEJA:g} mm | nudillo: {alto + 2 * dz:.2f} mm en hueco de {zi1 - zi0:g}")
+print(f"pared minima de la bandeja: {alojamiento.exterior.distance(silueta_cara.exterior):.1f} mm | piso de la bandeja {PISO_BANDEJA:g} mm | bandeja de {alto + dz + (dz if REALCE_NUDILLO else 0):.2f} mm en hueco de {zi1 - zi0:g}")
 
 for n_ in ["bandeja_navaja.stl", "forro_tpu.stl", "herramienta_armado.stl", "pruebas/prueba_bisagra_y_pestana.stl", "piezas_impresas.stl", "remache_x2.stl", "seguro_x2.stl"]:
     m_ = trimesh.load(os.path.join(aqui, n_)); print(f"{n_}: estanca {all(p_.is_watertight for p_ in m_.split(only_watertight=False))} | cuerpos {len(m_.split(only_watertight=False))}")
+
+# 17) pasadores mas gruesos para la bandeja YA IMPRESA (agujero de 10,5 mm): quitan el juego sin reimprimirla
+EJE_ANTERIOR = 10.3
+ms17 = [girar(remache((0, 0), True, e_, i + 1, eje_d=EJE_ANTERIOR), 90, [1, 0, 0]) for i, e_ in enumerate(VAR_REMACHE)] + [a_.copy() for a_ in aran]
+x = 0.0
+for m in ms17:
+    m.apply_translation(-m.bounds[0]); m.apply_translation([x, 0, 0]); x += m.extents[0] + 5
+placa17 = trimesh.util.concatenate(ms17); placa17.export(os.path.join(pr, "pasadores_para_bandeja_anterior.stl"))
+print(f"pasadores para la bandeja anterior: cuerpo {EJE_ANTERIOR} mm, {len(placa17.split())} piezas, {' x '.join(f'{v:.1f}' for v in placa17.extents)} mm | estancos {all(p_.is_watertight for p_ in placa17.split())}")
