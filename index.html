@@ -92,6 +92,9 @@ a{color:inherit;}
 .unidad span{font-family:var(--mono);font-size:11px;color:#c9c1aa;}
 .u1{--u:#b4531a;} .u2{--u:#1a7a2e;} .u3{--u:#2a4f9e;}
 .card.destacado{outline:3px solid var(--u);outline-offset:-8px;}
+.card .miniatura{display:block;margin:-20px -20px 14px;border-bottom:2px solid var(--ink);aspect-ratio:16/10;overflow:hidden;background:var(--ink);}
+.card .miniatura img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .25s;}
+.card:hover .miniatura img{transform:scale(1.04);}
 .card .acciones{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;align-items:center;}
 .card .acciones .live{margin-top:0;}
 .card .acciones span[data-enlaces]{display:flex;flex-wrap:wrap;gap:8px 14px;}
@@ -151,6 +154,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
   <div class="unidad u1" id="unidad-1"><h3>Unidad 1 · Interfaces Sonoras</h3><span>El sonido como entrada y salida de información</span></div>
   <div class="grid">
     <div class="card u1">
+      <a class="miniatura" href="analisis-interfaces/" tabindex="-1" aria-hidden="true"><img src="analisis-interfaces/portada.jpg" alt="Análisis de Interfaces" loading="lazy"></a>
       <div class="num">// E1</div>
       <h3>Análisis de Interfaces</h3>
       <div class="st">Entrega 1 · Lámina</div>
@@ -160,6 +164,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
     </div>
 
     <div class="card u1">
+      <a class="miniatura" href="aves-de-chile/" tabindex="-1" aria-hidden="true"><img src="aves-de-chile/portada.jpg" alt="Aves de Chile" loading="lazy"></a>
       <div class="num">// E2</div>
       <h3>Aves de Chile</h3>
       <div class="st">Entrega 2 · App educativa de audio</div>
@@ -169,6 +174,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
     </div>
 
     <div class="card u1">
+      <a class="miniatura" href="sintetizador/" tabindex="-1" aria-hidden="true"><img src="sintetizador/portada.svg" alt="Mi Primer Sintetizador" loading="lazy"></a>
       <div class="num">// E3</div>
       <h3>Mi Primer Sintetizador</h3>
       <div class="st">Entrega 3 · Max/MSP</div>
@@ -178,6 +184,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
     </div>
 
     <div class="card u1">
+      <a class="miniatura" href="sonificacion/" tabindex="-1" aria-hidden="true"><img src="sonificacion/portada.svg" alt="Sonificación" loading="lazy"></a>
       <div class="num">// E4</div>
       <h3>Sonificación</h3>
       <div class="st">Entrega 4 · Datos e imagen</div>
@@ -187,6 +194,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
     </div>
 
     <div class="card u1">
+      <a class="miniatura" href="voz-formas/" tabindex="-1" aria-hidden="true"><img src="voz-formas/portada.svg" alt="Voz + Forma" loading="lazy"></a>
       <div class="num">// EJ</div>
       <h3>Voz + Forma</h3>
       <div class="st">Ejercicio · Visualización de sonido</div>
@@ -196,6 +204,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
     </div>
 
     <div class="card u1 destacado">
+      <a class="miniatura" href="cofre-sonoro/" tabindex="-1" aria-hidden="true"><img src="cofre-sonoro/portada.jpg" alt="Cofre Sonoro Minecraft" loading="lazy"></a>
       <div class="num">// PF <span class="estrella">★ seleccionado para el examen</span></div>
       <h3>Cofre Sonoro Minecraft</h3>
       <div class="st">Proyecto de la unidad · grupal</div>
@@ -208,6 +217,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
   <div class="unidad u2" id="unidad-2"><h3>Unidad 2 · Interfaces Físicas</h3><span>Objetos que se tocan, se mueven y responden</span></div>
   <div class="grid">
     <div class="card u2 destacado">
+      <a class="miniatura" href="pulsar/" tabindex="-1" aria-hidden="true"><img src="pulsar/portada.jpg" alt="PULSAR · CTRL-04L" loading="lazy"></a>
       <div class="num">// E1 <span class="estrella">★ seleccionado para el examen</span></div>
       <h3>PULSAR · CTRL-04L</h3>
       <div class="st">Entrega 1 · Controlador físico</div>
@@ -217,6 +227,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
     </div>
 
     <div class="card u2">
+      <a class="miniatura" href="robotface/" tabindex="-1" aria-hidden="true"><img src="robotface/portada.jpg" alt="RobotFace" loading="lazy"></a>
       <div class="num">// PF</div>
       <h3>RobotFace</h3>
       <div class="st">Proyecto · Animatrónica</div>
@@ -229,6 +240,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
   <div class="unidad u3" id="unidad-3"><h3>Unidad 3 · Interfaces Gráficas</h3><span>Gestos, realidad virtual y espacio 3D en el navegador</span></div>
   <div class="grid">
     <div class="card u3">
+      <a class="miniatura" href="guantazo/" tabindex="-1" aria-hidden="true"><img src="guantazo/portada.jpg" alt="¡Guantazo!" loading="lazy"></a>
       <div class="num">// M1</div>
       <h3>¡Guantazo!</h3>
       <div class="st">Módulo · Interacción natural</div>
@@ -238,6 +250,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
     </div>
 
     <div class="card u3">
+      <a class="miniatura" href="sala-de-guerra/" tabindex="-1" aria-hidden="true"><img src="sala-de-guerra/portada.jpg" alt="Sala de Guerra" loading="lazy"></a>
       <div class="num">// M3</div>
       <h3>Sala de Guerra</h3>
       <div class="st">Módulo · Realidad virtual</div>
@@ -247,6 +260,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
     </div>
 
     <div class="card u3">
+      <a class="miniatura" href="chivilingo/" tabindex="-1" aria-hidden="true"><img src="chivilingo/portada.jpg" alt="Chivilingo · Genera tu luz" loading="lazy"></a>
       <div class="num">// P1</div>
       <h3>Chivilingo · Genera tu luz</h3>
       <div class="st">Prototipo · Chile Re-Descubre</div>
@@ -256,6 +270,7 @@ a:focus-visible{outline:3px solid var(--alert);outline-offset:2px;}
     </div>
 
     <div class="card u3 destacado">
+      <a class="miniatura" href="fosa-atacama-proyecto/" tabindex="-1" aria-hidden="true"><img src="fosa-atacama-proyecto/portada.jpg" alt="Fosa de Atacama" loading="lazy"></a>
       <div class="num">// PF <span class="estrella">★ seleccionado para el examen</span></div>
       <h3>Fosa de Atacama</h3>
       <div class="st">Proyecto final · Chile Re-Descubre</div>
