@@ -1,14 +1,12 @@
-// Lógica principal: avance del relato, descenso, ambiente según la profundidad,
-// modo VR (Meta Quest) y modo en pantalla.
+// Lógica principal: avance del relato, descenso, luz y color según la profundidad,
+// modo VR (Meta Quest, con controles o con las manos) y modo en pantalla.
 
 import { FASES, ZONAS, PROFUNDIDAD_FINAL, VISTAS } from './narrativa.js';
 import { crearSonido } from './sonido.js';
 
-const estado = window.FOSA;
-const THREE = AFRAME.THREE;
+const { THREE, U, estado, ALTURA_FONDO, limitar } = window.FOSA_BASE;
 const $ = (id) => document.getElementById(id);
 const esperar = (ms) => new Promise((resolver) => setTimeout(resolver, ms));
-const limitar = (v, min = 0, max = 1) => Math.min(max, Math.max(min, v));
 const aRadianes = (g) => (g * Math.PI) / 180;
 const formatear = (n) => Math.round(n).toLocaleString('es-CL');
 const parametros = new URLSearchParams(location.search);
@@ -29,7 +27,7 @@ const modoDemo = parametros.has('demo');
 
 let indiceFase = 0;
 let tiempoFase = 0;
-let tiempoAccion = null; // segundos desde que se bajó la palanca de la etapa
+let tiempoAccion = null; // segundos desde que se accionó la palanca de la etapa
 let pidioContinuar = false;
 let cambiandoFase = false;
 let enVR = false;
@@ -37,14 +35,18 @@ let vistaActual = VISTAS.barco;
 let telonObjetivo = 0;
 let proximoSonar = 0;
 let toco = false;
+let reloj = 0;
 
 const colorAgua = new THREE.Color();
 const COLORES_AGUA = [
-  [0, new THREE.Color('#0f4f73')],
-  [250, new THREE.Color('#06263d')],
-  [1000, new THREE.Color('#020b14')],
-  [3000, new THREE.Color('#000000')],
+  [0, new THREE.Color('#0d5273')],
+  [200, new THREE.Color('#062a40')],
+  [900, new THREE.Color('#010a12')],
+  [2500, new THREE.Color('#000000')],
 ];
+const COLOR_BRUMA = new THREE.Color('#8e9cb4');
+const COLOR_SOL = new THREE.Color('#ffc38a');
+const COLOR_SOL_AGUA = new THREE.Color('#8fd0e6');
 
 // =====================================================================
 // Relato
@@ -54,34 +56,41 @@ function actualizarRelato(s) {
   const fase = FASES[indiceFase];
   tiempoFase += s;
   if (tiempoAccion !== null) tiempoAccion += s;
+  const despuesDe = (id) => FASES.findIndex((f) => f.id === id) < indiceFase;
+  const enProfundidad = vistaActual.lugar === 'profundidad';
+  estado.enSuperficie = !enProfundidad;
 
-  // --- Descenso y profundidad ---
+  // --- Superficie: el lander cae al agua ---
   if (fase.id === 'superficie') {
     estado.profundidad = 0;
     estado.caida = tiempoAccion === null ? 0 : limitar(tiempoAccion / 1.3);
-  } else if (fase.id === 'descenso') {
+    estado.chapuzon = tiempoAccion !== null && tiempoAccion > 0.95 ? tiempoAccion - 0.95 : 0;
+  }
+
+  // --- Descenso ---
+  if (fase.id === 'descenso') {
     const k = limitar(tiempoFase / fase.duracionDescenso);
     estado.profundidad = PROFUNDIDAD_FINAL * (0.5 - Math.cos(Math.PI * k) / 2);
-    estado.velocidad = Math.sin(Math.PI * k) * 0.9 + 0.1 * (k < 1 ? 1 : 0);
+    estado.velocidad = k < 1 ? Math.sin(Math.PI * k) * 0.9 + 0.1 : 0;
     if (k >= 1 && !cambiandoFase) avanzarFase();
   } else {
-    estado.profundidad = PROFUNDIDAD_FINAL;
     estado.velocidad = 0;
+    if (despuesDe('descenso')) estado.profundidad = PROFUNDIDAD_FINAL;
   }
 
   const p = estado.profundidad;
-  const enProfundidad = vistaActual.lugar === 'profundidad';
-  estado.alturaSuelo = !enProfundidad ? -60 : p > 7700 ? -(PROFUNDIDAD_FINAL - p) * 0.12 - 0.15 : -60;
-  estado.luzSol = enProfundidad ? Math.pow(limitar(1 - p / 260), 1.5) : 1;
-  estado.bio = enProfundidad ? limitar((p - 250) / 400) * limitar((5800 - p) / 1500) : 0;
-  estado.linterna = enProfundidad ? limitar((p - 80) / 300) : 0;
+  estado.alturaSuelo = enProfundidad && p > 7700 ? -(PROFUNDIDAD_FINAL - p) * 0.12 + ALTURA_FONDO : -60;
+  estado.luzSol = enProfundidad ? Math.pow(limitar(1 - p / 240), 1.5) : 1;
+  estado.bio = enProfundidad ? limitar((p - 260) / 400) * limitar((5800 - p) / 1500) : 0;
+  estado.linterna = enProfundidad ? limitar((p - 60) / 200) : 0;
 
   // Contacto con el fondo.
-  if (fase.id === 'descenso' && p > PROFUNDIDAD_FINAL - 5 && !toco) {
+  if (fase.id === 'descenso' && p > PROFUNDIDAD_FINAL - 4 && !toco) {
     toco = true;
     sonido.golpe();
     vibrar(1, 350);
   }
+  estado.desdeFondo = toco ? estado.desdeFondo + s : 0;
 
   // Sonar y vibración que crecen con la presión.
   if (enProfundidad && reloj > proximoSonar) {
@@ -91,10 +100,10 @@ function actualizarRelato(s) {
   }
 
   // --- Focos y carnada ---
-  const despuesDe = (id) => FASES.findIndex((f) => f.id === id) < indiceFase;
   if (fase.id === 'fondo' && tiempoAccion !== null) {
-    const encendido = limitar(tiempoAccion / 0.9);
-    estado.focos = encendido < 1 ? encendido * (Math.random() > 0.3 ? 1 : 0.2) : 1;
+    // Los focos parpadean un instante al encender.
+    const k = limitar(tiempoAccion / 0.9);
+    estado.focos = k < 1 ? k * (Math.random() > 0.3 ? 1 : 0.15) : 1;
   } else {
     estado.focos = despuesDe('fondo') ? 1 : 0;
   }
@@ -113,24 +122,26 @@ function actualizarRelato(s) {
   }
   pidioContinuar = false;
 
-  // --- Modo demo para grabar en pantalla ---
+  // --- Modo demo, para grabar en pantalla ---
   if (modoDemo && !cambiandoFase) {
-    if (fase.requiere === 'palanca' && tiempoAccion === null && tiempoFase > Math.min(4, fase.duracionMinima)) bajarPalanca();
+    if (fase.requiere === 'palanca' && tiempoAccion === null && tiempoFase > Math.min(4, fase.duracionMinima)) accionar();
     if (fase.requiere === 'continuar' && tiempoFase > fase.duracionMinima + 2 && !fase.reinicia) pidioContinuar = true;
   }
 
   sonido.actualizar(estado, vistaActual.lugar);
 }
 
-function bajarPalanca() {
+// Acciona la palanca de la etapa (desde el visor, el botón en pantalla o el teclado).
+function accionar() {
   const fase = FASES[indiceFase];
-  if (cambiandoFase || fase.requiere !== 'palanca' || tiempoAccion !== null || tiempoFase < 1) return;
+  if (cambiandoFase || fase.requiere !== 'palanca' || tiempoAccion !== null || tiempoFase < 1) return false;
   tiempoAccion = 0;
   palanca.components.palanca.activar();
   sonido.clic();
-  if (fase.accion === 'soltar') setTimeout(() => sonido.chapuzon(), 1100);
+  if (fase.accion === 'soltar') setTimeout(() => sonido.chapuzon(), 950);
   if (fase.accion === 'focos') sonido.encenderFocos();
   if (fase.accion === 'carnada') sonido.soltarCarnada();
+  return true;
 }
 
 function continuar() {
@@ -147,14 +158,11 @@ async function avanzarFase() {
 async function mostrarFase(indice) {
   const fase = FASES[indice];
   const vista = VISTAS[fase.vista];
-  const cambiaLugar = vista.lugar !== vistaActual.lugar;
+  const cambiaLugar = vista.lugar !== vistaActual.lugar || indiceFase === 0;
 
   relato.classList.add('saliendo');
-  if (cambiaLugar) {
-    await fundido(1);
-  } else {
-    await esperar(600);
-  }
+  if (cambiaLugar && indiceFase !== 0) await fundido(1);
+  else await esperar(600);
 
   indiceFase = indice;
   tiempoFase = 0;
@@ -162,9 +170,10 @@ async function mostrarFase(indice) {
   pidioContinuar = false;
 
   if (cambiaLugar) {
-    colocarCamara(vista);
     vistaActual = vista;
-    await esperar(200);
+    colocarCamara(vista);
+    mostrarLugar();
+    await esperar(250);
     fundido(0);
   }
 
@@ -182,8 +191,7 @@ async function mostrarFase(indice) {
 function reiniciar() {
   cambiandoFase = true;
   toco = false;
-  estado.carnada = 0;
-  estado.caida = 0;
+  Object.assign(estado, { carnada: 0, caida: 0, chapuzon: 0, desdeFondo: 0, focos: 0, profundidad: 0 });
   mostrarFase(1).then(() => (cambiandoFase = false));
 }
 
@@ -207,6 +215,13 @@ function colocarCamara(vista) {
   reiniciarMirada(vista.pitch);
 }
 
+function mostrarLugar() {
+  const enSuperficie = vistaActual.lugar === 'superficie';
+  $('superficie').object3D.visible = enSuperficie;
+  $('profundidad').object3D.visible = !enSuperficie;
+  estado.enSuperficie = enSuperficie;
+}
+
 async function fundido(objetivo) {
   telonObjetivo = objetivo;
   $('telon').classList.toggle('activo', objetivo > 0.5);
@@ -215,18 +230,26 @@ async function fundido(objetivo) {
 
 function actualizarAmbiente(s) {
   estado.telon += (telonObjetivo - estado.telon) * Math.min(1, s * 4);
+  U.uTiempo.value = reloj;
+  U.uDesplazamiento.value += (estado.velocidad * 7 - 0.035) * s;
+  U.uProfundidad.value = estado.profundidad;
+  U.uLuzSol.value = estado.enSuperficie ? 1 : estado.luzSol;
+  U.uFocos.value = estado.focos;
+  const renderer = escena.renderer;
+  if (renderer) U.uEscalaPuntos.value = enVR ? 1050 : renderer.domElement.clientHeight / (2 * Math.tan(aRadianes(36)));
 
   const niebla = escena.object3D.fog;
-  const fondo = escena.object3D.background;
   const ambiente = $('luzAmbiente').getObject3D('light');
   const sol = $('luzSol').getObject3D('light');
   if (!niebla || !ambiente || !sol) return;
 
-  if (vistaActual.lugar === 'superficie') {
-    colorAgua.set('#0a1424');
-    niebla.density = 0.006;
-    ambiente.intensity = 0.5;
-    sol.intensity = 0.5;
+  if (estado.enSuperficie) {
+    niebla.color.copy(COLOR_BRUMA);
+    niebla.density = 0.0012;
+    ambiente.intensity = 0.45;
+    sol.intensity = 0.9;
+    sol.color.copy(COLOR_SOL);
+    escena.object3D.environmentIntensity = 0.8;
   } else {
     const p = estado.profundidad;
     let i = 0;
@@ -234,12 +257,15 @@ function actualizarAmbiente(s) {
     const [p0, c0] = COLORES_AGUA[i];
     const [p1, c1] = COLORES_AGUA[i + 1];
     colorAgua.copy(c0).lerp(c1, limitar((p - p0) / (p1 - p0)));
-    niebla.density = 0.055 + limitar(p / 3000) * 0.05;
-    ambiente.intensity = 0.55 * estado.luzSol + 0.035;
-    sol.intensity = 0.8 * estado.luzSol;
+    niebla.color.copy(colorAgua);
+    niebla.density = 0.05 + limitar(p / 2500) * 0.045;
+    ambiente.intensity = 0.5 * estado.luzSol + 0.006;
+    sol.intensity = 0.6 * estado.luzSol;
+    sol.color.copy(COLOR_SOL_AGUA);
+    escena.object3D.environmentIntensity = 0.02 + 0.25 * estado.luzSol;
   }
-  niebla.color.copy(colorAgua);
-  if (fondo && fondo.isColor) fondo.copy(colorAgua);
+  U.uColorAgua.value.copy(niebla.color);
+  U.uDensidad.value = niebla.density;
 }
 
 function vibrar(fuerza, ms) {
@@ -261,10 +287,10 @@ function textoIndicacion() {
     });
     return zona.texto;
   }
-  if (fase.requiere === 'palanca') return tiempoAccion === null ? (enVR ? fase.indicacion : '') : '';
+  if (fase.requiere === 'palanca') return tiempoAccion === null && enVR ? fase.indicacion : '';
   if (fase.requiere === 'continuar' && tiempoFase >= fase.duracionMinima) {
     const accion = fase.reinicia ? 'volver a empezar' : 'continuar';
-    return enVR ? `Aprieta el gatillo para ${accion}` : '';
+    return enVR ? `Aprieta el gatillo o junta los dedos para ${accion}` : '';
   }
   return '';
 }
@@ -280,16 +306,14 @@ function pintarInterfaz() {
   $('tuboRelleno').style.height = `${(p / PROFUNDIDAD_FINAL) * 100}%`;
   if ($('indicacion').textContent !== indicacion) $('indicacion').textContent = indicacion;
 
-  // Botón de acción en pantalla.
   let etiqueta = '';
   if (!cambiandoFase) {
     if (fase.requiere === 'palanca' && tiempoAccion === null && tiempoFase >= 1) etiqueta = fase.botonPantalla;
     if (fase.requiere === 'continuar' && tiempoFase >= fase.duracionMinima) etiqueta = fase.reinicia ? 'Volver a empezar' : 'Continuar';
   }
-  botonAccion.textContent = etiqueta;
+  if (botonAccion.textContent !== etiqueta) botonAccion.textContent = etiqueta;
   botonAccion.classList.toggle('oculto', !etiqueta);
 
-  // Panel dentro de la escena (solo se ve en VR).
   const panel = panelVR.components['panel-relato'];
   if (panel && enVR) {
     panel.actualizar({
@@ -312,10 +336,17 @@ function pintarPuntosFase() {
 
 function actualizarModo() {
   const fase = FASES[indiceFase];
-  consola.setAttribute('visible', enVR && fase.requiere === 'palanca');
-  panelVR.setAttribute('visible', enVR && indiceFase > 0);
-  $('linternaMano').setAttribute('visible', enVR);
-  $('linternaPantalla').setAttribute('visible', !enVR);
+  consola.object3D.visible = enVR && fase.requiere === 'palanca';
+  panelVR.object3D.visible = enVR && indiceFase > 0;
+  actualizarLinterna();
+}
+
+// Con un control en la mano izquierda, la linterna va en esa mano; si no, va en la cabeza.
+function actualizarLinterna() {
+  const operador = escena.components['operador-vr'];
+  const enMano = enVR && operador && operador.hayControl('left');
+  $('linternaMano').object3D.visible = Boolean(enMano);
+  $('linternaCabeza').object3D.visible = !enMano;
 }
 
 async function comenzar() {
@@ -323,6 +354,7 @@ async function comenzar() {
   $('portada').classList.add('oculto');
   hud.classList.remove('oculto');
   const faseInicial = limitar(parseInt(parametros.get('fase'), 10) || 1, 1, FASES.length - 1);
+  if (faseInicial > 2) toco = true;
   cambiandoFase = true;
   await mostrarFase(faseInicial);
   cambiandoFase = false;
@@ -339,7 +371,7 @@ async function prepararPortada() {
   }
   botonVR.disabled = !compatible;
   aviso.textContent = compatible
-    ? 'Ponte el visor y usa los dos controles: agarra la palanca con el gatillo.'
+    ? 'Ponte el visor. Puedes usar los controles o solo tus manos: empuja la palanca hacia ti.'
     : 'Para vivirla en realidad virtual, abre esta página en el navegador del Meta Quest.';
 
   botonVR.addEventListener('click', () => {
@@ -353,23 +385,21 @@ async function prepararPortada() {
 
 function accionPantalla() {
   const fase = FASES[indiceFase];
-  if (fase.requiere === 'palanca') bajarPalanca();
+  if (fase.requiere === 'palanca') accionar();
   else continuar();
 }
 
 function prepararEventos() {
-  escena.addEventListener('enter-vr', () => {
+  const alCambiarModo = () => {
     enVR = escena.is('vr-mode');
     colocarCamara(vistaActual);
     actualizarModo();
-  });
-  escena.addEventListener('exit-vr', () => {
-    enVR = false;
-    colocarCamara(vistaActual);
-    actualizarModo();
-  });
+  };
+  escena.addEventListener('enter-vr', alCambiarModo);
+  escena.addEventListener('exit-vr', alCambiarModo);
+  // La palanca avisa cuando la persona la acciona con la mano.
   escena.addEventListener('palanca-activada', () => {
-    if (tiempoAccion === null) bajarPalanca();
+    if (tiempoAccion === null && !accionar()) palanca.components.palanca.reiniciar();
   });
   escena.addEventListener('continuar', continuar);
 
@@ -390,15 +420,15 @@ function prepararEventos() {
 // Inicio
 // =====================================================================
 
-let reloj = 0;
-
 function iniciar() {
   colocarCamara(vistaActual);
+  mostrarLugar();
   prepararPortada();
   prepararEventos();
   actualizarModo();
 
   let anterior = performance.now();
+  let proximaRevision = 0;
   // El bucle corre dentro del ciclo de A-Frame para funcionar también dentro del visor.
   AFRAME.registerComponent('bucle-fosa', {
     tick: () => {
@@ -411,11 +441,15 @@ function iniciar() {
         pintarInterfaz();
       }
       actualizarAmbiente(s);
+      if (reloj > proximaRevision) {
+        proximaRevision = reloj + 1;
+        actualizarLinterna();
+      }
     },
   });
   escena.setAttribute('bucle-fosa', '');
 
-  window.fosa = { avanzarFase, bajarPalanca, continuar, estado, get fase() { return FASES[indiceFase].id; } };
+  window.fosa = { avanzarFase, accionar, continuar, estado, get fase() { return FASES[indiceFase].id; } };
 }
 
 if (escena.hasLoaded) iniciar();

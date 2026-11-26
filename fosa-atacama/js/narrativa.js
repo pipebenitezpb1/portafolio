@@ -24,10 +24,10 @@ export const FASES = [
     requiere: 'palanca',
     accion: 'soltar',
     etiqueta: 'SOLTAR EL LANDER',
-    indicacion: 'Baja la palanca para soltar el lander',
+    indicacion: 'Empuja la palanca hacia ti para soltar el lander',
     botonPantalla: 'Soltar el lander',
     duracionMinima: 6,
-    segundosDespues: 2.2,
+    segundosDespues: 2.6,
   },
   {
     id: 'descenso',
@@ -50,7 +50,7 @@ export const FASES = [
     requiere: 'palanca',
     accion: 'focos',
     etiqueta: 'ENCENDER LOS FOCOS',
-    indicacion: 'Baja la palanca para encender los focos',
+    indicacion: 'Empuja la palanca hacia ti para encender los focos',
     botonPantalla: 'Encender los focos',
     duracionMinima: 5,
     segundosDespues: 5,
@@ -61,14 +61,14 @@ export const FASES = [
     lugar: 'Zona hadal',
     texto:
       'Aquí abajo casi no hay alimento: lo que llega cae desde arriba como nieve marina. ' +
-      'Por eso los científicos usan carnada para atraer a la vida que se esconde en la oscuridad.',
+      'Por eso los científicos ponen carnada frente a las cámaras: atrae a la vida que se esconde en la oscuridad.',
     requiere: 'palanca',
     accion: 'carnada',
-    etiqueta: 'SOLTAR LA CARNADA',
-    indicacion: 'Baja la palanca para soltar la carnada',
-    botonPantalla: 'Soltar la carnada',
+    etiqueta: 'BAJAR LA CARNADA',
+    indicacion: 'Empuja la palanca hacia ti para bajar la carnada',
+    botonPantalla: 'Bajar la carnada',
     duracionMinima: 6,
-    segundosDespues: 14,
+    segundosDespues: 19,
   },
   {
     id: 'especies',
@@ -110,6 +110,6 @@ export const PROFUNDIDAD_FINAL = 8000;
 
 // Puntos de vista. "pos" es la posición de los ojos (en VR, la del suelo + la altura real de la persona).
 export const VISTAS = {
-  barco: { lugar: 'superficie', pos: [200, 1.6, 3.2], yaw: 0, pitch: 3 },
-  lander: { lugar: 'profundidad', pos: [0, 1.6, 0], yaw: 0, pitch: -16 },
+  barco: { lugar: 'superficie', pos: [200, 1.6, 1.6], yaw: 0, pitch: 7 },
+  lander: { lugar: 'profundidad', pos: [0, 1.6, 0.15], yaw: 0, pitch: -28 },
 };
