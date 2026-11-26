@@ -8,14 +8,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/estilos.css?v=2">
+  <link rel="stylesheet" href="css/estilos.css?v=3">
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="js/base.js?v=2"></script>
-  <script src="js/superficie.js?v=2"></script>
-  <script src="js/lander.js?v=2"></script>
-  <script src="js/agua.js?v=2"></script>
-  <script src="js/fauna.js?v=2"></script>
-  <script src="js/interaccion.js?v=2"></script>
+  <script src="js/base.js?v=3"></script>
+  <script src="js/superficie.js?v=3"></script>
+  <script src="js/lander.js?v=3"></script>
+  <script src="js/agua.js?v=3"></script>
+  <script src="js/fauna.js?v=3"></script>
+  <script src="js/descenso.js?v=3"></script>
+  <script src="js/interaccion.js?v=3"></script>
 </head>
 <body>
   <a-scene id="escena"
@@ -56,6 +57,10 @@
       <a-entity medusa="color: #b49cff; tamano: 0.85"></a-entity>
       <a-entity nube-sedimento="fuente: desdeFondo; radio: 0.95; alcance: 2.6; cantidad: 170; tamano: 1.2"></a-entity>
       <a-entity nube-sedimento="fuente: carnada; retraso: 2.1; origen: 0 -0.35 -2.55; radio: 0.05; alcance: 0.7; cantidad: 50; tamano: 0.5"></a-entity>
+      <a-entity sumergible></a-entity>
+      <a-entity pared-fosa></a-entity>
+      <a-entity linea-idoos></a-entity>
+      <a-entity luz-descenso position="0 2.7 0"></a-entity>
       <a-entity anfipodos></a-entity>
       <a-entity pez-caracol="retraso: 7; tamano: 1; radio: 0.62; altura: 0.26; angulo: 205; sentido: 1"></a-entity>
       <a-entity pez-caracol="retraso: 12; tamano: 0.8; radio: 0.95; altura: 0.42; angulo: 320; sentido: -1"></a-entity>
@@ -83,6 +88,7 @@
       </a-entity>
 
       <a-entity id="panelVR" panel-relato position="-0.6 1.22 -0.98" rotation="-10 30 0" visible="false"></a-entity>
+      <a-entity id="fichaVR" ficha-foto="src: assets/sumergible_limiting_factor.jpg; titulo: Sumergible Limiting Factor; credito: Foto: Richard Varcoe / Caladan Oceanic · CC BY-SA 4.0" position="0.66 1.2 -0.98" rotation="-10 -30 0" visible="false"></a-entity>
     </a-entity>
   </a-scene>
 
@@ -115,6 +121,11 @@
       <p id="relatoTexto" class="relato__texto"></p>
     </article>
 
+    <figure id="ficha" class="ficha">
+      <img src="assets/sumergible_limiting_factor.jpg" alt="El sumergible Limiting Factor bajo el agua">
+      <figcaption><strong>Sumergible Limiting Factor</strong><br>Foto: Richard Varcoe / Caladan Oceanic · CC BY-SA 4.0</figcaption>
+    </figure>
+
     <aside class="medidor">
       <p class="medidor__etiqueta">Profundidad</p>
       <p class="medidor__cifra"><span id="cifraProfundidad">0</span><small> m</small></p>
@@ -127,6 +138,6 @@
     <p class="atajos controles">Arrastra para mirar · Enter: acción · H: ocultar controles</p>
   </div>
 
-  <script type="module" src="js/principal.js?v=2"></script>
+  <script type="module" src="js/principal.js?v=3"></script>
 </body>
 </html>

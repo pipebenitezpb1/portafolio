@@ -1,10 +1,10 @@
 // Lógica principal: avance del relato, descenso, luz y color según la profundidad,
 // modo VR (Meta Quest, con controles o con las manos) y modo en pantalla.
 
-import { FASES, ZONAS, PROFUNDIDAD_FINAL, VISTAS } from './narrativa.js?v=2';
-import { crearSonido } from './sonido.js?v=2';
+import { FASES, HITOS, PROFUNDIDAD_FINAL, VISTAS } from './narrativa.js?v=3';
+import { crearSonido } from './sonido.js?v=3';
 
-const { THREE, U, estado, ALTURA_FONDO, limitar } = window.FOSA_BASE;
+const { THREE, U, estado, ALTURA_FONDO, limitar, suave } = window.FOSA_BASE;
 const $ = (id) => document.getElementById(id);
 const esperar = (ms) => new Promise((resolver) => setTimeout(resolver, ms));
 const aRadianes = (g) => (g * Math.PI) / 180;
@@ -21,7 +21,7 @@ const consola = $('consola');
 const palanca = $('palanca');
 const botonAccion = $('botonAccion');
 
-const sinSonido = { iniciar() {}, actualizar() {}, sonar() {}, clic() {}, chapuzon() {}, golpe() {}, encenderFocos() {}, soltarCarnada() {} };
+const sinSonido = { iniciar() {}, actualizar() {}, sonar() {}, clic() {}, chapuzon() {}, golpe() {}, encenderFocos() {}, soltarCarnada() {}, hito() {} };
 const sonido = parametros.has('silencio') ? sinSonido : crearSonido();
 const modoDemo = parametros.has('demo');
 
@@ -36,6 +36,11 @@ let telonObjetivo = 0;
 let proximoSonar = 0;
 let toco = false;
 let reloj = 0;
+let indiceHito = -1;
+let lugarActual = '';
+let textoActual = '';
+const DURACION_DESCENSO = HITOS[HITOS.length - 1].t;
+const hitoCon = (evento) => HITOS.find((h) => h.evento === evento);
 
 const colorAgua = new THREE.Color();
 const COLORES_AGUA = [
@@ -67,14 +72,38 @@ function actualizarRelato(s) {
     estado.chapuzon = tiempoAccion !== null && tiempoAccion > 0.95 ? tiempoAccion - 0.95 : 0;
   }
 
-  // --- Descenso ---
+  // --- Descenso, hito por hito ---
   if (fase.id === 'descenso') {
-    const k = limitar(tiempoFase / fase.duracionDescenso);
-    estado.profundidad = PROFUNDIDAD_FINAL * (0.5 - Math.cos(Math.PI * k) / 2);
-    estado.velocidad = k < 1 ? Math.sin(Math.PI * k) * 0.9 + 0.1 : 0;
-    if (k >= 1 && !cambiandoFase) avanzarFase();
+    const t = tiempoFase;
+    let i = 0;
+    while (i < HITOS.length - 2 && t >= HITOS[i + 1].t) i++;
+    const desde = HITOS[i];
+    const hasta = HITOS[i + 1];
+    let k = limitar((t - desde.t) / (hasta.t - desde.t));
+    if (hasta.fin) k = 1 - (1 - k) * (1 - k); // el último tramo frena antes de tocar fondo
+    estado.profundidad = desde.profundidad + (hasta.profundidad - desde.profundidad) * k;
+    estado.velocidad = t < DURACION_DESCENSO ? 0.06 + 0.84 * suave(0, 3, t) * (1 - suave(DURACION_DESCENSO - 7, DURACION_DESCENSO, t)) : 0;
+    if (i !== indiceHito && !cambiandoFase) {
+      indiceHito = i;
+      mostrarHito(desde);
+    }
+
+    // Encuentros del descenso.
+    const sub = hitoCon('sumergible');
+    const desdeSub = t - sub.t - 1.2;
+    estado.sumergible = desdeSub > 0 && desdeSub < 17 ? desdeSub : 0;
+    const observatorio = hitoCon('idoos');
+    estado.idoos = suave(observatorio.t, observatorio.t + 2.5, t) * (1 - suave(observatorio.t + 11, observatorio.t + 14, t));
+    estado.pared = suave(64, 70, t) * (1 - suave(DURACION_DESCENSO - 8, DURACION_DESCENSO - 3, t));
+    estado.foto += ((desde.foto ? 1 : 0) - estado.foto) * Math.min(1, s * 2.5);
+
+    if (t >= DURACION_DESCENSO && !cambiandoFase) avanzarFase();
   } else {
     estado.velocidad = 0;
+    estado.sumergible = 0;
+    estado.idoos = 0;
+    estado.pared = 0;
+    estado.foto += (0 - estado.foto) * Math.min(1, s * 2.5);
     if (despuesDe('descenso')) estado.profundidad = PROFUNDIDAD_FINAL;
   }
 
@@ -181,17 +210,35 @@ async function mostrarFase(indice) {
     palanca.setAttribute('palanca', 'etiqueta', fase.etiqueta);
     palanca.components.palanca.reiniciar();
   }
-  $('relatoLugar').textContent = fase.lugar;
-  $('relatoTexto').textContent = fase.texto;
-  relato.classList.remove('saliendo');
+  indiceHito = -1;
+  lugarActual = fase.lugar;
+  textoActual = fase.texto;
+  $('relatoLugar').textContent = lugarActual;
+  $('relatoTexto').textContent = textoActual;
+  if (fase.id !== 'descenso') relato.classList.remove('saliendo');
   pintarPuntosFase();
   actualizarModo();
+}
+
+// Cambia el texto del relato durante el descenso.
+async function mostrarHito(hito) {
+  relato.classList.add('saliendo');
+  lugarActual = '';
+  textoActual = '';
+  await esperar(650);
+  if (FASES[indiceFase].id !== 'descenso' || HITOS[indiceHito] !== hito) return;
+  lugarActual = hito.lugar;
+  textoActual = hito.texto;
+  $('relatoLugar').textContent = lugarActual;
+  $('relatoTexto').textContent = textoActual;
+  relato.classList.remove('saliendo');
+  sonido.hito();
 }
 
 function reiniciar() {
   cambiandoFase = true;
   toco = false;
-  Object.assign(estado, { carnada: 0, caida: 0, chapuzon: 0, desdeFondo: 0, focos: 0, profundidad: 0 });
+  Object.assign(estado, { carnada: 0, caida: 0, chapuzon: 0, desdeFondo: 0, focos: 0, profundidad: 0, sumergible: 0, idoos: 0, pared: 0, foto: 0 });
   mostrarFase(1).then(() => (cambiandoFase = false));
 }
 
@@ -280,13 +327,7 @@ function vibrar(fuerza, ms) {
 function textoIndicacion() {
   const fase = FASES[indiceFase];
   if (cambiandoFase) return '';
-  if (fase.id === 'descenso') {
-    let zona = ZONAS[0];
-    ZONAS.forEach((z) => {
-      if (estado.profundidad >= z.profundidad) zona = z;
-    });
-    return zona.texto;
-  }
+  if (fase.id === 'descenso') return estado.sumergible > 0 ? 'Mira a tu derecha: el sumergible Limiting Factor' : estado.idoos > 0.5 ? 'A tu izquierda, una línea de sensores' : '';
   if (fase.requiere === 'palanca') return tiempoAccion === null && enVR ? fase.indicacion : '';
   if (fase.requiere === 'continuar' && tiempoFase >= fase.duracionMinima) {
     const accion = fase.reinicia ? 'volver a empezar' : 'continuar';
@@ -313,12 +354,13 @@ function pintarInterfaz() {
   }
   if (botonAccion.textContent !== etiqueta) botonAccion.textContent = etiqueta;
   botonAccion.classList.toggle('oculto', !etiqueta);
+  $('ficha').style.opacity = estado.foto;
 
   const panel = panelVR.components['panel-relato'];
   if (panel && enVR) {
     panel.actualizar({
-      lugar: cambiandoFase ? '' : fase.lugar,
-      texto: cambiandoFase ? '' : fase.texto,
+      lugar: cambiandoFase ? '' : lugarActual,
+      texto: cambiandoFase ? '' : textoActual,
       indicacion,
       medidor: vistaActual.lugar === 'profundidad' ? `${formatear(p)} m  ·  ${formatear(presion)} atm` : '',
     });
@@ -338,6 +380,7 @@ function actualizarModo() {
   const fase = FASES[indiceFase];
   consola.object3D.visible = enVR && fase.requiere === 'palanca';
   panelVR.object3D.visible = enVR && indiceFase > 0;
+  $('fichaVR').object3D.visible = enVR;
   actualizarLinterna();
 }
 
@@ -357,6 +400,7 @@ async function comenzar() {
   if (faseInicial > 2) toco = true;
   cambiandoFase = true;
   await mostrarFase(faseInicial);
+  tiempoFase = parseFloat(parametros.get('seg')) || 0; // para ensayar: empieza la etapa más adelante
   cambiandoFase = false;
 }
 

@@ -33,11 +33,8 @@ export const FASES = [
     id: 'descenso',
     vista: 'lander',
     lugar: 'Descenso',
-    texto:
-      'Viajas dentro de un lander: un vehículo sin tripulación que cae libre hasta el fondo ' +
-      'con cámaras, luces y sensores. Mira a tu alrededor.',
+    texto: '',
     requiere: 'automatico',
-    duracionDescenso: 50,
     duracionMinima: 0,
   },
   {
@@ -84,26 +81,73 @@ export const FASES = [
   {
     id: 'final',
     vista: 'lander',
-    lugar: 'Atacamex · 2018',
+    lugar: 'Expediciones chilenas · desde 2018',
     texto:
-      'En 2018, científicos chilenos del Instituto Milenio de Oceanografía llevaron por primera vez ' +
-      'un lander a la parte más profunda de la fosa: 8.081 m frente a Antofagasta. Cada descenso ' +
-      'revela cómo la vida resiste la presión, la oscuridad y la escasez.',
+      'En 2018, la expedición Atacamex llevó el lander Audacia a 8.081 metros, la primera vez que la ciencia ' +
+      'chilena tocó el punto más profundo de la fosa. Desde entonces, cada descenso revela cómo la vida ' +
+      'resiste la presión, la oscuridad y la escasez.',
     requiere: 'continuar',
     duracionMinima: 6,
     reinicia: true,
   },
 ];
 
-// Mensajes que aparecen al pasar por cada profundidad durante el descenso.
-export const ZONAS = [
-  { profundidad: 0, texto: 'Superficie' },
-  { profundidad: 200, texto: '200 m · Aquí se acaba la luz del sol' },
-  { profundidad: 1000, texto: '1.000 m · Oscuridad total: solo brillan los animales bioluminiscentes' },
-  { profundidad: 4000, texto: '4.000 m · Zona abisal' },
-  { profundidad: 6000, texto: '6.000 m · Zona hadal, por Hades, el inframundo griego' },
-  { profundidad: 7000, texto: '7.000 m · Aquí cabría el Aconcagua completo' },
-  { profundidad: 7900, texto: 'Llegando al fondo' },
+// El descenso, hito por hito. "t" es el segundo en que empieza cada hito y "profundidad" la
+// que marca el medidor en ese momento; entre hitos la profundidad avanza de forma pareja.
+// evento: 'sumergible' hace aparecer el Limiting Factor; 'idoos', la línea de sensores.
+export const HITOS = [
+  {
+    t: 0,
+    profundidad: 0,
+    lugar: 'Descenso',
+    texto: 'Acompañas a un lander: un vehículo sin tripulación que cae libre hasta el fondo con cámaras, luces y sensores. Mira a tu alrededor.',
+  },
+  {
+    t: 11,
+    profundidad: 200,
+    lugar: '200 metros',
+    texto: 'Aquí se acaba la luz del sol. Desde este punto, el océano está siempre a oscuras.',
+  },
+  {
+    t: 22,
+    profundidad: 1000,
+    lugar: '1.000 metros · Zona de medianoche',
+    texto: 'La única luz es la que producen los propios animales: la bioluminiscencia.',
+  },
+  {
+    t: 34,
+    profundidad: 4000,
+    lugar: '4.000 metros · Zona abisal',
+    texto: 'El agua está cerca de los 2 °C y la presión supera las 400 atmósferas. La mayor parte del fondo de los océanos está a esta profundidad; la fosa sigue bajando.',
+  },
+  {
+    t: 46,
+    profundidad: 5400,
+    lugar: '21 de enero de 2022',
+    texto: 'Por aquí bajaron los primeros seres humanos: Osvaldo Ulloa, del Instituto Milenio de Oceanografía, y el explorador Victor Vescovo llegaron a 8.069 metros en el sumergible Limiting Factor.',
+    evento: 'sumergible',
+    foto: true,
+  },
+  {
+    t: 63,
+    profundidad: 6000,
+    lugar: '6.000 metros · Zona hadal',
+    texto: 'Bajo los 6.000 metros solo quedan las fosas. Su nombre viene de Hades, el inframundo griego. Las paredes de la Fosa de Atacama se cierran a tu alrededor.',
+  },
+  {
+    t: 75,
+    profundidad: 7000,
+    lugar: 'Observatorio IDOOS · desde 2023',
+    texto: 'Chile instaló en la fosa su primer observatorio del océano profundo: líneas de sensores que miden corrientes, temperatura, salinidad y oxígeno, y sensores de presión en el fondo que registran cómo se deforma la placa.',
+    evento: 'idoos',
+  },
+  {
+    t: 90,
+    profundidad: 7700,
+    lugar: 'Llegando al fondo',
+    texto: 'A esta profundidad cabría el Aconcagua completo, y todavía quedaría agua encima.',
+  },
+  { t: 100, profundidad: 8000, fin: true },
 ];
 
 export const PROFUNDIDAD_FINAL = 8000;

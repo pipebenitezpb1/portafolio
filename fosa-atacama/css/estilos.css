@@ -132,7 +132,7 @@ html, body {
 .medidor {
   position: absolute;
   right: 28px;
-  top: 50%;
+  top: 62%;
   transform: translateY(-50%);
   width: 132px;
   padding: 16px 14px;
@@ -149,6 +149,23 @@ html, body {
 .medidor__relleno { position: absolute; left: 0; right: 0; top: 0; height: 0; background: rgba(242, 183, 5, 0.85); box-shadow: 0 0 10px var(--amarillo); }
 .medidor__presion { margin: 4px 0 0; font: 600 16px var(--fuente-texto); color: var(--cian-claro); font-variant-numeric: tabular-nums; }
 
+.ficha {
+  position: absolute;
+  top: 64px;
+  right: 28px;
+  width: min(300px, 32vw);
+  margin: 0;
+  padding: 6px 6px 10px;
+  background: var(--abismo-suave);
+  border: 1px solid var(--amarillo);
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.ficha img { display: block; width: 100%; border-radius: 6px; }
+.ficha figcaption { margin-top: 8px; padding: 0 4px; font-size: 11px; line-height: 1.4; color: var(--espuma-tenue); }
+.ficha strong { color: var(--espuma); font-size: 13px; }
+
 .boton-accion { position: absolute; right: 28px; bottom: 40px; }
 
 .atajos { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); margin: 0; font-size: 11px; color: rgba(238, 244, 248, 0.45); white-space: nowrap; }
@@ -160,5 +177,6 @@ html, body {
   .medidor__cifra { margin: 0; font-size: 18px; }
   .boton-accion { right: 16px; bottom: 16px; }
   .atajos { display: none; }
+  .ficha { top: 96px; right: 16px; width: 46vw; }
   .indicacion { white-space: normal; text-align: center; width: calc(100vw - 32px); }
 }
