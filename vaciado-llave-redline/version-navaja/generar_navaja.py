@@ -76,7 +76,7 @@ CUELLO_D = 6.25            # mm, cuello que atraviesa el MDF
 CERRADURA_CORTE = (6.4, 11.6, 4.4)   # mm, agujero YA CORTADO en el acrilico: diametro, largo y ancho de las orejas. NO CAMBIAR
 ALA = (10.2, 3.4, 3.0)     # mm, largo x ancho x alto de la cabeza impresa (debe pasar holgada por las orejas)
 # ---- bisagra ----
-JUEGO_EJE = 0.15           # mm de juego radial entre el agujero de la bandeja y el pasador
+JUEGO_EJE = 0.12           # mm de juego radial entre el agujero de la bandeja y el pasador
 REALCE_NUDILLO = False     # True = realce de 0,15 mm sobre la bandeja junto al pasador; False = cara lisa (el juego se quita con una golilla)
 JUEGO_NUDILLO = 0.1        # mm de juego vertical de la bandeja contra cada cara, en la zona del pasador
 ARANDELAS = (0.2, 0.3, 0.4)   # mm, arandelas de ajuste por si el hueco real entre caras es mayor
@@ -306,7 +306,7 @@ m_ext = a3d(p_ext, [[0, 0, 1, x_ext], [1, 0, 0, y_lomo], [0, 1, 0, 0], [0, 0, 0,
 m_caras = [extruir(cara, zi0 - t, zi0), extruir(cara, zi1, zi1 + t)]
 
 # ---------------- remache de 1/4 de vuelta y seguro ----------------
-def remache(c, alas_en_u, extra=0.2, marcas=0, eje_d=None, cuello_d=None):   # extra = holgura del cuello sobre el espesor del MDF
+def remache(c, alas_en_u, extra=0.1, marcas=0, eje_d=None, cuello_d=None):   # extra 0,1 = el pasador de 2 anillos que calzo   # extra = holgura del cuello sobre el espesor del MDF
     ln = t + extra
     partes = [cil(0, 0, (eje_d or EJE_D) / 2, zi0, zi1), cil(0, 0, (cuello_d or CUELLO_D) / 2, zi0 - ln - ALA[2], zi1 + ln + ALA[2])]
     for za in (zi0 - ln - ALA[2], zi1 + ln):
