@@ -76,7 +76,7 @@ CUELLO_D = 6.25            # mm, cuello que atraviesa el MDF
 CERRADURA_CORTE = (6.4, 11.6, 4.4)   # mm, agujero YA CORTADO en el acrilico: diametro, largo y ancho de las orejas. NO CAMBIAR
 ALA = (10.2, 3.4, 3.0)     # mm, largo x ancho x alto de la cabeza impresa (debe pasar holgada por las orejas)
 # ---- bisagra ----
-JUEGO_EJE = 0.12           # mm de juego radial entre el agujero de la bandeja y el pasador
+JUEGO_EJE = 0.15           # mm de juego radial entre el agujero de la bandeja y el pasador
 REALCE_NUDILLO = False     # True = realce de 0,15 mm sobre la bandeja junto al pasador; False = cara lisa (el juego se quita con una golilla)
 JUEGO_NUDILLO = 0.1        # mm de juego vertical de la bandeja contra cada cara, en la zona del pasador
 ARANDELAS = (0.2, 0.3, 0.4)   # mm, arandelas de ajuste por si el hueco real entre caras es mayor
@@ -306,9 +306,9 @@ m_ext = a3d(p_ext, [[0, 0, 1, x_ext], [1, 0, 0, y_lomo], [0, 1, 0, 0], [0, 0, 0,
 m_caras = [extruir(cara, zi0 - t, zi0), extruir(cara, zi1, zi1 + t)]
 
 # ---------------- remache de 1/4 de vuelta y seguro ----------------
-def remache(c, alas_en_u, extra=0.2, marcas=0, eje_d=None):   # extra = holgura del cuello sobre el espesor del MDF
+def remache(c, alas_en_u, extra=0.2, marcas=0, eje_d=None, cuello_d=None):   # extra = holgura del cuello sobre el espesor del MDF
     ln = t + extra
-    partes = [cil(0, 0, (eje_d or EJE_D) / 2, zi0, zi1), cil(0, 0, CUELLO_D / 2, zi0 - ln - ALA[2], zi1 + ln + ALA[2])]
+    partes = [cil(0, 0, (eje_d or EJE_D) / 2, zi0, zi1), cil(0, 0, (cuello_d or CUELLO_D) / 2, zi0 - ln - ALA[2], zi1 + ln + ALA[2])]
     for za in (zi0 - ln - ALA[2], zi1 + ln):
         cara_z = za + ALA[2] if za < zi0 else za                      # cara de la cabeza que aprieta el acrilico
         fuera = za if za < zi0 else za + ALA[2]
@@ -679,11 +679,12 @@ print(f"llave: {herr.bounds[2] - herr.bounds[0]:.1f} x {herr.bounds[3] - herr.bo
 
 # 20) SEGMENTO QUE COMPLETA EL CILINDRO DEL PASADOR: el pasador se imprime acostado y por eso su cuerpo lleva una cara plana.
 #     Esta pieza es el trozo que falta; se apoya en esa cara, dentro del agujero de la bandeja, y deja el eje redondo completo.
-def segmento_pasador(eje_d, marca=False):
+def segmento_pasador(eje_d, marca=False, muescas=0):
     r_ = eje_d / 2; plano = -ALA[1] / 2 - 0.05                    # la cara plana del pasador, con 0,05 mm de juego
     largo = (zi1 - zi0) - 0.2                                     # un poco mas corto que el hueco entre las caras
     m = trimesh.boolean.intersection([cil(0, 0, r_, 0, largo), B(-r_ - 1, r_ + 1, -r_ - 1, plano, -1, largo + 1)], engine="manifold")
     if marca: m = D(m, B(-0.6, 0.6, -r_ - 1, -r_ + 0.6, -1, 3))  # una muesca en la punta distingue los del pasador de 10,3 mm
+    for k_ in range(muescas): m = D(m, B(-r_ - 1, r_ + 1, -r_ - 1, -r_ + 0.5, 4 + 2.4 * k_, 4.8 + 2.4 * k_))   # anillos que indican el diametro
     m.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))   # cara plana hacia abajo, sobre la cama
     m.apply_translation(-m.bounds[0]); return m
 segs = [segmento_pasador(EJE_D), segmento_pasador(EJE_D), segmento_pasador(EJE_ANTERIOR, True), segmento_pasador(EJE_ANTERIOR, True)]
@@ -691,14 +692,22 @@ for i, m in enumerate(segs): m.apply_translation([i * 14.0, 0, 0])
 trimesh.util.concatenate(segs).export(os.path.join(aqui, "segmento_cilindro_pasador.stl"))
 print(f"segmentos de pasador: {' x '.join(f'{v:.1f}' for v in segs[0].extents)} mm (para {EJE_D:g}) y {' x '.join(f'{v:.1f}' for v in segs[2].extents)} mm (para {EJE_ANTERIOR:g}) | estancos {all(m.is_watertight for m in segs)}")
 
-# 21) PRUEBA DE LA BISAGRA CON EL BLOQUEO, completa en una placa: lo de la prueba 16 mas el segmento que completa el pasador
-ms21 = [m.copy() for m in ms16] + [segmento_pasador(EJE_D)]
-ms21[-1].apply_translation([placa16.bounds[1][0] - ms21[-1].extents[0], placa16.bounds[0][1] + ms16[0].extents[1] + 5, 0])
-ms21[-1].apply_translation([0, 0, 0])
-libre_x = max(m.bounds[1][0] for m in ms16[1:]) + 5               # a continuacion de la fila de piezas chicas
-ms21[-1].apply_translation([libre_x - ms21[-1].bounds[0][0], 0, 0])
+# 21) PRUEBA DE LA BISAGRA CON EL BLOQUEO, completa en una placa.  Los pasadores van en tres diametros y dos largos de cuello,
+#     porque el ajuste real depende de la impresora y del laser:
+#       anillos 1 / 2 / 3 = fino / medio / justo, con cuello corto (+0,0);   anillos 4 / 5 / 6 = lo mismo con cuello largo (+0,2)
+VAR_DIAM = [(6.00, 9.80), (6.15, 9.90), (6.25, 10.00)]         # (diametro del cuello, diametro del cuerpo)
+pas21 = [girar(remache((0, 0), True, e_, 1 + i + 3 * j, eje_d=cu_, cuello_d=cn_), 90, [1, 0, 0])
+         for j, e_ in enumerate((0.0, 0.2)) for i, (cn_, cu_) in enumerate(VAR_DIAM)]
+seg21 = [segmento_pasador(cu_, muescas=i + 1) for i, (cn_, cu_) in enumerate(VAR_DIAM)]
+ms21 = [esqueleto.copy(), llave_t.copy()] + pas21 + [girar(seguro((0, 0), True, p_, i + 1), 180, [1, 0, 0]) for i, p_ in enumerate(VAR_SEGURO[1:3])] + \
+       [a_.copy() for a_ in aran] + seg21
+ancho21 = esqueleto.extents[0]; x = y = fila = 0.0
+for k, m in enumerate(ms21):
+    m.apply_translation(-m.bounds[0]); ex = m.extents
+    if k == 1 or (x > 0 and x + ex[0] > ancho21): x, y, fila = 0.0, y + fila + 5, 0.0
+    m.apply_translation([x, y, 0]); x += ex[0] + 5; fila = max(fila, ex[1])
 placa21 = trimesh.util.concatenate(ms21); placa21.export(os.path.join(pr, "prueba_bisagra_con_bloqueo.stl"))
-print(f"prueba de bisagra con bloqueo: {' x '.join(f'{v:.1f}' for v in placa21.extents)} mm, {len(placa21.split())} piezas, {sum(m.volume for m in ms21) / 1000:.0f} cm3 | estancas {all(p_.is_watertight for p_ in placa21.split())}")
+print(f"prueba de bisagra con bloqueo: {' x '.join(f'{v:.1f}' for v in placa21.extents)} mm, {len(placa21.split())} piezas, {sum(m.volume for m in ms21) / 1000:.0f} cm3 | agujero de la bandeja {EJE_D + 2 * JUEGO_EJE:.2f} mm")
 
 # 22) LIMPIEZA Y ESPEJO: al final se revisan todos los STL (caras degeneradas, piezas vueltas del reves) y,
 #     si ESPEJO esta activo, se reflejan para que la bandeja abra hacia el otro lado.
