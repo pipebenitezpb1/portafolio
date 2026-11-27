@@ -709,6 +709,15 @@ for k, m in enumerate(ms21):
 placa21 = trimesh.util.concatenate(ms21); placa21.export(os.path.join(pr, "prueba_bisagra_con_bloqueo.stl"))
 print(f"prueba de bisagra con bloqueo: {' x '.join(f'{v:.1f}' for v in placa21.extents)} mm, {len(placa21.split())} piezas, {sum(m.volume for m in ms21) / 1000:.0f} cm3 | agujero de la bandeja {EJE_D + 2 * JUEGO_EJE:.2f} mm")
 
+# 21b) PASADORES DEFINITIVOS en una placa: 2 pasadores (mas 1 de repuesto), 2 segmentos que completan el cilindro y 2 seguros
+ms21b = [girar(remache((0, 0), True), 90, [1, 0, 0]) for _ in range(3)] + [segmento_pasador(EJE_D) for _ in range(2)] + \
+        [girar(seguro((0, 0), True), 180, [1, 0, 0]) for _ in range(2)]
+x = 0.0
+for m in ms21b:
+    m.apply_translation(-m.bounds[0]); m.apply_translation([x, 0, 0]); x += m.extents[0] + 5
+placa21b = trimesh.util.concatenate(ms21b); placa21b.export(os.path.join(aqui, "pasadores_definitivos.stl"))
+print(f"pasadores definitivos: {' x '.join(f'{v:.1f}' for v in placa21b.extents)} mm, {len(placa21b.split())} piezas, {sum(m.volume for m in ms21b) / 1000:.1f} cm3")
+
 # 22) LIMPIEZA Y ESPEJO: al final se revisan todos los STL (caras degeneradas, piezas vueltas del reves) y,
 #     si ESPEJO esta activo, se reflejan para que la bandeja abra hacia el otro lado.
 #     Las placas con varias piezas quedan con su distribucion reflejada, lo que no afecta a la impresion.
