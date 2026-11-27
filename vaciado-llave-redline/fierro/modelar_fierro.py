@@ -49,6 +49,8 @@ fierro2d = fierro2d.buffer(0.6).buffer(-1.2).buffer(0.6).simplify(0.03)
 e0, e1 = np.array([ub(159.8), vb(49.8)]), np.array([ub(172.0), vb(28.4)])                # borde de la escala (0-20)
 d = (e1 - e0) / np.hypot(*(e1 - e0))                                                      # direccion de la linea = de la mordaza
 p0 = np.array([ub(159.5), vb(22.5)])                                                      # punto de la linea
+if os.path.exists(os.path.join(aqui, "eje_foto.json")):                                   # la linea negra medida en la foto superior
+    _e = json.load(open(os.path.join(aqui, "eje_foto.json"))); p0 = np.array(_e["p0"]); d = np.array(_e["d"])
 n = np.array([d[1], -d[0]]); n = n if n[0] < 0 else -n                                    # perpendicular, hacia el mango
 s_de = lambda p: (np.array(p) - p0) @ n
 co = np.array(fierro2d.exterior.coords); ss = (co - p0) @ n
